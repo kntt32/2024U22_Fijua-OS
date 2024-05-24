@@ -1,0 +1,6 @@
+#ifndef INCLUDED_EFI_BUILD_H
+#define INCLUDED_EFI_BUILD_H
+
+#define PLATFORM_64BIT 1
+
+#endif
