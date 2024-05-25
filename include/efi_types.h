@@ -1,7 +1,7 @@
 #ifndef INCLUDED_EFI_TYPES_H
 #define INCLUDED_EFI_TYPES_H
 
-#include <os_types.h>
+#include <types.h>
 
 typedef uint8 BOOLEAN;
 typedef sintn INTN;
