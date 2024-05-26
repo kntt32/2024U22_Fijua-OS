@@ -3,6 +3,10 @@
 
 #include <build.h>
 
+#define in
+#define out
+#define optional
+
 typedef char ascii;
 
 typedef signed char sint8;

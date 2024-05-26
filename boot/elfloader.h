@@ -8,6 +8,11 @@ typedef struct {
     uintn memSize;
 } ElfLoader_MemLoadArea;
 
-unsigned int ElfLoader_GetLoadArea(const void* file, ElfLoader_MemLoadArea* buff, uintn* buffCount);
+
+unsigned int ElfLoader_GetProperty(in const void* file, optional void** entryPointPtr, optional uint16* machineTypePtr);
+
+unsigned int ElfLoader_Load(in const void* file, in optional void* loadAddr);
+
+unsigned int ElfLoader_GetLoadArea(in const void* file, in optional const void* loadAddr, in out uintn* buffCount, out ElfLoader_MemLoadArea* buff);
 
 #endif

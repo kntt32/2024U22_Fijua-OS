@@ -9,23 +9,26 @@
 #define Elf_Header_ET_EXEC 2
 #define Elf_Header_ET_DYN  3
 
+#define Elf_Header_EM_AMD64 62
+
+
 #define Elf_ProgramHeader_PT_LOAD 1
 
 typedef struct {
-        unsigned char   e_ident[EI_NIDENT]; 
-        uint16      e_type;
-        uint16      e_machine;
-        uint32      e_version;
-        uintn      e_entry;
-        uintn       e_phoffset;
-        uintn       e_shoffset;
-        uint32      e_flags;
-        uint16      e_ehsize;
-        uint16      e_phentsize;
-        uint16      e_phnum;
-        uint16      e_shentsize;
-        uint16      e_shnum;
-        uint16      e_shstrndx;
+    unsigned char   e_ident[EI_NIDENT]; 
+    uint16      e_type;
+    uint16      e_machine;
+    uint32      e_version;
+    uintn      e_entry;
+    uintn       e_phoffset;
+    uintn       e_shoffset;
+    uint32      e_flags;
+    uint16      e_ehsize;
+    uint16      e_phentsize;
+    uint16      e_phnum;
+    uint16      e_shentsize;
+    uint16      e_shnum;
+    uint16      e_shstrndx;
 } Elf_Header;
 
 #if PLATFORM_64BIT

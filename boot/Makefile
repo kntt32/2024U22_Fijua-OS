@@ -7,8 +7,14 @@ else
 INCLUDE := ../include
 endif
 
-build: main.o elfloader.o
-	lld-link /subsystem:efi_application /entry:efi_main /out:a.efi $^
+build: a.efi
+
+install: a.efi
+ifeq ($(OS), Windows_NT)
+	copy a.efi ..\disk\EFI\BOOT\BOOTX64.EFI
+else
+	cp a.efi ../disk/EFI/BOOT/BOOTX64.EFI
+endif
 
 clean:
 ifeq ($(OS), Windows_NT)
@@ -17,7 +23,8 @@ else
 	rm *.o *.efi
 endif
 
-
+a.efi: main.o elfloader.o
+	lld-link /subsystem:efi_application /entry:efi_main /out:a.efi $^
 
 main.o: main.c
 
