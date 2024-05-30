@@ -3,9 +3,21 @@
 #include <efi_file_info.h>
 #include <efi_simple_pointer_protocol.h>
 
+#include "elfloader.h"
+
 #define NULL ((void*)0)
 
+#define ELFLOADERMEMLOADAREA_BUFFSIZE (20)
+
+
+typedef struct _AllocatedPageTable{
+    VOID* pageStart;
+    unsigned int size;
+} ExpandKernel_AllocatedPageTable;
+
+
 void __chkstk() {}
+
 
 void err(IN EFI_SYSTEM_TABLE* SystemTable) {
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Err");
@@ -51,13 +63,42 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
     //open kernelfile
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Opening kernelfile\n\r");
     char* buff_kernelfile = NULL;
-    status = SystemTable->BootServices->AllocatePages(AllocateAnyPage, EfiLoaderData, (kernelSize>>12)+1, buff_kernelfile);
+    status = SystemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, (kernelSize>>12)+1, (EFI_PHYSICAL_ADDRESS*)&buff_kernelfile);
     if(status) err(SystemTable);
-    
 
-    //expand kernelfile
+    //read kernelfile to buffer
+    SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Reading kernelfile to buffer\n\r");
+    UINTN copyof_kernelSize = kernelSize;
+    status = efiFileProtocol_kernelfile->Read(efiFileProtocol_kernelfile, &copyof_kernelSize, buff_kernelfile);
+    if(status) err(SystemTable);
+
+    //get memarea to expand kernelfile
+    SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Getting memarea to expand kernelfile\n\r");
+    static ElfLoader_MemLoadArea elfloaderMemloadarea_buff[ELFLOADERMEMLOADAREA_BUFFSIZE];
+    uintn elfloaderMemloadarea_buffCount = ELFLOADERMEMLOADAREA_BUFFSIZE;
+    status = ElfLoader_GetLoadArea(buff_kernelfile, NULL, &elfloaderMemloadarea_buffCount, elfloaderMemloadarea_buff);
+    if(status) err(SystemTable);
+
+    //allocate pages to expand kernelfile
+    SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Allocating pages to expand kernelfile\n\r");
+    static ExpandKernel_AllocatedPageTable allocatePageTable_buff[ELFLOADERMEMLOADAREA_BUFFSIZE];
+    for(uintn i=0; i<elfloaderMemloadarea_buffCount; i++) {
+        uintn isAllocatedFlag = 0;
+        for(uintn k=0; k<i; k++) {
+
+        }
+        if(!isAllocatedFlag) {
+            //status = SystemTable->BootServices->AllocatePages(AllocateAddress, EfiLoaderData, );
+        }else {
+            allocatePageTable_buff[i].pageStart = NULL;
+        }
+    }
 
     
+    //free unnecessary resource
+    efiFileProtocol_root->Close(efiFileProtocol_kernelfile);
+    efiFileProtocol_kernelfile->Close(efiFileProtocol_kernelfile);
+
 
 
     while(1);
