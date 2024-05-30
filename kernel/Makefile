@@ -10,6 +10,13 @@ endif
 build: main.o
 	ld.lld --entry kernel_main -z norelro --image-base 0x100000 --static -o a.elf $^
 
+install: a.elf
+ifeq ($(OS), Windows_NT)
+	copy a.elf ..\disk\kernel.elf
+else
+	cp a.elf ../disk/kernel.elf
+endif
+
 clean:
 ifeq ($(OS), Windows_NT)
 	del *.o *.elf

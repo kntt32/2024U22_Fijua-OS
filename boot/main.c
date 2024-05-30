@@ -11,8 +11,8 @@
 
 
 typedef struct _AllocatedPageTable{
-    VOID* pageStart;
-    unsigned int size;
+    EFI_PHYSICAL_ADDRESS pageStart;
+    uintn pages;
 } ExpandKernel_AllocatedPageTable;
 
 
@@ -63,7 +63,7 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
     //open kernelfile
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Opening kernelfile\n\r");
     char* buff_kernelfile = NULL;
-    status = SystemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, (kernelSize>>12)+1, (EFI_PHYSICAL_ADDRESS*)&buff_kernelfile);
+    status = SystemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, ((kernelSize+0xffe)>>12), (EFI_PHYSICAL_ADDRESS*)&buff_kernelfile);
     if(status) err(SystemTable);
 
     //read kernelfile to buffer
@@ -81,18 +81,34 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
 
     //allocate pages to expand kernelfile
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Allocating pages to expand kernelfile\n\r");
-    static ExpandKernel_AllocatedPageTable allocatePageTable_buff[ELFLOADERMEMLOADAREA_BUFFSIZE];
-    for(uintn i=0; i<elfloaderMemloadarea_buffCount; i++) {
-        uintn isAllocatedFlag = 0;
-        for(uintn k=0; k<i; k++) {
+    static ExpandKernel_AllocatedPageTable allocatePageTable[ELFLOADERMEMLOADAREA_BUFFSIZE];
 
+    EFI_PHYSICAL_ADDRESS allocatePageTable_prevPageStart = 0;
+    EFI_PHYSICAL_ADDRESS allocatePageTable_prevPageEnd   = 0;
+    EFI_PHYSICAL_ADDRESS allocatePageTable_thisPageStart = 0;
+    EFI_PHYSICAL_ADDRESS allocatePageTable_thisPageEnd   = 0;
+    for(uintn i=0; i<elfloaderMemloadarea_buffCount; i++) {
+        allocatePageTable_thisPageStart = allocatePageTable[i].pageStart;
+        allocatePageTable_thisPageEnd   = allocatePageTable[i].pageStart + (allocatePageTable[i].pages<<12);
+
+        allocatePageTable[i].pageStart = (EFI_PHYSICAL_ADDRESS)(elfloaderMemloadarea_buff[i].startAddr);
+        allocatePageTable[i].pages = ((elfloaderMemloadarea_buff[i].memSize+0xffe)>>12);
+
+        for(uintn k=0; k<i; k++) {
+            if(allocatePageTable[i-1].pages == 0) continue;
+            allocatePageTable_prevPageStart = allocatePageTable[k].pageStart;
+            allocatePageTable_prevPageEnd   = allocatePageTable[k].pageStart + (allocatePageTable[k].pages<<12);
+
+            
         }
-        if(!isAllocatedFlag) {
-            //status = SystemTable->BootServices->AllocatePages(AllocateAddress, EfiLoaderData, );
-        }else {
-            allocatePageTable_buff[i].pageStart = NULL;
+        if(allocatePageTable[i].pages != 0) {
+            SystemTable->ConOut->OutputString(SystemTable->ConOut, L";\n\r");
+            status = SystemTable->BootServices->AllocatePages(AllocateAddress, EfiLoaderData, allocatePageTable[i].pages, &(allocatePageTable[i].pageStart));;
+            if(status) err(SystemTable);
         }
     }
+
+    //expand kernelfile
 
     
     //free unnecessary resource
