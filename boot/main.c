@@ -60,14 +60,14 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
     if(status) err(SystemTable);
     unsigned int kernelSize = fileInfo_kernelfile->FileSize;
 
-    //open kernelfile
-    SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Opening kernelfile\n\r");
+    //allocate memory to load kernelfile
+    SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Allocating memory to load kernelfile\n\r");
     char* buff_kernelfile = NULL;
-    status = SystemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, ((kernelSize+0xffe)>>12), (EFI_PHYSICAL_ADDRESS*)&buff_kernelfile);
+    status = SystemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, ((kernelSize+0xfff)>>12), (EFI_PHYSICAL_ADDRESS*)&buff_kernelfile);
     if(status) err(SystemTable);
 
-    //read kernelfile to buffer
-    SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Reading kernelfile to buffer\n\r");
+    //load kernelfile to buffer
+    SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Loading kernelfile to buffer\n\r");
     UINTN copyof_kernelSize = kernelSize;
     status = efiFileProtocol_kernelfile->Read(efiFileProtocol_kernelfile, &copyof_kernelSize, buff_kernelfile);
     if(status) err(SystemTable);
@@ -88,11 +88,11 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
     EFI_PHYSICAL_ADDRESS allocatePageTable_thisPageStart = 0;
     EFI_PHYSICAL_ADDRESS allocatePageTable_thisPageEnd   = 0;
     for(uintn i=0; i<elfloaderMemloadarea_buffCount; i++) {
+        allocatePageTable[i].pageStart = (EFI_PHYSICAL_ADDRESS)(elfloaderMemloadarea_buff[i].startAddr);
+        allocatePageTable[i].pages = ((elfloaderMemloadarea_buff[i].memSize+0xfff)>>12);
+        
         allocatePageTable_thisPageStart = allocatePageTable[i].pageStart;
         allocatePageTable_thisPageEnd   = allocatePageTable[i].pageStart + (allocatePageTable[i].pages<<12);
-
-        allocatePageTable[i].pageStart = (EFI_PHYSICAL_ADDRESS)(elfloaderMemloadarea_buff[i].startAddr);
-        allocatePageTable[i].pages = ((elfloaderMemloadarea_buff[i].memSize+0xffe)>>12);
 
         for(uintn k=0; k<i; k++) {
             if(allocatePageTable[i-1].pages == 0) continue;
@@ -115,8 +115,12 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
     efiFileProtocol_root->Close(efiFileProtocol_kernelfile);
     efiFileProtocol_kernelfile->Close(efiFileProtocol_kernelfile);
 
+    //allocate resource for kernel
 
+    
+    //run kernel
 
+    SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Kernel returned\n\r");
     while(1);
 
     return 0;
