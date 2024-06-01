@@ -23,10 +23,10 @@ else
 	rm *.o *.efi
 endif
 
-a.efi: main.o elfloader.o
+a.efi: main.o elfloader.o subroutine.o
 	lld-link /subsystem:efi_application /entry:efi_main /out:a.efi $^
 
-main.o: main.c
+main.o: main.c elfloader.h subroutine.h
 
 elfloader.o: elfloader.c elfloader.h
 

@@ -1,19 +1,28 @@
 #include <efi.h>
 #include <efi_simple_file_system_protocol.h>
 #include <efi_file_info.h>
-#include <efi_simple_pointer_protocol.h>
+#include <efi_graphics_output_protocol.h>
 
 #include "elfloader.h"
+#include "subroutine.h"
 
 #define NULL ((void*)0)
 
 #define ELFLOADERMEMLOADAREA_BUFFSIZE (20)
 
 
-typedef struct _AllocatedPageTable{
-    EFI_PHYSICAL_ADDRESS pageStart;
-    uintn pages;
-} ExpandKernel_AllocatedPageTable;
+typedef struct {
+    EFI_SYSTEM_TABLE* SystemTablePtr;
+    struct {
+        uintn mode;//1:rgb 2:rbg
+        uintn startAddr;
+        uintn scanlineWidth;
+        uintn width;
+        uintn height;
+    } Graphic;
+} KernelInputStruct;
+
+KernelInputStruct kernelInput;
 
 
 void __chkstk() {}
@@ -21,18 +30,21 @@ void __chkstk() {}
 
 void err(IN EFI_SYSTEM_TABLE* SystemTable) {
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Err");
-    while(1);
+    while(1) SystemTable->BootServices->Stall(1000);
 }
 
 
 EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable) {
     EFI_STATUS status = 0;
+
     //console test
+    SystemTable->ConOut->ClearScreen(SystemTable->ConOut);
+    SystemTable->ConOut->EnableCursor(SystemTable->ConOut, 1);
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Hello, World!!\n\r");
 
     //get EFI_SIMPLE_FILE_SYSTEM_PROTOCOL
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Getting EFI_SIMPLE_FILE_SYSTEM_PROTOCOL\n\r");
-    static EFI_GUID efiSimpleFileSystemProtocol_guid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
+    EFI_GUID efiSimpleFileSystemProtocol_guid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
     EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* efiSimpleFileSystemProtocol_volume = NULL;
     status = SystemTable->BootServices->LocateProtocol(&efiSimpleFileSystemProtocol_guid, NULL, (void*)&efiSimpleFileSystemProtocol_volume);
     if(status) err(SystemTable);
@@ -52,7 +64,7 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
     //get kernelfile size
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Getting kernelfile size\n\r");
     UINTN fileInfo_kernelfile_size = 0;
-    static EFI_GUID efiFileInfoID_guid = EFI_FILE_INFO_ID;
+    EFI_GUID efiFileInfoID_guid = EFI_FILE_INFO_ID;
     efiFileProtocol_kernelfile->GetInfo(efiFileProtocol_kernelfile, &efiFileInfoID_guid, &fileInfo_kernelfile_size, NULL);
     char fileInfo_kernelfile_buff[fileInfo_kernelfile_size];
     EFI_FILE_INFO* fileInfo_kernelfile = (void*)fileInfo_kernelfile_buff;
@@ -74,54 +86,78 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
 
     //get memarea to expand kernelfile
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Getting memarea to expand kernelfile\n\r");
-    static ElfLoader_MemLoadArea elfloaderMemloadarea_buff[ELFLOADERMEMLOADAREA_BUFFSIZE];
+    ElfLoader_MemLoadArea elfloaderMemloadarea_buff[ELFLOADERMEMLOADAREA_BUFFSIZE];
     uintn elfloaderMemloadarea_buffCount = ELFLOADERMEMLOADAREA_BUFFSIZE;
     status = ElfLoader_GetLoadArea(buff_kernelfile, NULL, &elfloaderMemloadarea_buffCount, elfloaderMemloadarea_buff);
     if(status) err(SystemTable);
 
     //allocate pages to expand kernelfile
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Allocating pages to expand kernelfile\n\r");
-    static ExpandKernel_AllocatedPageTable allocatePageTable[ELFLOADERMEMLOADAREA_BUFFSIZE];
-
-    EFI_PHYSICAL_ADDRESS allocatePageTable_prevPageStart = 0;
-    EFI_PHYSICAL_ADDRESS allocatePageTable_prevPageEnd   = 0;
-    EFI_PHYSICAL_ADDRESS allocatePageTable_thisPageStart = 0;
-    EFI_PHYSICAL_ADDRESS allocatePageTable_thisPageEnd   = 0;
-    for(uintn i=0; i<elfloaderMemloadarea_buffCount; i++) {
-        allocatePageTable[i].pageStart = (EFI_PHYSICAL_ADDRESS)(elfloaderMemloadarea_buff[i].startAddr);
-        allocatePageTable[i].pages = ((elfloaderMemloadarea_buff[i].memSize+0xfff)>>12);
-        
-        allocatePageTable_thisPageStart = allocatePageTable[i].pageStart;
-        allocatePageTable_thisPageEnd   = allocatePageTable[i].pageStart + (allocatePageTable[i].pages<<12);
-
-        for(uintn k=0; k<i; k++) {
-            if(allocatePageTable[i-1].pages == 0) continue;
-            allocatePageTable_prevPageStart = allocatePageTable[k].pageStart;
-            allocatePageTable_prevPageEnd   = allocatePageTable[k].pageStart + (allocatePageTable[k].pages<<12);
-
-            
+    EFI_PHYSICAL_ADDRESS memstart;
+    EFI_PHYSICAL_ADDRESS memend;
+    for(unsigned int i=0; i<elfloaderMemloadarea_buffCount; i++) {
+        if(i == 0 || (EFI_PHYSICAL_ADDRESS)(elfloaderMemloadarea_buff[i].startAddr) < memstart) {
+            memstart = (EFI_PHYSICAL_ADDRESS)(elfloaderMemloadarea_buff[i].startAddr);
         }
-        if(allocatePageTable[i].pages != 0) {
-            SystemTable->ConOut->OutputString(SystemTable->ConOut, L";\n\r");
-            status = SystemTable->BootServices->AllocatePages(AllocateAddress, EfiLoaderData, allocatePageTable[i].pages, &(allocatePageTable[i].pageStart));;
-            if(status) err(SystemTable);
+        if(i == 0 || memend < (EFI_PHYSICAL_ADDRESS)(elfloaderMemloadarea_buff[i].startAddr)+(EFI_PHYSICAL_ADDRESS)(elfloaderMemloadarea_buff[i].memSize)) {
+            memend = (EFI_PHYSICAL_ADDRESS)(elfloaderMemloadarea_buff[i].startAddr)+(EFI_PHYSICAL_ADDRESS)(elfloaderMemloadarea_buff[i].memSize);
         }
     }
+    memstart = (memstart >> 12) << 12;
+    memend = ((memend+0xfff) >> 12) << 12;
+    status = SystemTable->BootServices->AllocatePages(AllocateAddress, EfiLoaderData, (memend-memstart) >> 12, &memstart);
+    if(status) err(SystemTable);
 
     //expand kernelfile
+    SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Expanding kernelfile\n\r");
 
-    
-    //free unnecessary resource
-    efiFileProtocol_root->Close(efiFileProtocol_kernelfile);
+    //release resource
+    SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Releasing resource\n\r");
     efiFileProtocol_kernelfile->Close(efiFileProtocol_kernelfile);
+    efiFileProtocol_root->Close(efiFileProtocol_root);
+    SystemTable->BootServices->FreePages((EFI_PHYSICAL_ADDRESS)buff_kernelfile, ((kernelSize+0xfff)>>12));
 
-    //allocate resource for kernel
+    //disable dogtimer
+    SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Disable dogtimer\n\r");
+    status =  SystemTable->BootServices->SetWatchdogTimer(0, 0x10000, 0, NULL);
+    if(status) err(SystemTable);
 
-    
+    //get framebuffer for kernel
+    SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Getting framebuffer for kernel\n\r");
+    EFI_GUID efiGraphicsOutputProtocol_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
+    EFI_GRAPHICS_OUTPUT_PROTOCOL* efiGraphicsOutputProtocol_interface = NULL;
+    status = SystemTable->BootServices->LocateProtocol(&efiGraphicsOutputProtocol_guid, NULL, (VOID**)&efiGraphicsOutputProtocol_interface);
+    if(status) err(SystemTable);
+    switch(efiGraphicsOutputProtocol_interface->Mode->Info->PixelFormat) {
+        case PixelRedGreenBlueReserved8BitPerColor:
+            kernelInput.Graphic.mode = 1;
+            break;
+        case PixelBlueGreenRedReserved8BitPerColor :
+            kernelInput.Graphic.mode = 2;
+            break;
+        default:
+            SystemTable->ConOut->OutputString(SystemTable->ConOut, L"This Graphic Mode is Unsupported.\n\r");
+            err(SystemTable);
+    }
+    kernelInput.Graphic.startAddr = efiGraphicsOutputProtocol_interface->Mode->FrameBufferBase;
+    kernelInput.Graphic.scanlineWidth = efiGraphicsOutputProtocol_interface->Mode->Info->PixelsPerScanLine;
+    kernelInput.Graphic.width = efiGraphicsOutputProtocol_interface->Mode->Info->HorizontalResolution;
+    kernelInput.Graphic.height = efiGraphicsOutputProtocol_interface->Mode->Info->VerticalResolution;
+
+    //get memory for kernel
+    SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Getting memory for Kernel\n\r");
+        //get memory map
+        SystemTable->ConOut->OutputString(SystemTable->ConOut, L"  Getting memory map\n\r");
+
+
+
     //run kernel
+    SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Starting Kernel...\n\r");
+
 
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Kernel returned\n\r");
-    while(1);
+    
+    while(1) SystemTable->BootServices->Stall(1000);
 
     return 0;
 }
