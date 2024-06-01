@@ -20,6 +20,13 @@ typedef struct {
         uintn width;
         uintn height;
     } Graphic;
+    struct {
+        uintn count;
+        struct {
+            EFI_PHYSICAL_ADDRESS pageStart;
+            uintn pages;
+        }* AvailableMemoryPageMap;
+    } Memory;
 } KernelInputStruct;
 
 KernelInputStruct kernelInput;
@@ -148,6 +155,24 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Getting memory for Kernel\n\r");
         //get memory map
         SystemTable->ConOut->OutputString(SystemTable->ConOut, L"  Getting memory map\n\r");
+        EFI_MEMORY_DESCRIPTOR* memoryMap;
+        uintn memoryMapSize = 0;
+        uintn mapKey;
+        uintn descriptorSize;
+        uint32 descriptorVersion;
+        SystemTable->BootServices->GetMemoryMap(&memoryMapSize, NULL, &mapKey, &descriptorSize, &descriptorVersion);
+        status = SystemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, (memoryMapSize+0xfff)>>12, (EFI_PHYSICAL_ADDRESS*)&memoryMap);
+        if(status) err(SystemTable);
+        status = SystemTable->BootServices->GetMemoryMap(&memoryMapSize, memoryMap, &mapKey, &descriptorSize, &descriptorVersion);
+        if(status) err(SystemTable);
+        
+        //count AvailableMemoryPages
+        SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Counting available memory pages\n\r");
+        for(uintn i=0; i<(memoryMapSize/descriptorSize); i++) {
+
+        }
+
+        //make availableMemoryPages map
 
 
 
