@@ -26,9 +26,11 @@ typedef double float64;
 #if PLATFORM_64BIT
 typedef sint64 sintn;
 typedef uint64 uintn;
+#define TYPES_UINTN_LN2_SIZE (4)
 #else
 typedef sint32 sintn;
 typedef uint32 uintn;
+#define TYPES_UINTN_LN2_SIZE (3)
 #endif
 
 #endif

@@ -21,12 +21,9 @@ typedef struct {
         uintn height;
     } Graphic;
     struct {
-        uintn count;
-        struct {
-            EFI_PHYSICAL_ADDRESS pageStart;
-            uintn pages;
-        }* AvailableMemoryPageMap;
-    } Memory;
+        uintn ramSize;
+        uintn* availableRamMap;//per 1 byte represent 1 pages'owner id (4KiB) (0:unavailable 1:available 2<=:ownerid)
+    } Ram;
 } KernelInputStruct;
 
 KernelInputStruct kernelInput;
@@ -43,6 +40,9 @@ void err(IN EFI_SYSTEM_TABLE* SystemTable) {
 
 EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable) {
     EFI_STATUS status = 0;
+    uintn tempUintn = 0;
+    uintn* tempUintnptr = NULL;
+    uint8* tempUint8ptr = NULL;
 
     //console test
     SystemTable->ConOut->ClearScreen(SystemTable->ConOut);
@@ -153,26 +153,50 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
 
     //get memory for kernel
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Getting memory for Kernel\n\r");
-        //get memory map
-        SystemTable->ConOut->OutputString(SystemTable->ConOut, L"  Getting memory map\n\r");
+        //get ram size
+        SystemTable->ConOut->OutputString(SystemTable->ConOut, L"  Getting ramsize\n\r");
         EFI_MEMORY_DESCRIPTOR* memoryMap;
         uintn memoryMapSize = 0;
         uintn mapKey;
         uintn descriptorSize;
         uint32 descriptorVersion;
         SystemTable->BootServices->GetMemoryMap(&memoryMapSize, NULL, &mapKey, &descriptorSize, &descriptorVersion);
-        status = SystemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, (memoryMapSize+0xfff)>>12, (EFI_PHYSICAL_ADDRESS*)&memoryMap);
+        status = SystemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, (memoryMapSize+descriptorSize+0xfff)>>12, (EFI_PHYSICAL_ADDRESS*)&memoryMap);
         if(status) err(SystemTable);
+        memoryMapSize = ((memoryMapSize+descriptorSize+0xfff)>>12)<<12;
         status = SystemTable->BootServices->GetMemoryMap(&memoryMapSize, memoryMap, &mapKey, &descriptorSize, &descriptorVersion);
         if(status) err(SystemTable);
-        
-        //count AvailableMemoryPages
-        SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Counting available memory pages\n\r");
-        for(uintn i=0; i<(memoryMapSize/descriptorSize); i++) {
+        uintn ramSize = 0;
+        EFI_MEMORY_DESCRIPTOR* targetMemDescriptor = memoryMap;
+        for(uintn i=0; i<memoryMapSize/descriptorSize; i++) {
+            tempUintn = (uintn)(targetMemDescriptor->PhysicalStart) + (targetMemDescriptor->NumberOfPages << 12);
+            if(targetMemDescriptor->Type == EfiConventionalMemory && ramSize < tempUintn) {
+                ramSize = tempUintn;
+            }
 
+            targetMemDescriptor = (EFI_MEMORY_DESCRIPTOR*)((EFI_PHYSICAL_ADDRESS)targetMemDescriptor + descriptorSize);
         }
 
-        //make availableMemoryPages map
+        //set availableRamMap
+        SystemTable->ConOut->OutputString(SystemTable->ConOut, L"  Setting available ram map\n\r");
+        kernelInput.Ram.ramSize = ramSize;
+        status = SystemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, (ramSize+0xfff)>>12, (EFI_PHYSICAL_ADDRESS*)&(kernelInput.Ram.availableRamMap));
+        if(status) err(SystemTable);
+        tempUintnptr = kernelInput.Ram.availableRamMap;
+        for(uintn i=0; i<((ramSize+0xfff)>>12)<<(12-TYPES_UINTN_LN2_SIZE); i++) {
+            *tempUintnptr = 0;
+            tempUintnptr++;
+        }
+        status = SystemTable->BootServices->GetMemoryMap(&memoryMapSize, memoryMap, &mapKey, &descriptorSize, &descriptorVersion);
+        if(status) err(SystemTable);
+        targetMemDescriptor = memoryMap;
+        tempUint8ptr = (uint8*)(kernelInput.Ram.availableRamMap);
+        for(uintn i=0; i<memoryMapSize/descriptorSize; i++) {
+            for(uintn k=(uintn)(targetMemDescriptor->PhysicalStart >> 12); k<(uintn)(targetMemDescriptor->PhysicalStart >> 12) + targetMemDescriptor->NumberOfPages; k++) {
+                tempUint8ptr[k] = 1;
+            }
+            targetMemDescriptor = (EFI_MEMORY_DESCRIPTOR*)((EFI_PHYSICAL_ADDRESS)targetMemDescriptor + descriptorSize);
+        }
 
 
 
