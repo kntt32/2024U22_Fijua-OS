@@ -52,7 +52,7 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
     //get EFI_FILE_PROTOCOL:root handle
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Getting EFI_FILE_PROTOCOL:root handle\n\r");
     EFI_FILE_PROTOCOL* efiFileProtocol_root = NULL;
-    status =efiSimpleFileSystemProtocol_volume->OpenVolume(efiSimpleFileSystemProtocol_volume, &efiFileProtocol_root);
+    status = efiSimpleFileSystemProtocol_volume->OpenVolume(efiSimpleFileSystemProtocol_volume, &efiFileProtocol_root);
     if(status) err(SystemTable);
     
     //get EFI_FILE_PROTOCOL:kernelfile handle
@@ -86,7 +86,7 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
 
     //get memarea to expand kernelfile
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Getting memarea to expand kernelfile\n\r");
-    ElfLoader_MemLoadArea elfloaderMemloadarea_buff[ELFLOADERMEMLOADAREA_BUFFSIZE];
+    static ElfLoader_MemLoadArea elfloaderMemloadarea_buff[ELFLOADERMEMLOADAREA_BUFFSIZE];
     uintn elfloaderMemloadarea_buffCount = ELFLOADERMEMLOADAREA_BUFFSIZE;
     status = ElfLoader_GetLoadArea(buff_kernelfile, NULL, &elfloaderMemloadarea_buffCount, elfloaderMemloadarea_buff);
     if(status) err(SystemTable);
