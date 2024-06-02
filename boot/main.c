@@ -120,12 +120,11 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
     if(status) err(SystemTable);
 
     //expand kernelfile
-/*
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Expanding kernelfile\n\r");
     ElfLoader_Load(buff_kernelfile, NULL);
     KernelEntryPoint* entryPoint = NULL;
     ElfLoader_GetProperty(buff_kernelfile, (void**)&entryPoint, NULL);
-*/
+
     //release resource
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Releasing resource\n\r");
     efiFileProtocol_kernelfile->Close(efiFileProtocol_kernelfile);
@@ -158,10 +157,6 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
     kernelInput.Graphic.scanlineWidth = efiGraphicsOutputProtocol_interface->Mode->Info->PixelsPerScanLine;
     kernelInput.Graphic.width = efiGraphicsOutputProtocol_interface->Mode->Info->HorizontalResolution;
     kernelInput.Graphic.height = efiGraphicsOutputProtocol_interface->Mode->Info->VerticalResolution;
-    for(int i=0; i<100; i++) {
-        ((uintn*)(kernelInput.Graphic.startAddr))[i] = 0xffff;
-    }
-    err(SystemTable);
 
     //get memory for kernel
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Getting memory for Kernel\n\r");
@@ -252,6 +247,10 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
 SystemTable->ConOut->OutputString(SystemTable->ConOut, L"POINT");
     //run kernel
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Starting Kernel...\n\r");
+    int retcode = entryPoint(&kernelInput);
+    CHAR16 chartempbuff[16];
+    Functions_SPrintIntX(retcode, 16, chartempbuff);
+    SystemTable->ConOut->OutputString(SystemTable->ConOut, chartempbuff);
 
 
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Kernel returned\n\r");
