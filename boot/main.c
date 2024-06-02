@@ -7,7 +7,7 @@
 #include "subroutine.h"
 
 #define NULL ((void*)0)
-
+#define KERNEL_LOAD_ADDR ((void*)0x100000)
 #define ELFLOADERMEMLOADAREA_BUFFSIZE (20)
 
 
@@ -26,6 +26,9 @@ typedef struct {
     } Ram;
 } KernelInputStruct;
 
+typedef int (KernelEntryPoint)(KernelInputStruct*);
+
+
 KernelInputStruct kernelInput;
 
 
@@ -43,6 +46,7 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
     uintn tempUintn = 0;
     uintn* tempUintnptr = NULL;
     uint8* tempUint8ptr = NULL;
+    EFI_PHYSICAL_ADDRESS tempPhysicalAddress = 0;
 
     //console test
     SystemTable->ConOut->ClearScreen(SystemTable->ConOut);
@@ -116,8 +120,12 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
     if(status) err(SystemTable);
 
     //expand kernelfile
+/*
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Expanding kernelfile\n\r");
-
+    ElfLoader_Load(buff_kernelfile, NULL);
+    KernelEntryPoint* entryPoint = NULL;
+    ElfLoader_GetProperty(buff_kernelfile, (void**)&entryPoint, NULL);
+*/
     //release resource
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Releasing resource\n\r");
     efiFileProtocol_kernelfile->Close(efiFileProtocol_kernelfile);
@@ -150,6 +158,10 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
     kernelInput.Graphic.scanlineWidth = efiGraphicsOutputProtocol_interface->Mode->Info->PixelsPerScanLine;
     kernelInput.Graphic.width = efiGraphicsOutputProtocol_interface->Mode->Info->HorizontalResolution;
     kernelInput.Graphic.height = efiGraphicsOutputProtocol_interface->Mode->Info->VerticalResolution;
+    for(int i=0; i<100; i++) {
+        ((uintn*)(kernelInput.Graphic.startAddr))[i] = 0xffff;
+    }
+    err(SystemTable);
 
     //get memory for kernel
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Getting memory for Kernel\n\r");
@@ -163,7 +175,8 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
         SystemTable->BootServices->GetMemoryMap(&memoryMapSize, NULL, &mapKey, &descriptorSize, &descriptorVersion);
         status = SystemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, (memoryMapSize+descriptorSize+0xfff)>>12, (EFI_PHYSICAL_ADDRESS*)&memoryMap);
         if(status) err(SystemTable);
-        memoryMapSize = ((memoryMapSize+descriptorSize+0xfff)>>12)<<12;
+        uintn memoryMap_AllocatedSize = ((memoryMapSize+descriptorSize+0xfff)>>12)<<12;
+        memoryMapSize = memoryMap_AllocatedSize;
         status = SystemTable->BootServices->GetMemoryMap(&memoryMapSize, memoryMap, &mapKey, &descriptorSize, &descriptorVersion);
         if(status) err(SystemTable);
         uintn ramSize = 0;
@@ -180,26 +193,63 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
         //set availableRamMap
         SystemTable->ConOut->OutputString(SystemTable->ConOut, L"  Setting available ram map\n\r");
         kernelInput.Ram.ramSize = ramSize;
-        status = SystemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, (ramSize+0xfff)>>12, (EFI_PHYSICAL_ADDRESS*)&(kernelInput.Ram.availableRamMap));
+        status = SystemTable->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, ((ramSize>>12)+0xfff)>>12, (EFI_PHYSICAL_ADDRESS*)&(kernelInput.Ram.availableRamMap));
         if(status) err(SystemTable);
         tempUintnptr = kernelInput.Ram.availableRamMap;
-        for(uintn i=0; i<((ramSize+0xfff)>>12)<<(12-TYPES_UINTN_LN2_SIZE); i++) {
+        for(uintn i=0; i<(((ramSize>>12)+0xfff)>>12)<<(12-TYPES_UINTN_LN2_SIZE); i++) {
             *tempUintnptr = 0;
             tempUintnptr++;
         }
+        memoryMapSize = memoryMap_AllocatedSize;
         status = SystemTable->BootServices->GetMemoryMap(&memoryMapSize, memoryMap, &mapKey, &descriptorSize, &descriptorVersion);
         if(status) err(SystemTable);
         targetMemDescriptor = memoryMap;
         tempUint8ptr = (uint8*)(kernelInput.Ram.availableRamMap);
         for(uintn i=0; i<memoryMapSize/descriptorSize; i++) {
-            for(uintn k=(uintn)(targetMemDescriptor->PhysicalStart >> 12); k<(uintn)(targetMemDescriptor->PhysicalStart >> 12) + targetMemDescriptor->NumberOfPages; k++) {
-                tempUint8ptr[k] = 1;
+            if(targetMemDescriptor->Type == EfiConventionalMemory && 0x100000 <= targetMemDescriptor->PhysicalStart) {
+                tempPhysicalAddress = targetMemDescriptor->PhysicalStart;
+                status = SystemTable->BootServices->AllocatePages(AllocateAddress, EfiLoaderData, targetMemDescriptor->NumberOfPages, &tempPhysicalAddress);
+                if(status) err(SystemTable);
+                for(uintn k=(uintn)(targetMemDescriptor->PhysicalStart >> 12); k<(uintn)(targetMemDescriptor->PhysicalStart >> 12) + targetMemDescriptor->NumberOfPages; k++) {
+                    tempUint8ptr[k] = 1;
+                }
             }
             targetMemDescriptor = (EFI_MEMORY_DESCRIPTOR*)((EFI_PHYSICAL_ADDRESS)targetMemDescriptor + descriptorSize);
         }
 
 
+#if 0
+        //debug
+        targetMemDescriptor = memoryMap;
+        for(int i=0; i<20; i++) {
+            CHAR16 chartempbuff[16];
+            Functions_SPrintIntX(targetMemDescriptor->PhysicalStart, 16, chartempbuff);
+            SystemTable->ConOut->OutputString(SystemTable->ConOut, chartempbuff);
+            SystemTable->ConOut->OutputString(SystemTable->ConOut, L" ");
+            Functions_SPrintIntX(targetMemDescriptor->NumberOfPages, 16, chartempbuff);
+            SystemTable->ConOut->OutputString(SystemTable->ConOut, chartempbuff);
+            SystemTable->ConOut->OutputString(SystemTable->ConOut, L" ");
+            Functions_SPrintIntX(targetMemDescriptor->Type, 16, chartempbuff);
+            SystemTable->ConOut->OutputString(SystemTable->ConOut, chartempbuff);
+            SystemTable->ConOut->OutputString(SystemTable->ConOut, L"\n\r");
+            targetMemDescriptor = (EFI_MEMORY_DESCRIPTOR*)((EFI_PHYSICAL_ADDRESS)targetMemDescriptor + descriptorSize);
+        }
+        
+        tempUint8ptr = (uint8*)(kernelInput.Ram.availableRamMap);
+        for(int i=0; i<100; i++) {
+            for(int k=0; k<16; k++) {
+                if(tempUint8ptr[k+i*16]) {
+                    SystemTable->ConOut->OutputString(SystemTable->ConOut, L"O ");
+                }else {
+                    SystemTable->ConOut->OutputString(SystemTable->ConOut, L"X ");
+                }
+            }
+            SystemTable->ConOut->OutputString(SystemTable->ConOut, L"\n\r");
+        }
+#endif
+        SystemTable->BootServices->FreePages((EFI_PHYSICAL_ADDRESS)memoryMap, memoryMap_AllocatedSize>>12);
 
+SystemTable->ConOut->OutputString(SystemTable->ConOut, L"POINT");
     //run kernel
     SystemTable->ConOut->OutputString(SystemTable->ConOut, L"Starting Kernel...\n\r");
 
