@@ -10,7 +10,7 @@ buildboot:
 buildkernel:
 	make -C kernel install
 
-all:
+all: buildboot buildkernel
 	
 
 run:
