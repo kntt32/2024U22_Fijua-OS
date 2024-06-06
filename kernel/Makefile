@@ -9,7 +9,7 @@ endif
 
 build: a.elf
 
-install: a.elf
+install: build
 ifeq ($(OS), Windows_NT)
 	copy a.elf ..\disk\kernel.elf
 else

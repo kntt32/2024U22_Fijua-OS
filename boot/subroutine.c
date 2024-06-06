@@ -174,6 +174,7 @@ void get_framebuffer_for_kernel() {
             err();
     }
     kernelInput.Graphic.startAddr = efiGraphicsOutputProtocol_interface->Mode->FrameBufferBase;
+    uint32* tg32 = (uint32*)kernelInput.Graphic.startAddr;
     kernelInput.Graphic.scanlineWidth = efiGraphicsOutputProtocol_interface->Mode->Info->PixelsPerScanLine;
     kernelInput.Graphic.width = efiGraphicsOutputProtocol_interface->Mode->Info->HorizontalResolution;
     kernelInput.Graphic.height = efiGraphicsOutputProtocol_interface->Mode->Info->VerticalResolution;

@@ -9,7 +9,7 @@ endif
 
 build: a.efi
 
-install: a.efi
+install: build
 ifeq ($(OS), Windows_NT)
 	copy a.efi ..\disk\EFI\BOOT\BOOTX64.EFI
 else
