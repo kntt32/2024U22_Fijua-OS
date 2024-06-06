@@ -4,11 +4,11 @@ else
 OVMFFDPATH := tool/OVMF.fd
 endif
 
-buildboot:
-	make -C boot install
-
 buildkernel:
 	make -C kernel install
+
+buildboot:
+	make -C boot install
 
 all: buildboot buildkernel
 	

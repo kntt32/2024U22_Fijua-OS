@@ -7,8 +7,7 @@ else
 INCLUDE := ../include
 endif
 
-build: main.o
-	ld.lld --entry kernel_main -z norelro --image-base 0x100000 --static -o a.elf $^
+build: a.elf
 
 install: a.elf
 ifeq ($(OS), Windows_NT)
@@ -24,12 +23,14 @@ else
 	rm *.o *.elf
 endif
 
-
+a.elf: main.o font.o
+	ld.lld --entry kernel_main -z norelro --image-base 0x100000 --static -o a.elf $^
 
 main.o: main.c
+font.o: font.c font.h fontdata_monospace
 
 %.o: %.c
-	$(CC) -I $(INCLUDE) -Wall -Wextra --target=$(TARGET) -ffreestanding -mno-red-zone -c $^
+	$(CC) -I $(INCLUDE) -Wall -Wextra --target=$(TARGET) -ffreestanding -mno-red-zone -c $<
 
 %.o: %.s
-	$(CC) -I $(INCLUDE) -Wall -Wextra --target=$(TARGET) -ffreestanding -mno-red-zone -c $^
+	$(CC) -I $(INCLUDE) -Wall -Wextra --target=$(TARGET) -ffreestanding -mno-red-zone -c $<
