@@ -111,8 +111,7 @@ void load_kernelfile_to_buffer() {
 void get_memarea_to_expand_kernelfile() {
     SysTbl->ConOut->OutputString(SysTbl->ConOut, L"Getting memarea to expand kernelfile\n\r");
     status = ElfLoader_GetLoadArea(buff_kernelfile, NULL, &elfloaderMemloadarea_buffCount, elfloaderMemloadarea_buff);
-    //CHAR16 str[16];
-    //Functions_SPrintIntX();
+    CHAR16 str[16];
     if(status) err();
     return;
 }

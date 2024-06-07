@@ -12,6 +12,7 @@ int kernel_main(KernelInputStruct* kernelInput) {
 
     Font_Init(kernelInput);
     Font_Draw_WhiteFont('A', 0, 0);
+    Font_Draw("Hello, World!", 0, 16, 0xff, 0xff, 0xff);
 
     return 1;
 }
