@@ -23,15 +23,17 @@ else
 	rm *.o *.efi
 endif
 
-a.efi: main.o elfloader.o subroutine.o
+a.efi: main.o elfloader.o subroutine.o x64.o
 	lld-link /subsystem:efi_application /entry:efi_main /out:a.efi $^
 
 main.o: main.c elfloader.h subroutine.h
 
 elfloader.o: elfloader.c elfloader.h
 
+x64.o: x64.asm
+
 %.o: %.c
 	$(CC) -I $(INCLUDE) -target $(TARGET) -mno-red-zone -fno-stack-protector -fshort-wchar -Wall -Wextra -c $<
 
-%.o: %.s
-	$(CC) -target $(TARGET) -mno-red-zone -fno-stack-protector -fshort-wchar -Wall -Wextra -c $<
+%.o: %.asm
+	$(CC) -target $(TARGET) -Wall -Wextra -c $<

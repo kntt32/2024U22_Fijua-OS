@@ -50,7 +50,7 @@ int Functions_SPrintIntX(uintn number, uintn buffsize, CHAR16 buff[]) {
 
 
 
-static void err() {
+void err() {
     SysTbl->ConOut->OutputString(SysTbl->ConOut, L"Err");
     while(1) SysTbl->BootServices->Stall(1000);
 }
@@ -111,6 +111,8 @@ void load_kernelfile_to_buffer() {
 void get_memarea_to_expand_kernelfile() {
     SysTbl->ConOut->OutputString(SysTbl->ConOut, L"Getting memarea to expand kernelfile\n\r");
     status = ElfLoader_GetLoadArea(buff_kernelfile, NULL, &elfloaderMemloadarea_buffCount, elfloaderMemloadarea_buff);
+    //CHAR16 str[16];
+    //Functions_SPrintIntX();
     if(status) err();
     return;
 }
@@ -174,7 +176,6 @@ void get_framebuffer_for_kernel() {
             err();
     }
     kernelInput.Graphic.startAddr = efiGraphicsOutputProtocol_interface->Mode->FrameBufferBase;
-    uint32* tg32 = (uint32*)kernelInput.Graphic.startAddr;
     kernelInput.Graphic.scanlineWidth = efiGraphicsOutputProtocol_interface->Mode->Info->PixelsPerScanLine;
     kernelInput.Graphic.width = efiGraphicsOutputProtocol_interface->Mode->Info->HorizontalResolution;
     kernelInput.Graphic.height = efiGraphicsOutputProtocol_interface->Mode->Info->VerticalResolution;

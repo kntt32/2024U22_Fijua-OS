@@ -1,6 +1,7 @@
 #ifndef INCLUDED_SUBROUTINE_H
 #define INCLUDED_SUBROUTINE_H
 
+#include <kernel.h>
 
 int Functions_SPrintIntX(uintn number, uintn buffsize, CHAR16 buff[]);
 
@@ -20,6 +21,8 @@ void release_resource();
 void disable_dogtimer();
 void get_framebuffer_for_kernel();
 void get_memory_for_kernel();
+
+int wrapper_callKernel(KernelInputStruct*);
 
 
 #endif
