@@ -48,7 +48,7 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
 
     //run kernel
     SysTbl->ConOut->OutputString(SysTbl->ConOut, L"Starting Kernel...\n\r");
-    int retcode = wrapper_callKernel(&kernelInput);
+    int retcode = entryPoint(&kernelInput);
     CHAR16 chartempbuff[16];
     Functions_SPrintIntX(retcode, 16, chartempbuff);
     SysTbl->ConOut->OutputString(SysTbl->ConOut, chartempbuff);

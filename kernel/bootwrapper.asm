@@ -1,15 +1,13 @@
-.global wrapper_callKernel
+.global entrypoint
 
-wrapper_callKernel:
+entrypoint:
 	# rcx: kernelInput
-	
 	push %rbx
 	push %rsi
 	push %rdi
 
 	mov %rcx, %rdi
-	mov entryPoint, %rax
-	callq *%rax
+	call kernel_main
 
 	pop %rdi
 	pop %rsi
