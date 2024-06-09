@@ -32,7 +32,7 @@ bootwrapper.o: bootwrapper.asm
 x64.o: x64.asm
 
 %.o: %.c
-	$(CC) -I $(INCLUDE) -Wall -Wextra --target=$(TARGET) -ffreestanding -mno-red-zone -c $<
+	$(CC) -I $(INCLUDE) -Wall -Wextra --target=$(TARGET) -fshort-wchar -ffreestanding -mno-red-zone -c $<
 
 %.o: %.asm
 	$(CC) -I $(INCLUDE) -Wall -Wextra --target=$(TARGET) -c $<

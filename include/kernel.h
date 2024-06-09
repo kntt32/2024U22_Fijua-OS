@@ -16,6 +16,7 @@ typedef struct {
         uintn ramSize;
         uintn* availableRamMap;//per 1 byte represent 1 pages'owner id (4KiB) (0:unavailable 1:available 2<=:ownerid)
     } Ram;
+    void* tester;
 } KernelInputStruct;
 
 typedef int (KernelEntryPoint)(KernelInputStruct*);

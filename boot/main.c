@@ -20,6 +20,32 @@ KernelEntryPoint* entryPoint = NULL;
 
 void __chkstk() {}
 
+void a(uintn n1, uintn n2, uintn n3, uintn n4, uintn n5) {
+    CHAR16 chartempbuff[16];
+    SysTbl->ConOut->OutputString(SysTbl->ConOut, L"A::\n\r");
+
+    Functions_SPrintIntX(n1, 16, chartempbuff);
+    SysTbl->ConOut->OutputString(SysTbl->ConOut, chartempbuff);
+    SysTbl->ConOut->OutputString(SysTbl->ConOut, L"\n\r");
+    
+    Functions_SPrintIntX(n2, 16, chartempbuff);
+    SysTbl->ConOut->OutputString(SysTbl->ConOut, chartempbuff);
+    SysTbl->ConOut->OutputString(SysTbl->ConOut, L"\n\r");
+
+    Functions_SPrintIntX(n3, 16, chartempbuff);
+    SysTbl->ConOut->OutputString(SysTbl->ConOut, chartempbuff);
+    SysTbl->ConOut->OutputString(SysTbl->ConOut, L"\n\r");
+
+    Functions_SPrintIntX(n4, 16, chartempbuff);
+    SysTbl->ConOut->OutputString(SysTbl->ConOut, chartempbuff);
+    SysTbl->ConOut->OutputString(SysTbl->ConOut, L"\n\r");
+
+    Functions_SPrintIntX(n5, 16, chartempbuff);
+    SysTbl->ConOut->OutputString(SysTbl->ConOut, chartempbuff);
+    SysTbl->ConOut->OutputString(SysTbl->ConOut, L"\n\r");
+
+    SysTbl->ConOut->OutputString(SysTbl->ConOut, L"\n\r");
+}
 
 EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable) {
     SysTbl = SystemTable;
@@ -45,9 +71,11 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
     disable_dogtimer();
     get_framebuffer_for_kernel();
     get_memory_for_kernel();
+    kernelInput.SystemTablePtr = SysTbl;
 
     //run kernel
     SysTbl->ConOut->OutputString(SysTbl->ConOut, L"Starting Kernel...\n\r");
+    kernelInput.tester = (void*)a;
     int retcode = entryPoint(&kernelInput);
     CHAR16 chartempbuff[16];
     Functions_SPrintIntX(retcode, 16, chartempbuff);

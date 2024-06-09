@@ -1,21 +1,27 @@
 .global wrapper
 
+#uintn wrapper(uintn input1, uintn input2, uintn input3, uintn input4, uintn input5, uintn (*f)());
 wrapper:
-	push %rax
-	push %r9
+	mov %r9, %rax
+
 	push %r8
+	push %rcx
+	push %rdx
+	push %rsi
+	push %rdi
 
-	mov %rdi, %rcx
-	mov %rsi, %rdx
-	mov %rdx, %r8
 	mov %rcx, %r9
+	mov %rdx, %r8
+	mov %rsi, %rdx
+	mov %rdi, %rcx
 
-	dec $4, %rsp
+	call *%rax
 
-	call *%r10
-
-	a:
-	jmp a
+	pop %r9
+	pop %r9
+	pop %r9
+	pop %r9
+	pop %r9
 
 	ret
 	
