@@ -75,7 +75,7 @@ if(isRGB) {
 			drawY += 16;
 		}
 		if(frameBuff_Width <= drawX+8) continue;
-		if(frameBuff_Width <= drawY+16) break;
+		if(frameBuff_Height <= drawY+16) break;
 
 		fontdata_ptr = fontdata_monospace + (str[strindex]<<4);
 		targetFrameBuffPtr = (uint8*)(frameBuff_StartAddr + (drawX + drawY*frameBuff_ScanLineWidth)*4);
@@ -107,7 +107,7 @@ if(isRGB) {
 			drawY += 16;
 		}
 		if(frameBuff_Width <= drawX+8) continue;
-		if(frameBuff_Width <= drawY+16) break;
+		if(frameBuff_Height <= drawY+16) break;
 
 		fontdata_ptr = fontdata_monospace + (str[strindex]<<4);
 		targetFrameBuffPtr = (uint8*)(frameBuff_StartAddr + (drawX + drawY*frameBuff_ScanLineWidth)*4);
