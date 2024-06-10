@@ -25,6 +25,7 @@ extern EFI_STATUS status;
 extern uintn tempUintn;
 extern uintn* tempUintnptr;
 extern uint8* tempUint8ptr;
+extern uint16* tempUint16ptr;
 extern EFI_PHYSICAL_ADDRESS tempPhysicalAddress;
 
 extern KernelEntryPoint* entryPoint;
@@ -64,7 +65,6 @@ void get_EFI_SIMPLE_FILE_SYSTEM_PROTOCOL() {
     EFI_GUID efiSimpleFileSystemProtocol_guid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
     efiSimpleFileSystemProtocol_volume = NULL;
     status = SysTbl->BootServices->HandleProtocol(LddImg->DeviceHandle, &efiSimpleFileSystemProtocol_guid, (VOID**)&efiSimpleFileSystemProtocol_volume);
-    CHAR16 str[16];
     return;
 }
 
@@ -213,10 +213,10 @@ void get_memory_for_kernel() {
         //set availableRamMap
         SysTbl->ConOut->OutputString(SysTbl->ConOut, L"  Setting available ram map\n\r");
         kernelInput.Ram.ramSize = ramSize;
-        status = SysTbl->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, ((ramSize>>12)+0xfff)>>12, (EFI_PHYSICAL_ADDRESS*)&(kernelInput.Ram.availableRamMap));
+        status = SysTbl->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, (((ramSize*2)>>12)+0xfff)>>12, (EFI_PHYSICAL_ADDRESS*)&(kernelInput.Ram.availableRamMap));
         if(status) err();
         tempUintnptr = kernelInput.Ram.availableRamMap;
-        for(uintn i=0; i<(((ramSize>>12)+0xfff)>>12)<<(12-TYPES_UINTN_LN2_SIZE); i++) {
+        for(uintn i=0; i<((((ramSize*2)>>12)+0xfff)>>12)<<(12-TYPES_UINTN_LN2_SIZE); i++) {
             *tempUintnptr = 0;
             tempUintnptr++;
         }
@@ -224,14 +224,14 @@ void get_memory_for_kernel() {
         status = SysTbl->BootServices->GetMemoryMap(&memoryMapSize, memoryMap, &mapKey, &descriptorSize, &descriptorVersion);
         if(status) err();
         targetMemDescriptor = memoryMap;
-        tempUint8ptr = (uint8*)(kernelInput.Ram.availableRamMap);
+        tempUint16ptr = (uint16*)(kernelInput.Ram.availableRamMap);
         for(uintn i=0; i<memoryMapSize/descriptorSize; i++) {
             if(targetMemDescriptor->Type == EfiConventionalMemory && 0x100000 <= targetMemDescriptor->PhysicalStart) {
                 tempPhysicalAddress = targetMemDescriptor->PhysicalStart;
                 status = SysTbl->BootServices->AllocatePages(AllocateAddress, EfiLoaderData, targetMemDescriptor->NumberOfPages, &tempPhysicalAddress);
                 if(status) err();
                 for(uintn k=(uintn)(targetMemDescriptor->PhysicalStart >> 12); k<(uintn)(targetMemDescriptor->PhysicalStart >> 12) + targetMemDescriptor->NumberOfPages; k++) {
-                    tempUint8ptr[k] = 1;
+                    tempUint16ptr[k] = 1;
                 }
             }
             targetMemDescriptor = (EFI_MEMORY_DESCRIPTOR*)((EFI_PHYSICAL_ADDRESS)targetMemDescriptor + descriptorSize);

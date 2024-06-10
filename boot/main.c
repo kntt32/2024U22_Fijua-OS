@@ -18,6 +18,7 @@ EFI_STATUS status = 0;
 uintn tempUintn = 0;
 uintn* tempUintnptr = NULL;
 uint8* tempUint8ptr = NULL;
+uint16* tempUint16ptr = NULL;
 EFI_PHYSICAL_ADDRESS tempPhysicalAddress = 0;
 
 KernelEntryPoint* entryPoint = NULL;
