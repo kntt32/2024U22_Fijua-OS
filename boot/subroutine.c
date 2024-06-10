@@ -1,9 +1,10 @@
 #include <types.h>
 #include <efi.h>
+#include <efi_types.h>
 #include <efi_simple_file_system_protocol.h>
 #include <efi_file_info.h>
 #include <efi_graphics_output_protocol.h>
-#include <efi_types.h>
+#include <efi_loaded_image_protocol.h>
 #include <kernel.h>
 
 #include "elfloader.h"
@@ -17,6 +18,8 @@
 
 extern KernelInputStruct kernelInput;
 extern EFI_SYSTEM_TABLE* SysTbl;
+extern EFI_HANDLE ImgHdl;
+extern EFI_LOADED_IMAGE_PROTOCOL* LddImg;
 
 extern EFI_STATUS status;
 extern uintn tempUintn;
@@ -60,8 +63,8 @@ void get_EFI_SIMPLE_FILE_SYSTEM_PROTOCOL() {
     SysTbl->ConOut->OutputString(SysTbl->ConOut, L"Getting EFI_SIMPLE_FILE_SYSTEM_PROTOCOL\n\r");
     EFI_GUID efiSimpleFileSystemProtocol_guid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
     efiSimpleFileSystemProtocol_volume = NULL;
-    status = SysTbl->BootServices->LocateProtocol(&efiSimpleFileSystemProtocol_guid, NULL, (void*)&efiSimpleFileSystemProtocol_volume);
-    if(status) err();
+    status = SysTbl->BootServices->HandleProtocol(LddImg->DeviceHandle, &efiSimpleFileSystemProtocol_guid, (VOID**)&efiSimpleFileSystemProtocol_volume);
+    CHAR16 str[16];
     return;
 }
 
@@ -111,7 +114,6 @@ void load_kernelfile_to_buffer() {
 void get_memarea_to_expand_kernelfile() {
     SysTbl->ConOut->OutputString(SysTbl->ConOut, L"Getting memarea to expand kernelfile\n\r");
     status = ElfLoader_GetLoadArea(buff_kernelfile, NULL, &elfloaderMemloadarea_buffCount, elfloaderMemloadarea_buff);
-    CHAR16 str[16];
     if(status) err();
     return;
 }

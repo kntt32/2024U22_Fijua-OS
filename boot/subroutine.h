@@ -4,6 +4,7 @@
 #include <kernel.h>
 
 int Functions_SPrintIntX(uintn number, uintn buffsize, CHAR16 buff[]);
+void err();
 
 void get_EFI_SIMPLE_FILE_SYSTEM_PROTOCOL();
 void get_EFI_FILE_PROTOCOL_root_handle();

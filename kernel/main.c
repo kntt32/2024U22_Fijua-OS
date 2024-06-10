@@ -28,7 +28,7 @@ int kernel_main(KernelInputStruct* kernelInput) {
     Font_Draw_WhiteFont('A', 0, 0);
     Font_Draw("Hello, World!", 0, 16, 0xff, 0xff, 0xff);
 
-    wrapper((void*)(kernelInput->SystemTablePtr->ConOut), (void*)(L"HELLO!"), NULL, NULL, NULL, (void*)(kernelInput->SystemTablePtr->ConOut->OutputString));
+    wrapper((void*)(kernelInput->LoadedImage->SystemTable->ConOut->OutputString), (void*)(kernelInput->LoadedImage->SystemTable->ConOut), (void*)(L"HELLO!"), NULL, NULL, NULL);
     a();
     return 1;
 }

@@ -11,11 +11,16 @@ static uint8 fontdata_monospace[] = {
 
 static uint8 Font_isInited = 0;
 static GraphicData* Font_GraphicDataPtr;
+static uint8 isRGB = 0;
 
 
 void Font_Init(in KernelInputStruct* kernelInput) {
 	Font_GraphicDataPtr = &(kernelInput->Graphic);
 	Font_isInited = 1;
+
+	if(kernelInput->Graphic.mode == 1) isRGB = 1;
+	else isRGB = 0;
+
 	return;
 }
 
@@ -62,6 +67,37 @@ void Font_Draw(in const ascii str[], in const uintn x, in const uintn y, in cons
 	uint8 mask;
 	uintn scanlineWidth = Font_GraphicDataPtr->scanlineWidth;
 
+if(isRGB) {
+	while(1) {
+		if(str[strindex] == '\0') break;
+		if(str[strindex] == '\n') {
+			drawX = x;
+			drawY += 16;
+		}
+
+		fontdata_ptr = fontdata_monospace + (str[strindex]<<4);
+		targetFrameBuffPtr = (uint8*)(Font_GraphicDataPtr->startAddr + (drawX + drawY*scanlineWidth)*4);
+
+		for(int i=0; i<16; i++) {
+			mask = 0x80;
+			fontdata_copy = fontdata_ptr[i];
+			for(int k=0; k<8; k++) {
+				if(fontdata_copy & mask) {
+					targetFrameBuffPtr[0] = red;
+					targetFrameBuffPtr[1] = green;
+					targetFrameBuffPtr[2] = blue;
+				}
+				targetFrameBuffPtr += 4;
+				mask >>= 1;
+			}
+			targetFrameBuffPtr += (scanlineWidth - 8)*4;
+		}
+
+		drawX += 8;
+
+		strindex++;
+	}
+}else {
 	while(1) {
 		if(str[strindex] == '\0') break;
 		if(str[strindex] == '\n') {
@@ -91,6 +127,7 @@ void Font_Draw(in const ascii str[], in const uintn x, in const uintn y, in cons
 
 		strindex++;
 	}
+}
 
 	return;
 }

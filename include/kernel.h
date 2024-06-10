@@ -1,8 +1,11 @@
 #ifndef INCLUDED_KERNELINPUT_H
 #define INCLUDED_KERNELINPUT_H
 
+#include <efi.h>
+#include <efi_loaded_image_protocol.h>
+
 typedef struct {
-        uintn mode;//1:rgb 2:rbg
+        uintn mode;//1:rgb 2:bgr
         uintn startAddr;
         uintn scanlineWidth;
         uintn width;
@@ -10,7 +13,7 @@ typedef struct {
     } GraphicData;
 
 typedef struct {
-    EFI_SYSTEM_TABLE* SystemTablePtr;
+    EFI_LOADED_IMAGE_PROTOCOL* LoadedImage;
     GraphicData Graphic;
     struct {
         uintn ramSize;

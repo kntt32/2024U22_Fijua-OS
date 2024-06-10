@@ -1,4 +1,5 @@
 #include <efi.h>
+#include <efi_loaded_image_protocol.h>
 
 #include <kernel.h>
 
@@ -9,6 +10,9 @@
 
 KernelInputStruct kernelInput;
 EFI_SYSTEM_TABLE* SysTbl = NULL;
+EFI_HANDLE ImgHdl = NULL;
+EFI_LOADED_IMAGE_PROTOCOL* LddImg = NULL;
+
 
 EFI_STATUS status = 0;
 uintn tempUintn = 0;
@@ -49,6 +53,10 @@ void a(uintn n1, uintn n2, uintn n3, uintn n4, uintn n5) {
 
 EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable) {
     SysTbl = SystemTable;
+    ImgHdl = ImageHandle;
+    EFI_GUID efiLoadedImageProtocol_guid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
+    status = SysTbl->BootServices->HandleProtocol(ImgHdl, &efiLoadedImageProtocol_guid, (VOID**)&LddImg);
+    if(status) err();
 
     //console test
     SysTbl->ConOut->ClearScreen(SysTbl->ConOut);
@@ -71,7 +79,7 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
     disable_dogtimer();
     get_framebuffer_for_kernel();
     get_memory_for_kernel();
-    kernelInput.SystemTablePtr = SysTbl;
+    kernelInput.LoadedImage = LddImg;
 
     //run kernel
     SysTbl->ConOut->OutputString(SysTbl->ConOut, L"Starting Kernel...\n\r");
