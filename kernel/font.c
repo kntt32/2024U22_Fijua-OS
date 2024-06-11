@@ -4,6 +4,7 @@
 
 #include "font.h"
 
+extern KernelInputStruct* KernelInput;
 
 static uint8 fontdata_monospace[] = {
 #include "fontdata_monospace"
@@ -17,14 +18,14 @@ static uintn frameBuff_Height;
 static uint8 isRGB = 0;
 
 
-void Font_Init(in KernelInputStruct* kernelInput) {
-    Font_GraphicDataPtr = &(kernelInput->Graphic);
-    frameBuff_StartAddr = kernelInput->Graphic.startAddr;
-    frameBuff_ScanLineWidth = kernelInput->Graphic.scanlineWidth;
-    frameBuff_Width = kernelInput->Graphic.width;
-    frameBuff_Height = kernelInput->Graphic.height;
+void Font_Init(void) {
+    Font_GraphicDataPtr = &(KernelInput->Graphic);
+    frameBuff_StartAddr = KernelInput->Graphic.startAddr;
+    frameBuff_ScanLineWidth = KernelInput->Graphic.scanlineWidth;
+    frameBuff_Width = KernelInput->Graphic.width;
+    frameBuff_Height = KernelInput->Graphic.height;
 
-    if(kernelInput->Graphic.mode == 1) isRGB = 1;
+    if(KernelInput->Graphic.mode == 1) isRGB = 1;
     else isRGB = 0;
 
     return;

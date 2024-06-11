@@ -1,7 +1,7 @@
 #ifndef INCLUDED_CONSOLE_H
 #define INCLUDED_CONSOLE_H
 
-void Console_Init(KernelInputStruct* kernelInput);
+void Console_Init(void);
 void Console_Flush();
 void Console_Print(ascii str[]);
 

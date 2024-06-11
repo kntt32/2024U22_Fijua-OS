@@ -3,6 +3,8 @@
 
 #include <build.h>
 
+#define NULL ((void*)0)
+
 #define in
 #define out
 #define optional

@@ -7,6 +7,7 @@
 #define CONSOLE_WIDTH (40)
 #define CONSOLE_HEIGHT (30)
 
+extern KernelInputStruct* KernelInput;
 
 static uint32* frameBuff_StartAddr = 0;
 static uintn frameBuff_ScanLineWidth = 0;
@@ -17,11 +18,11 @@ static uintn Console_CursorX = 0;
 static uintn Console_CursorY = 0;
 static ascii Console_Buff[CONSOLE_HEIGHT*CONSOLE_WIDTH];
 
-void Console_Init(KernelInputStruct* kernelInput) {
-    frameBuff_StartAddr = (uint32*)(kernelInput->Graphic.startAddr);
-    frameBuff_ScanLineWidth = kernelInput->Graphic.scanlineWidth;
-    frameBuff_Width = kernelInput->Graphic.width;
-    frameBuff_Height = kernelInput->Graphic.height;
+void Console_Init() {
+    frameBuff_StartAddr = (uint32*)(KernelInput->Graphic.startAddr);
+    frameBuff_ScanLineWidth = KernelInput->Graphic.scanlineWidth;
+    frameBuff_Width = KernelInput->Graphic.width;
+    frameBuff_Height = KernelInput->Graphic.height;
 
     Console_CursorX = 0;
     Console_CursorY = 0;
@@ -81,5 +82,11 @@ void Console_Flush() {
 		}
 		y += 16;
     }
+/*
+    for(int i=0; i<5; i++) {
+        for(int k=8*Console_CursorX; k<8*(Console_CursorX+1); k++) {
+
+        }
+    }*/
     return;
 }
