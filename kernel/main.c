@@ -2,6 +2,7 @@
 #include <efi.h>
 #include <kernel.h>
 #include "font.h"
+#include "console.h"
 
 /*
 https://docs.oracle.com/cd/E19253-01/819-0389/fcowb/index.html
@@ -30,5 +31,11 @@ int kernel_main(KernelInputStruct* kernelInput) {
 
     wrapper((void*)(kernelInput->LoadedImage->SystemTable->ConOut->OutputString), (void*)(kernelInput->LoadedImage->SystemTable->ConOut), (void*)(L"HELLO!"), NULL, NULL, NULL);
     a();
+
+    Console_Init(kernelInput);
+    Console_Print("Hello, Console!\n");
+    Console_Print("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-=^~\\|[]{}@:;*+./?<>!_#\"$%&\'()");
+    Console_Flush();
+
     return 1;
 }
