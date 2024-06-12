@@ -4,8 +4,7 @@
 #include "font.h"
 #include "console.h"
 
-#define CONSOLE_WIDTH (40)
-#define CONSOLE_HEIGHT (30)
+#define CONSOLE_BUFFSIZE (10000)
 
 extern KernelInputStruct* KernelInput;
 
@@ -16,7 +15,9 @@ static uintn frameBuff_Height = 0;
 
 static uintn Console_CursorX = 0;
 static uintn Console_CursorY = 0;
-static ascii Console_Buff[CONSOLE_HEIGHT*CONSOLE_WIDTH];
+static uintn Console_Width = 40;
+static uintn Console_Height = 30;
+static ascii Console_Buff[CONSOLE_BUFFSIZE];
 
 void Console_Init() {
     frameBuff_StartAddr = (uint32*)(KernelInput->Graphic.startAddr);
@@ -26,9 +27,14 @@ void Console_Init() {
 
     Console_CursorX = 0;
     Console_CursorY = 0;
-    for(uintn i=0; i<CONSOLE_HEIGHT; i++) {
-        for(uintn k=0; k<CONSOLE_WIDTH; k++) {
-            Console_Buff[i*CONSOLE_WIDTH+k] = ' ';
+    Console_Width = frameBuff_Width/8;
+    Console_Height = frameBuff_Height/16;
+    if(CONSOLE_BUFFSIZE <= Console_Width*Console_Height) {
+        Console_Height = CONSOLE_BUFFSIZE/Console_Width;
+    }
+    for(uintn i=0; i<Console_Height; i++) {
+        for(uintn k=0; k<Console_Width; k++) {
+            Console_Buff[i*Console_Width+k] = ' ';
         }
     }
 
@@ -41,21 +47,21 @@ void Console_Print(ascii str[]) {
         seekindex++;
 
         if(str[seekindex] == '\0') break;
-        if(str[seekindex] == '\n' || Console_CursorX == CONSOLE_WIDTH) {
+        if(str[seekindex] == '\n' || Console_CursorX == Console_Width) {
             Console_CursorX = 0;
             Console_CursorY ++;
-            for(int i=0; i<CONSOLE_WIDTH; i++) {
-                Console_Buff[Console_CursorY*CONSOLE_WIDTH+i] = ' ';
+            for(uintn i=0; i<Console_Width; i++) {
+                Console_Buff[Console_CursorY*Console_Width+i] = ' ';
             }
         }
         if(str[seekindex] == '\r') {
             Console_CursorX = 0;
             continue;
         }
-        if(Console_CursorY == CONSOLE_HEIGHT) Console_CursorY = 0;
+        if(Console_CursorY == Console_Height) Console_CursorY = 0;
 
         if(str[seekindex] == '\n') continue;
-        Console_Buff[Console_CursorY*CONSOLE_WIDTH+Console_CursorX] = str[seekindex];
+        Console_Buff[Console_CursorY*Console_Width+Console_CursorX] = str[seekindex];
 
         Console_CursorX++;
     }
@@ -67,26 +73,27 @@ void Console_PrintLn(ascii str[]) {
 }
 
 void Console_Flush() {
-    for(int i=0; i<CONSOLE_HEIGHT*16; i++) {
-        for(int k=0; k<CONSOLE_WIDTH*8; k++) {
-        	frameBuff_StartAddr[frameBuff_ScanLineWidth*i + k] = 0x11111111;
+    for(uintn i=0; i<Console_Height*16; i++) {
+        for(uintn k=0; k<Console_Width*8; k++) {
+            frameBuff_StartAddr[frameBuff_ScanLineWidth*i + k] = 0x11111111;
         }
     }
     uintn x = 0;
     uintn y = 0;
-    for(int i=0; i<CONSOLE_HEIGHT; i++) {
-    	x = 0;
-    	for(int k=0; k<CONSOLE_WIDTH; k++) {
-		    Font_Draw_WhiteFont(Console_Buff[k+i*CONSOLE_WIDTH], x, y);
-		    x += 8;
-		}
-		y += 16;
-    }
-/*
-    for(int i=0; i<5; i++) {
-        for(int k=8*Console_CursorX; k<8*(Console_CursorX+1); k++) {
-
+    for(uintn i=0; i<Console_Height; i++) {
+        x = 0;
+        for(uintn k=0; k<Console_Width; k++) {
+            Font_Draw_WhiteFont(Console_Buff[k+i*Console_Width], x, y);
+            x += 8;
         }
-    }*/
+        y += 16;
+    }
+
+    for(uintn i=16*Console_CursorY+15; i<16*Console_CursorY+18; i++) {
+        for(uintn k=8*Console_CursorX; k<8*(Console_CursorX+1); k++) {
+            frameBuff_StartAddr[frameBuff_ScanLineWidth*i + k] = 0xaaaaaaaa;
+        }
+    }
+
     return;
 }
