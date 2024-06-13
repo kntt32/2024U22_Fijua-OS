@@ -4,6 +4,7 @@
 void Console_Init(void);
 void Console_Flush();
 void Console_Print(ascii str[]);
+void Console_PrintLn(ascii str[]);
 
 
 #endif

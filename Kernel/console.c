@@ -69,7 +69,9 @@ void Console_Print(ascii str[]) {
 }
 
 void Console_PrintLn(ascii str[]) {
-
+    Console_Print(str);
+    Console_Print("\n");
+    return;
 }
 
 void Console_Flush() {

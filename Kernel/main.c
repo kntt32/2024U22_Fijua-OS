@@ -1,9 +1,11 @@
 #include <types.h>
 #include <efi.h>
 #include <kernel.h>
+#include "functions.h"
 #include "x64.h"
 #include "font.h"
 #include "console.h"
+#include "timer.h"
 
 /*
 https://docs.oracle.com/cd/E19253-01/819-0389/fcowb/index.html
@@ -30,13 +32,21 @@ int kernel_main(KernelInputStruct* kernelInput) {
     Font_Draw_WhiteFont('A', 0, 0);
     Font_Draw("Hello, World!AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 0, 16, 0xff, 0xff, 0xff);
 
-    wrapper((void*)(kernelInput->LoadedImage->SystemTable->ConOut->OutputString), (void*)(kernelInput->LoadedImage->SystemTable->ConOut), (void*)(L"HELLO!"), NULL, NULL, NULL);
+    wrapper((void*)(kernelInput->LoadedImage->SystemTable->ConOut->OutputString), (uintn)(kernelInput->LoadedImage->SystemTable->ConOut), (uintn)(L"HELLO!"), 0, 0, 0);
     a();
 
     Console_Init();
     Console_Print("Hello, Console!\n");
     Console_Print("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-=^~\\|[]{}@:;*+./?<>!_#\"$%&\'()");
     Console_Flush();
+
+    Timer_Init();
+    Timer_Set(NULL, 10000000);
+
+    Console_Print("A\n");
+    Console_Flush();
+
+    Halt();
 
     return 1;
 }
