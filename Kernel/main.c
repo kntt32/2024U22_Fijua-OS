@@ -38,13 +38,11 @@ int kernel_main(KernelInputStruct* kernelInput) {
     Console_Init();
     Console_Print("Hello, Console!\n");
     Console_Print("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-=^~\\|[]{}@:;*+./?<>!_#\"$%&\'()");
-    Console_Flush();
 
     Timer_Init();
     Timer_Set(NULL, 10000000);
 
     Console_Print("A\n");
-    Console_Flush();
 
     Halt();
 

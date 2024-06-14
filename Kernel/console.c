@@ -50,6 +50,7 @@ void Console_Print(ascii str[]) {
         if(str[seekindex] == '\n' || Console_CursorX == Console_Width) {
             Console_CursorX = 0;
             Console_CursorY ++;
+            Console_FlushLine(Console_CursorY-1);
             for(uintn i=0; i<Console_Width; i++) {
                 Console_Buff[Console_CursorY*Console_Width+i] = ' ';
             }
@@ -65,6 +66,7 @@ void Console_Print(ascii str[]) {
 
         Console_CursorX++;
     }
+    Console_FlushLine(Console_CursorY);
     return;
 }
 
@@ -91,7 +93,33 @@ void Console_Flush() {
         y += 16;
     }
 
-    for(uintn i=16*Console_CursorY+15; i<16*Console_CursorY+18; i++) {
+    for(uintn i=16*Console_CursorY+14; i<16*Console_CursorY+16; i++) {
+        for(uintn k=8*Console_CursorX; k<8*(Console_CursorX+1); k++) {
+            frameBuff_StartAddr[frameBuff_ScanLineWidth*i + k] = 0xaaaaaaaa;
+        }
+    }
+
+    return;
+}
+
+void Console_FlushLine(uintn line) {
+    for(uintn i=0; i<Console_Height*16; i++) {
+        for(uintn k=0; k<Console_Width*8; k++) {
+            frameBuff_StartAddr[frameBuff_ScanLineWidth*i + k] = 0x11111111;
+        }
+    }
+    uintn x = 0;
+    uintn y = 0;
+    for(uintn i=0; i<Console_Height; i++) {
+        x = 0;
+        for(uintn k=0; k<Console_Width; k++) {
+            Font_Draw_WhiteFont(Console_Buff[k+i*Console_Width], x, y);
+            x += 8;
+        }
+        y += 16;
+    }
+
+    for(uintn i=16*Console_CursorY+14; i<16*Console_CursorY+16; i++) {
         for(uintn k=8*Console_CursorX; k<8*(Console_CursorX+1); k++) {
             frameBuff_StartAddr[frameBuff_ScanLineWidth*i + k] = 0xaaaaaaaa;
         }

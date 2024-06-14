@@ -16,6 +16,7 @@ extern KernelInputStruct* KernelInput;
 static EFI_CREATE_EVENT Efi_CreateEvent = NULL;
 static EFI_SET_TIMER Efi_SetTimer       = NULL;
 static EFI_RAISE_TPL Efi_RaiseTPL       = NULL;
+static EFI_RESTORE_TPL Efi_RestoreTPL   = NULL;
 static EFI_CLOSE_EVENT Efi_CloseEvent   = NULL;
 
 static Timer_TimerTable TimerTable[TIMER_MAX_NUMBER];
@@ -26,6 +27,7 @@ void Timer_Init(void) {
     Efi_CreateEvent = bootServices->CreateEvent;
     Efi_SetTimer    = bootServices->SetTimer;
     Efi_RaiseTPL    = bootServices->RaiseTPL;
+    Efi_RestoreTPL  = bootServices->RestoreTPL;
     Efi_CloseEvent  = bootServices->CloseEvent;
 
     for(uintn i=0; i<TIMER_MAX_NUMBER; i++) {
@@ -39,7 +41,7 @@ static void Timer_NotifyHandler(void (*notifyFunction)(void)) {
     wrapper(Efi_RaiseTPL, TPL_APPLICATION, 0, 0, 0, 0);
     //notifyFunction();
     Console_Print("A\n");
-    Console_Flush();
+    wrapper(Efi_RestoreTPL, TPL_CALLBACK, 0, 0, 0, 0);
     return;
 }
 
