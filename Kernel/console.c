@@ -37,6 +37,7 @@ void Console_Init() {
             Console_Buff[i*Console_Width+k] = ' ';
         }
     }
+    Console_Flush();
 
     return;
 }
@@ -103,25 +104,24 @@ void Console_Flush() {
 }
 
 void Console_FlushLine(uintn line) {
-    for(uintn i=0; i<Console_Height*16; i++) {
+    for(uintn i=line*16; i<line*16+16; i++) {
         for(uintn k=0; k<Console_Width*8; k++) {
             frameBuff_StartAddr[frameBuff_ScanLineWidth*i + k] = 0x11111111;
         }
     }
     uintn x = 0;
-    uintn y = 0;
-    for(uintn i=0; i<Console_Height; i++) {
-        x = 0;
-        for(uintn k=0; k<Console_Width; k++) {
-            Font_Draw_WhiteFont(Console_Buff[k+i*Console_Width], x, y);
-            x += 8;
-        }
-        y += 16;
+    uintn y = line*16;
+    for(uintn k=0; k<Console_Width; k++) {
+        Font_Draw_WhiteFont(Console_Buff[k+line*Console_Width], x, y);
+        x += 8;
     }
+    y += 16;
 
-    for(uintn i=16*Console_CursorY+14; i<16*Console_CursorY+16; i++) {
-        for(uintn k=8*Console_CursorX; k<8*(Console_CursorX+1); k++) {
-            frameBuff_StartAddr[frameBuff_ScanLineWidth*i + k] = 0xaaaaaaaa;
+    if(Console_CursorY == line) {
+        for(uintn i=16*Console_CursorY+14; i<16*Console_CursorY+16; i++) {
+            for(uintn k=8*Console_CursorX; k<8*(Console_CursorX+1); k++) {
+                frameBuff_StartAddr[frameBuff_ScanLineWidth*i + k] = 0xaaaaaaaa;
+            }
         }
     }
 

@@ -16,7 +16,7 @@ https://ja.wikipedia.org/wiki/%E5%91%BC%E5%87%BA%E8%A6%8F%E7%B4%84#%E3%83%9E%E3%
 KernelInputStruct* KernelInput = NULL;
 
 void a() {
-    Font_Draw("A", 0,32,0xff,0xff,0xff);
+    Console_Print("Timer NotifyA\n");
 }
 
 int kernel_main(KernelInputStruct* kernelInput) {
@@ -29,18 +29,15 @@ int kernel_main(KernelInputStruct* kernelInput) {
     }
 
     Font_Init();
-    Font_Draw_WhiteFont('A', 0, 0);
-    Font_Draw("Hello, World!AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 0, 16, 0xff, 0xff, 0xff);
-
+    
     wrapper((void*)(kernelInput->LoadedImage->SystemTable->ConOut->OutputString), (uintn)(kernelInput->LoadedImage->SystemTable->ConOut), (uintn)(L"HELLO!"), 0, 0, 0);
-    a();
 
     Console_Init();
     Console_Print("Hello, Console!\n");
     Console_Print("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-=^~\\|[]{}@:;*+./?<>!_#\"$%&\'()");
 
     Timer_Init();
-    Timer_Set(NULL, 10000000);
+    Timer_Set(a, 10000000);
 
     Console_Print("A\n");
 

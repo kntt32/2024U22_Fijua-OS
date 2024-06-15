@@ -3,4 +3,6 @@
 
 uintn wrapper(void* callback, uintn, uintn, uintn, uintn, uintn);
 
+void Timer_Wrapper(uintn (*callback)(void));
+
 #endif
