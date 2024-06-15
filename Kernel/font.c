@@ -34,7 +34,7 @@ void Font_Init(void) {
 
 //draw font
 void Font_Draw_WhiteFont(in const ascii asciicode, in const uintn x, in const uintn y) {
-	if(frameBuff_Width<=x+8 || frameBuff_Height<=y+16) return;
+    if(frameBuff_Width<x+8 || frameBuff_Height<y+16) return;
     uint32* targetFrameBuffPtr = (uint32*)(frameBuff_StartAddr) + x + y*frameBuff_ScanLineWidth;
     uint8* fontdata_ptr = fontdata_monospace + (asciicode<<4);
     uint8 fontdata_copy = 0;
@@ -76,11 +76,11 @@ void Font_Draw(in const ascii str[], in const uintn x, in const uintn y, in cons
 	            drawX = x;
 	            drawY += 16;
 	        }
-	        if(frameBuff_Width <= drawX+8) {
+	        if(frameBuff_Width < drawX+8) {
 	        	strindex++;
 	        	continue;
 	    	}
-	        if(frameBuff_Height <= drawY+16) break;
+	        if(frameBuff_Height < drawY+16) break;
 
 	        fontdata_ptr = fontdata_monospace + (str[strindex]<<4);
 	        targetFrameBuffPtr = (uint8*)(frameBuff_StartAddr + (drawX + drawY*frameBuff_ScanLineWidth)*4);
@@ -111,11 +111,11 @@ void Font_Draw(in const ascii str[], in const uintn x, in const uintn y, in cons
 	            drawX = x;
 	            drawY += 16;
 	        }
-	        if(frameBuff_Width <= drawX+8) {
+	        if(frameBuff_Width < drawX+8) {
 	        	strindex++;
 	        	continue;
 	    	}
-	        if(frameBuff_Height <= drawY+16) break;
+	        if(frameBuff_Height < drawY+16) break;
 
 	        fontdata_ptr = fontdata_monospace + (str[strindex]<<4);
 	        targetFrameBuffPtr = (uint8*)(frameBuff_StartAddr + (drawX + drawY*frameBuff_ScanLineWidth)*4);
