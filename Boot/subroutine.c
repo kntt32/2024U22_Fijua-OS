@@ -113,7 +113,7 @@ void load_kernelfile_to_buffer() {
 
 void get_memarea_to_expand_kernelfile() {
     SysTbl->ConOut->OutputString(SysTbl->ConOut, L"Getting memarea to expand kernelfile\n\r");
-    status = ElfLoader_GetLoadArea(buff_kernelfile, NULL, &elfloaderMemloadarea_buffCount, elfloaderMemloadarea_buff);
+    status = ElfLoader_GetLoadArea(buff_kernelfile, KERNEL_LOAD_ADDR, &elfloaderMemloadarea_buffCount, elfloaderMemloadarea_buff);
     if(status) err();
     return;
 }
@@ -139,7 +139,7 @@ void allocate_pages_to_expand_kernelfile() {
 
 void expand_kernelfile() {
     SysTbl->ConOut->OutputString(SysTbl->ConOut, L"Expanding kernelfile\n\r");
-    ElfLoader_Load(buff_kernelfile, NULL);
+    ElfLoader_Load(buff_kernelfile, KERNEL_LOAD_ADDR);
     ElfLoader_GetProperty(buff_kernelfile, (void**)&entryPoint, NULL);
     return;
 }
@@ -212,10 +212,10 @@ void get_memory_for_kernel() {
 
         //set availableRamMap
         SysTbl->ConOut->OutputString(SysTbl->ConOut, L"  Setting available ram map\n\r");
-        kernelInput.Ram.ramSize = ramSize;
-        status = SysTbl->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, (((ramSize*2)>>12)+0xfff)>>12, (EFI_PHYSICAL_ADDRESS*)&(kernelInput.Ram.availableRamMap));
+        kernelInput.Ram.RamSize = ramSize;
+        status = SysTbl->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, (((ramSize*2)>>12)+0xfff)>>12, (EFI_PHYSICAL_ADDRESS*)&(kernelInput.Ram.AvailableRamMap));
         if(status) err();
-        tempUintnptr = kernelInput.Ram.availableRamMap;
+        tempUintnptr = kernelInput.Ram.AvailableRamMap;
         for(uintn i=0; i<((((ramSize*2)>>12)+0xfff)>>12)<<(12-TYPES_UINTN_LN2_SIZE); i++) {
             *tempUintnptr = 0;
             tempUintnptr++;
@@ -224,7 +224,7 @@ void get_memory_for_kernel() {
         status = SysTbl->BootServices->GetMemoryMap(&memoryMapSize, memoryMap, &mapKey, &descriptorSize, &descriptorVersion);
         if(status) err();
         targetMemDescriptor = memoryMap;
-        tempUint16ptr = (uint16*)(kernelInput.Ram.availableRamMap);
+        tempUint16ptr = (uint16*)(kernelInput.Ram.AvailableRamMap);
         for(uintn i=0; i<memoryMapSize/descriptorSize; i++) {
             if(targetMemDescriptor->Type == EfiConventionalMemory && 0x100000 <= targetMemDescriptor->PhysicalStart) {
                 tempPhysicalAddress = targetMemDescriptor->PhysicalStart;

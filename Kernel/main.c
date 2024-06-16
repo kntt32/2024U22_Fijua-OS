@@ -16,7 +16,20 @@ https://ja.wikipedia.org/wiki/%E5%91%BC%E5%87%BA%E8%A6%8F%E7%B4%84#%E3%83%9E%E3%
 KernelInputStruct* KernelInput = NULL;
 
 void a() {
-    Console_Print("Timer NotifyA\n");
+    static int n=0;
+    switch(n) {
+    case 0:
+        Console_Print("A\n");
+        break;
+    case 1:
+        Console_Print("B\n");
+        break;
+    case 2:
+        Console_Print("C\n");
+        break;
+    }
+    n++;
+    n = n%3;
 }
 
 int kernel_main(KernelInputStruct* kernelInput) {
@@ -37,7 +50,7 @@ int kernel_main(KernelInputStruct* kernelInput) {
     Console_Print("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-=^~\\|[]{}@:;*+./?<>!_#\"$%&\'()");
 
     Timer_Init();
-    Timer_Set(a, 10000000);
+    Timer_Set(a, 5000000);
 
     Console_Print("A\n");
 

@@ -3,6 +3,7 @@
 #include <kernel.h>
 #include "functions.h"
 #include "x64.h"
+#include "console.h"
 
 extern KernelInputStruct* KernelInput;
 
@@ -18,5 +19,12 @@ void Halt() {
         wrapper((void*)Stall, 0xffffffff, 0, 0 ,0 ,0);
     }
 }
+
+
+void printk(ascii* str) {
+
+}
+
+
 
 
