@@ -12,7 +12,7 @@
 
 #define NULL ((void*)0)
 
-#define KERNEL_LOAD_ADDR ((void*)0x100000)
+#define KERNEL_LOAD_ADDR ((void*)0x200000)
 #define ELFLOADERMEMLOADAREA_BUFFSIZE (20)
 
 

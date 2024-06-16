@@ -24,7 +24,7 @@ else
 endif
 
 a.elf: main.o font.o bootwrapper.o x64.o console.o timer.o functions.o
-	ld.lld --entry entrypoint -z norelro --image-base 0x200000 --static -o a.elf $^
+	ld --entry entrypoint -pie -o a.elf $^
 
 main.o: main.c console.h x64.h functions.h timer.h
 functions.o: functions.c functions.h x64.h console.h
@@ -38,7 +38,7 @@ memory.o: memory.c memory.h console.h
 
 
 %.o: %.c
-	$(CC) -I $(INCLUDE) -Wall -Wextra --target=$(TARGET) -fshort-wchar -ffreestanding -mno-red-zone -c $<
+	$(CC) -I $(INCLUDE) -Wall -Wextra --target=$(TARGET) -fshort-wchar -ffreestanding -mno-red-zone -c -fpie $<
 
 %.o: %.asm
-	$(CC) -I $(INCLUDE) -Wall -Wextra --target=$(TARGET) -c $<
+	$(CC) -I $(INCLUDE) -Wall -Wextra --target=$(TARGET) -c -fpie $<
