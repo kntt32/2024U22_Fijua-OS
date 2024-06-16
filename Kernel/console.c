@@ -52,6 +52,7 @@ void Console_Print(ascii str[]) {
             Console_CursorX = 0;
             Console_CursorY ++;
             Console_FlushLine(Console_CursorY-1);
+            if(Console_CursorY == Console_Height) Console_CursorY = 0;
             for(uintn i=0; i<Console_Width; i++) {
                 Console_Buff[Console_CursorY*Console_Width+i] = ' ';
             }
@@ -60,7 +61,6 @@ void Console_Print(ascii str[]) {
             Console_CursorX = 0;
             continue;
         }
-        if(Console_CursorY == Console_Height) Console_CursorY = 0;
 
         if(str[seekindex] == '\n') continue;
         Console_Buff[Console_CursorY*Console_Width+Console_CursorX] = str[seekindex];
