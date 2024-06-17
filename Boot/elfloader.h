@@ -9,7 +9,7 @@ typedef struct {
 } ElfLoader_MemLoadArea;
 
 
-unsigned int ElfLoader_GetProperty(in const void* file, optional void** entryPointPtr, optional uint16* machineTypePtr);
+unsigned int ElfLoader_GetProperty(in const void* file, in optional void* loadAddr, out optional void** entryPointPtr, out optional uint16* machineTypePtr);
 
 unsigned int ElfLoader_Load(in const void* file, in optional void* loadAddr);
 

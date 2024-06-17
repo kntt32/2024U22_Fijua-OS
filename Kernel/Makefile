@@ -1,6 +1,6 @@
 CC := clang
 TARGET := x86_64-elf
-FILES := main.c
+
 ifeq ($(OS), Windows_NT)
 INCLUDE := ..\include
 else
@@ -23,10 +23,10 @@ else
 	rm *.o *.elf
 endif
 
-a.elf: main.o font.o bootwrapper.o x64.o console.o timer.o functions.o
-	ld --entry entrypoint -pie -o a.elf $^
+a.elf: main.o font.o bootwrapper.o x64.o console.o timer.o functions.o memory.o
+	ld.lld --entry entrypoint -z norelro --static -pie -o a.elf $^
 
-main.o: main.c console.h x64.h functions.h timer.h
+main.o: main.c console.h x64.h functions.h timer.h memory.h
 functions.o: functions.c functions.h x64.h console.h
 font.o: font.c font.h fontdata_monospace
 console.o: console.c console.h font.h
@@ -34,7 +34,7 @@ bootwrapper.o: bootwrapper.asm
 x64.o: x64.asm
 keyboard.o: keyboard.c keyboard.h x64.h
 timer.o: timer.c timer.h x64.h console.h
-memory.o: memory.c memory.h console.h
+memory.o: memory.c memory.h console.h functions.h
 
 
 %.o: %.c

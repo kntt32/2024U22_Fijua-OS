@@ -6,6 +6,7 @@
 #include "font.h"
 #include "console.h"
 #include "timer.h"
+#include "memory.h"
 
 /*
 https://docs.oracle.com/cd/E19253-01/819-0389/fcowb/index.html
@@ -42,13 +43,15 @@ int kernel_main(KernelInputStruct* kernelInput) {
     }
 
     Font_Init();
-    
+    Console_Init();
+
+    //Memory_Init();
+
     wrapper((void*)(kernelInput->LoadedImage->SystemTable->ConOut->OutputString), (uintn)(kernelInput->LoadedImage->SystemTable->ConOut), (uintn)(L"HELLO!"), 0, 0, 0);
 
-    Console_Init();
-    Console_Print("Hello, Console!\n");
-    Console_Print("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-=^~\\|[]{}@:;*+./?<>!_#\"$%&\'()");
 
+    Console_Print("Hello, Console!\n");
+    Console_Print("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-=^~\\|[]{}@:;*+./?<>!_#\"$%&\'()\n");
     Timer_Init();
     Timer_Set(a, 5000000);
 

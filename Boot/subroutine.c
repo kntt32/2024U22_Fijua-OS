@@ -140,7 +140,7 @@ void allocate_pages_to_expand_kernelfile() {
 void expand_kernelfile() {
     SysTbl->ConOut->OutputString(SysTbl->ConOut, L"Expanding kernelfile\n\r");
     ElfLoader_Load(buff_kernelfile, KERNEL_LOAD_ADDR);
-    ElfLoader_GetProperty(buff_kernelfile, (void**)&entryPoint, NULL);
+    ElfLoader_GetProperty(buff_kernelfile, KERNEL_LOAD_ADDR, (void**)&entryPoint, NULL);
     return;
 }
 

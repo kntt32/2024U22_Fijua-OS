@@ -26,5 +26,20 @@ void printk(ascii* str) {
 }
 
 
+void sprintintx(uintn number, uintn buffsize, ascii buff[]) {
+    uintn n;
+    for(sintn i=buffsize-2; 0<=i; i--) {
+        n = number & 0xf;
+        buff[i] = (n<10)?(n+'0'):(n+'a'-10);
+        
+        number >>= 4;
+    }
+    buff[buffsize-1] = '\0';
+    
+    return;
+}
+
+
+
 
 

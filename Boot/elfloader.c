@@ -7,10 +7,10 @@
 static void ElfLoader_MemCopy(in const void* from, in const unsigned int size, out void* to);
 
 
-unsigned int ElfLoader_GetProperty(in const void* file, optional void** entryPointPtr, optional uint16* machineTypePtr) {
+unsigned int ElfLoader_GetProperty(in const void* file, in optional void* loadAddr, out optional void** entryPointPtr, out optional uint16* machineTypePtr) {
     if(file == NULL) return 1;
 
-    if(entryPointPtr != NULL) *entryPointPtr = (void*)(((Elf_Header*)file)->e_entry);
+    if(entryPointPtr != NULL) *entryPointPtr = (void*)(((Elf_Header*)file)->e_entry + (uintn)loadAddr);
     if(machineTypePtr != NULL) *machineTypePtr = ((Elf_Header*)file)->e_machine;
 
     return 0;

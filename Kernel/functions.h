@@ -3,4 +3,6 @@
 
 void Halt();
 
+void sprintintx(uintn number, uintn buffsize, ascii buff[]);
+
 #endif
