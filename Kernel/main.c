@@ -44,15 +44,15 @@ int kernel_main(KernelInputStruct* kernelInput) {
 
     Font_Init();
     Console_Init();
-
-    //Memory_Init();
+    Memory_Init();
+    Timer_Init();
 
     wrapper((void*)(kernelInput->LoadedImage->SystemTable->ConOut->OutputString), (uintn)(kernelInput->LoadedImage->SystemTable->ConOut), (uintn)(L"HELLO!"), 0, 0, 0);
 
 
     Console_Print("Hello, Console!\n");
     Console_Print("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-=^~\\|[]{}@:;*+./?<>!_#\"$%&\'()\n");
-    Timer_Init();
+
     Timer_Set(a, 5000000);
 
     Console_Print("A\n");
