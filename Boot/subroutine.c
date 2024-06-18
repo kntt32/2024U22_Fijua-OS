@@ -65,6 +65,7 @@ void get_EFI_SIMPLE_FILE_SYSTEM_PROTOCOL() {
     EFI_GUID efiSimpleFileSystemProtocol_guid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
     efiSimpleFileSystemProtocol_volume = NULL;
     status = SysTbl->BootServices->HandleProtocol(LddImg->DeviceHandle, &efiSimpleFileSystemProtocol_guid, (VOID**)&efiSimpleFileSystemProtocol_volume);
+    if(status) err();
     return;
 }
 
