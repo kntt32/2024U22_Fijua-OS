@@ -7,10 +7,33 @@
 static void ElfLoader_MemCopy(in const void* from, in const unsigned int size, out void* to);
 
 
+static void ElfLoader_Bss(in out void* start, in uintn size) {
+    uint8* targetptr = (uint8*)start;
+
+    for(uintn i=0; i<size; i++) {
+        *targetptr = 0;
+        targetptr++;
+    }
+
+    return;
+}
+
+
 unsigned int ElfLoader_GetProperty(in const void* file, in optional void* loadAddr, out optional void** entryPointPtr, out optional uint16* machineTypePtr) {
     if(file == NULL) return 1;
 
-    if(entryPointPtr != NULL) *entryPointPtr = (void*)(((Elf_Header*)file)->e_entry + (uintn)loadAddr);
+    if(entryPointPtr != NULL) {
+        switch(((Elf_Header*)file)->e_type) {
+            case Elf_Header_ET_EXEC:
+                *entryPointPtr = (void*)(((Elf_Header*)file)->e_entry + (uintn)loadAddr);
+                break;
+            case Elf_Header_ET_DYN:
+                *entryPointPtr = (void*)(((Elf_Header*)file)->e_entry + (uintn)loadAddr);
+                break;
+            default:
+                return 2;
+        }
+    }
     if(machineTypePtr != NULL) *machineTypePtr = ((Elf_Header*)file)->e_machine;
 
     return 0;
@@ -29,7 +52,10 @@ unsigned int ElfLoader_Load(in const void* file, in optional void* loadAddr) {
         case Elf_Header_ET_EXEC:
             for(unsigned int i=0; i<programHeaderNumber; i++) {
                 if(programHeader->p_type == Elf_ProgramHeader_PT_LOAD) {
-                    ElfLoader_MemCopy((void*)(programHeader->p_offset+(uintn)file), programHeader->p_memsz, (void*)(programHeader->p_vaddr));
+                    //load
+                    ElfLoader_MemCopy((void*)(programHeader->p_offset+(uintn)file), programHeader->p_filesz, (void*)(programHeader->p_vaddr));
+                    //bss section
+                    ElfLoader_Bss((void*)(programHeader->p_vaddr+programHeader->p_filesz), programHeader->p_memsz-programHeader->p_filesz);
                 }
 
                 programHeader = (void*)((uintn)programHeader + programHeaderSize);
@@ -38,7 +64,10 @@ unsigned int ElfLoader_Load(in const void* file, in optional void* loadAddr) {
         case Elf_Header_ET_DYN:
             for(unsigned int i=0; i<programHeaderNumber; i++) {
                 if(programHeader->p_type == Elf_ProgramHeader_PT_LOAD) {
-                    ElfLoader_MemCopy((void*)(programHeader->p_offset+(uintn)file), programHeader->p_memsz, (void*)(programHeader->p_vaddr+(uintn)loadAddr));
+                    //load
+                    ElfLoader_MemCopy((void*)(programHeader->p_offset+(uintn)file), programHeader->p_filesz, (void*)(programHeader->p_vaddr+(uintn)loadAddr));
+                    //bss section
+                    ElfLoader_Bss((void*)(programHeader->p_vaddr+programHeader->p_filesz+(uintn)loadAddr), programHeader->p_memsz-programHeader->p_filesz);
                 }
 
                 programHeader = (void*)((uintn)programHeader + programHeaderSize);

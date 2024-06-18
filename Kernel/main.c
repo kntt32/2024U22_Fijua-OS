@@ -55,7 +55,7 @@ int kernel_main(KernelInputStruct* kernelInput) {
 
     Timer_Set(a, 5000000);
 
-    Console_Print("ABCDEFG\n");
+    Console_Print("A\n");
 
     Halt();
 
