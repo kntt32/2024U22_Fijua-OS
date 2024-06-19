@@ -81,6 +81,7 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
     get_framebuffer_for_kernel();
     get_memory_for_kernel();
     kernelInput.LoadedImage = LddImg;
+    kernelInput.ImageHandle = ImgHdl;
 
     //run kernel
     SysTbl->ConOut->OutputString(SysTbl->ConOut, L"Starting Kernel...\n\r");

@@ -40,6 +40,8 @@ void sprintintx(uintn number, uintn buffsize, ascii buff[]) {
 }
 
 
-
+void BlueScreen() {
+    
+}
 
 

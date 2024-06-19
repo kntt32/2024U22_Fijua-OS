@@ -9,13 +9,6 @@ endif
 
 build: a.elf
 
-install: build
-ifeq ($(OS), Windows_NT)
-	copy a.elf ..\disk\kernel.elf
-else
-	cp a.elf ../disk/kernel.elf
-endif
-
 clean:
 ifeq ($(OS), Windows_NT)
 	del *.o *.elf
@@ -25,6 +18,11 @@ endif
 
 a.elf: main.o font.o bootwrapper.o x64.o console.o timer.o functions.o memory.o
 	ld.lld --entry entrypoint -z norelro --static -pie -o a.elf $^
+ifeq ($(OS), Windows_NT)
+	copy a.elf ..\disk\kernel.elf
+else
+	cp a.elf ../disk/kernel.elf
+endif
 
 main.o: main.c console.h x64.h functions.h timer.h memory.h
 functions.o: functions.c functions.h x64.h console.h

@@ -15,11 +15,12 @@ typedef struct {
 
 typedef struct {
     EFI_LOADED_IMAGE_PROTOCOL* LoadedImage;
+    EFI_HANDLE ImageHandle;
     GraphicData Graphic;
     struct {
-        uintn RamSize;
-        uintn* AvailableRamMap;//per 2 byte represent 1 pages'owner id (4KiB) (0:unavailable 1:available 2:kernel_heap <=3:owner_id)
-    } Ram;
+        uintn PageCount;
+        uintn* AvailableMemoryMap;//[PageCount] per 2 byte represent 1 pages'owner id (4KiB) (0:unavailable 1:available 2:kernel_heap <=3:owner_id)
+    } Memory;
     void* tester;
 } KernelInputStruct;
 

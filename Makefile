@@ -4,15 +4,18 @@ else
 OVMFFDPATH := tool/OVMF.fd
 endif
 
+
+build: buildboot buildkernel
+
 buildkernel:
 	make -C Kernel
-	make -C Kernel install
 
 buildboot:
 	make -C Boot
-	make -C Boot install
 
-all: buildboot buildkernel
+clean:
+	make -C Kernel clean
+	make -C Boot clean
 	
 
 run:

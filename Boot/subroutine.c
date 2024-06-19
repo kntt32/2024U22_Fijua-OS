@@ -213,10 +213,10 @@ void get_memory_for_kernel() {
 
         //set availableRamMap
         SysTbl->ConOut->OutputString(SysTbl->ConOut, L"  Setting available ram map\n\r");
-        kernelInput.Ram.RamSize = ramSize;
-        status = SysTbl->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, (((ramSize*2)>>12)+0xfff)>>12, (EFI_PHYSICAL_ADDRESS*)&(kernelInput.Ram.AvailableRamMap));
+        kernelInput.Memory.PageCount = ramSize>>12;
+        status = SysTbl->BootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, (((ramSize*2)>>12)+0xfff)>>12, (EFI_PHYSICAL_ADDRESS*)&(kernelInput.Memory.AvailableMemoryMap));
         if(status) err();
-        tempUintnptr = kernelInput.Ram.AvailableRamMap;
+        tempUintnptr = kernelInput.Memory.AvailableMemoryMap;
         for(uintn i=0; i<((((ramSize*2)>>12)+0xfff)>>12)<<(12-TYPES_UINTN_LN2_SIZE); i++) {
             *tempUintnptr = 0;
             tempUintnptr++;
@@ -225,9 +225,9 @@ void get_memory_for_kernel() {
         status = SysTbl->BootServices->GetMemoryMap(&memoryMapSize, memoryMap, &mapKey, &descriptorSize, &descriptorVersion);
         if(status) err();
         targetMemDescriptor = memoryMap;
-        tempUint16ptr = (uint16*)(kernelInput.Ram.AvailableRamMap);
+        tempUint16ptr = (uint16*)(kernelInput.Memory.AvailableMemoryMap);
         for(uintn i=0; i<memoryMapSize/descriptorSize; i++) {
-            if(targetMemDescriptor->Type == EfiConventionalMemory && 0x100000 <= targetMemDescriptor->PhysicalStart) {
+            if(targetMemDescriptor->Type == EfiConventionalMemory && 0x500000 <= targetMemDescriptor->PhysicalStart) {
                 tempPhysicalAddress = targetMemDescriptor->PhysicalStart;
                 status = SysTbl->BootServices->AllocatePages(AllocateAddress, EfiLoaderData, targetMemDescriptor->NumberOfPages, &tempPhysicalAddress);
                 if(status) err();

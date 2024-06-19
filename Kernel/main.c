@@ -53,9 +53,17 @@ int kernel_main(KernelInputStruct* kernelInput) {
     Console_Print("Hello, Console!\n");
     Console_Print("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-=^~\\|[]{}@:;*+./?<>!_#\"$%&\'()\n");
 
-    Timer_Set(a, 5000000);
 
-    Console_Print("A\n");
+    ascii strbuff[17];
+    void* memptr =  Memory_AllocatePages(2, 2);
+    sprintintx((uintn)memptr, 17, strbuff);
+    Console_Print(strbuff);
+    Console_Print("\n");
+    memptr =  Memory_AllocatePages(2, 2);
+    sprintintx((uintn)memptr, 17, strbuff);
+    Console_Print(strbuff);
+
+
 
     Halt();
 
