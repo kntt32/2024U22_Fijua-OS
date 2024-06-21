@@ -1,9 +1,15 @@
+/*
+    Memory Allocater
+
+    note: this allocater using boundary tag algolithm
+*/
+
 #include <types.h>
 #include <kernel.h>
 #include "functions.h"
 #include "memory.h"
 #include "console.h"
-#include "memallocater.h"
+#include "kmalloc.h"
 
 
 #define KMALLOC_MAX_MANAGE_PAGE_COUNT (10000)
@@ -22,12 +28,16 @@ uintn KMalloc_Init(void) {
 }
 
 
-uintn KMalloc_Alloc() {
+void* KMalloc_Alloc(uintn size) {
+    if(size == 0) return NULL;
 
+
+
+    return NULL;
 }
 
 
-uintn KMalloc_Realloc() {
+void* KMalloc_Realloc() {
 
 }
 
