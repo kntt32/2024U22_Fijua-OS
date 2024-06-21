@@ -21,12 +21,7 @@ void Halt() {
 }
 
 
-void printk(ascii* str) {
-
-}
-
-
-void sprintintx(uintn number, uintn buffsize, ascii buff[]) {
+void Functions_SPrintIntX(uintn number, uintn buffsize, ascii buff[]) {
     uintn n;
     for(sintn i=buffsize-2; 0<=i; i--) {
         n = number & 0xf;
@@ -40,8 +35,10 @@ void sprintintx(uintn number, uintn buffsize, ascii buff[]) {
 }
 
 
-void BlueScreen() {
-    
+void BlueScreen(uintn errCode, ascii moduleName[]) {
+
+
+    Halt();
 }
 
 

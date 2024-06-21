@@ -4,14 +4,25 @@
 #include "memory.h"
 #include "console.h"
 
+
+typedef enum {
+    Memory_MemType_Unavailable,
+    Memory_MemType_Available
+} Memory_MemType;
+
+
+extern KernelInputStruct* KernelInput;
+
+
 static uintn   Memory_PageCount = 0;
 static uint16* Memory_MemMap = NULL;
 
-extern KernelInputStruct* KernelInput;
 
 void Memory_Init(void) {
     Memory_PageCount = KernelInput->Memory.PageCount;
     Memory_MemMap = (uint16*)(KernelInput->Memory.AvailableMemoryMap);
+
+    return;
 }
 
 
@@ -19,7 +30,7 @@ void Memory_Print_Memmap(void) {
     ascii strbuff[17];
     for(uintn i=0; i<Memory_PageCount; i++) {
         if(Memory_MemMap[i] != 0) {
-            sprintintx(i, sizeof(strbuff), strbuff);
+            Functions_SPrintIntX(i, sizeof(strbuff), strbuff);
             Console_Print(strbuff);
             Console_Print("\n");
         }
@@ -28,7 +39,7 @@ void Memory_Print_Memmap(void) {
 }
 
 
-void* Memory_AllocatePages(uint16 ownerid, uintn pages) {
+void* Memory_AllocPages(uint16 ownerid, uintn pages) {
     /*
     ownerid:
         0:firmware
@@ -36,15 +47,19 @@ void* Memory_AllocatePages(uint16 ownerid, uintn pages) {
         2:kernel
         10~:app
     */
-    if(ownerid == 0) return NULL;
+    if(ownerid == Memory_MemType_Unavailable || ownerid == Memory_MemType_Available) return NULL;
     if(pages == 0) return NULL;
 
-    uintn i=0;
     uintn memareaPages = 0;
     for(uintn i=0; i<Memory_PageCount; i++) {
-        if(Memory_MemMap[i] == 1) memareaPages++;
+        if(Memory_MemMap[i] == Memory_MemType_Available) {
+            memareaPages++;
+        }else {
+            memareaPages=0;
+        }
+
         if(memareaPages == pages) {
-            for(int k=i-pages+1; k<=i; k++) {
+            for(uintn k=i-pages+1; k<=i; k++) {
                 Memory_MemMap[k] = ownerid;
             }
             return (void*)((i-pages+1)<<12);
@@ -54,12 +69,39 @@ void* Memory_AllocatePages(uint16 ownerid, uintn pages) {
     return NULL;
 }
 
+
+//free pages
+//if indecaded page isn't owned by ownerid, it is ignored.
+uintn Memory_FreePages(uint16 ownerid, uintn pages, void* pageaddr) {
+    if(ownerid == Memory_MemType_Unavailable || ownerid == Memory_MemType_Available) return 1;
+    if(pageaddr == NULL) return 2;
+    if((((uintn)pageaddr)&0xfff) != 0) return 3;
+    if(Memory_PageCount < (((uintn)pageaddr)>>12)+pages) return 4;
+    if(pages == 0) return 0;
+
+    uintn pageCount = ((uintn)pageaddr)>>12;
+    for(uintn i=0; i<pages; i++) {
+        if(Memory_MemMap[i+pageCount] == ownerid) {
+            Memory_MemMap[i+pageCount] = Memory_MemType_Available;
+        }
+    }
+
+    return 0;
+}
+
+
 uintn Memory_FreeAll(uint16 ownerid) {
+    if(ownerid == Memory_MemType_Unavailable || ownerid == Memory_MemType_Available) return 1;
 
+    for(uintn i=0; i<Memory_PageCount; i++) {
+        if(Memory_MemMap[i] == ownerid) {
+            Memory_MemMap[i] = Memory_MemType_Available;
+        }
+    }
+
+    return 0;
 }
 
-uintn Memory_FreePages() {
-    return 1;
-}
+
 
 
