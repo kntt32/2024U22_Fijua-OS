@@ -3,6 +3,7 @@
 #include "functions.h"
 #include "memory.h"
 #include "console.h"
+#include "x64.h"
 
 
 typedef enum {
@@ -16,6 +17,8 @@ extern KernelInputStruct* KernelInput;
 
 static uintn   Memory_PageCount = 0;
 static uint16* Memory_MemMap = NULL;
+
+static uintn Memory_Mutex = 0;
 
 
 void Memory_Init(void) {
@@ -50,6 +53,8 @@ void* Memory_AllocPages(uint16 ownerid, uintn pages) {
     if(ownerid == Memory_MemType_Unavailable || ownerid == Memory_MemType_Available) return NULL;
     if(pages == 0) return NULL;
 
+    Mutex_Lock(&Memory_Mutex);
+
     uintn memareaPages = 0;
     for(uintn i=0; i<Memory_PageCount; i++) {
         if(Memory_MemMap[i] == Memory_MemType_Available) {
@@ -66,6 +71,8 @@ void* Memory_AllocPages(uint16 ownerid, uintn pages) {
         }
     }
 
+    Mutex_UnLock(&Memory_Mutex);
+
     return NULL;
 }
 
@@ -79,12 +86,16 @@ uintn Memory_FreePages(uint16 ownerid, uintn pages, void* pageaddr) {
     if(Memory_PageCount < (((uintn)pageaddr)>>12)+pages) return 4;
     if(pages == 0) return 0;
 
+    Mutex_Lock(&Memory_Mutex);
+
     uintn pageCount = ((uintn)pageaddr)>>12;
     for(uintn i=0; i<pages; i++) {
         if(Memory_MemMap[i+pageCount] == ownerid) {
             Memory_MemMap[i+pageCount] = Memory_MemType_Available;
         }
     }
+
+    Mutex_UnLock(&Memory_Mutex);
 
     return 0;
 }
@@ -93,11 +104,15 @@ uintn Memory_FreePages(uint16 ownerid, uintn pages, void* pageaddr) {
 uintn Memory_FreeAll(uint16 ownerid) {
     if(ownerid == Memory_MemType_Unavailable || ownerid == Memory_MemType_Available) return 1;
 
+    Mutex_Lock(&Memory_Mutex);
+
     for(uintn i=0; i<Memory_PageCount; i++) {
         if(Memory_MemMap[i] == ownerid) {
             Memory_MemMap[i] = Memory_MemType_Available;
         }
     }
+
+    Mutex_UnLock(&Memory_Mutex);
 
     return 0;
 }

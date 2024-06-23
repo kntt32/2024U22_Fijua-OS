@@ -27,13 +27,13 @@ endif
 main.o: main.c console.h x64.h functions.h timer.h memory.h
 functions.o: functions.c functions.h x64.h console.h
 font.o: font.c font.h fontdata_monospace
-console.o: console.c console.h font.h
+console.o: console.c console.h font.h x64.h
 bootwrapper.o: bootwrapper.s
 x64.o: x64.s
 keyboard.o: keyboard.c keyboard.h x64.h
 timer.o: timer.c timer.h x64.h console.h
-memory.o: memory.c memory.h console.h functions.h
-kmalloc.o: kmalloc.c functions.h memory.h console.h kmalloc.h
+memory.o: memory.c memory.h console.h functions.h x64.h
+kmalloc.o: kmalloc.c functions.h memory.h console.h kmalloc.h x64.h
 
 
 %.o: %.c

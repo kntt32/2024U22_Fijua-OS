@@ -1,6 +1,7 @@
 #include <types.h>
 #include <kernel.h>
 #include <efi.h>
+#include "x64.h"
 #include "font.h"
 #include "console.h"
 
@@ -21,6 +22,8 @@ static uintn Console_Height = 30;
 static ascii Console_Buff[CONSOLE_BUFFSIZE];
 
 static uint32 Console_BackGroundColor = 0;
+
+static uintn Console_Mutex = 0;
 
 void Console_Init() {
     frameBuff_StartAddr = (uint32*)(KernelInput->Graphic.startAddr);
@@ -56,6 +59,8 @@ void Console_Init() {
 }
 
 void Console_Scroll() {
+    Mutex_Lock(&Console_Mutex);
+
     for(uintn i=0; i<Console_Height-1; i++) {
         for(uintn k=0; k<Console_Width; k++) {
             Console_Buff[i*Console_Width+k] = Console_Buff[(i+1)*Console_Width+k];
@@ -65,10 +70,14 @@ void Console_Scroll() {
         Console_Buff[(Console_Height-1)*Console_Width+i] = ' ';
     }
 
+    Mutex_Lock(&Console_Mutex);
+
     return;
 }
 
 void Console_Print(ascii str[]) {
+    Mutex_Lock(&Console_Mutex);
+
     sintn seekindex = -1;
     while(1) {
         seekindex++;
@@ -79,7 +88,9 @@ void Console_Print(ascii str[]) {
             Console_CursorY ++;
             if(Console_CursorY == Console_Height) {
                 Console_CursorY--;
+                Mutex_UnLock(&Console_Mutex);
                 Console_Scroll();
+                Mutex_Lock(&Console_Mutex);
             }else {
                 for(uintn i=0; i<Console_Width; i++) {
                     Console_Buff[Console_CursorY*Console_Width+i] = ' ';
@@ -96,6 +107,7 @@ void Console_Print(ascii str[]) {
 
         Console_CursorX++;
     }
+    Mutex_UnLock(&Console_Mutex);
     Console_Flush();
     return;
 }
@@ -115,6 +127,7 @@ void Console_Flush() {
 }
 
 void Console_FlushLine(uintn line) {
+    Mutex_Lock(&Console_Mutex);
     for(uintn i=line*16; i<line*16+16; i++) {
         for(uintn k=0; k<frameBuff_Width; k++) {
             frameBuff_StartAddr[frameBuff_ScanLineWidth*i + k] = Console_BackGroundColor; //_rgb;
@@ -135,6 +148,7 @@ void Console_FlushLine(uintn line) {
             }
         }
     }
+    Mutex_UnLock(&Console_Mutex);
 
     return;
 }

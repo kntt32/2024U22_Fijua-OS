@@ -35,6 +35,14 @@ void Functions_SPrintIntX(uintn number, uintn buffsize, ascii buff[]) {
 }
 
 
+sintn Functions_Log2(uintn number) {
+    for(sintn i=0; i<64; i++) {
+        if(number>>i == 0) return i-1;
+    }
+    return -1;
+}
+
+
 void BlueScreen(uintn errCode, ascii moduleName[]) {
 
 

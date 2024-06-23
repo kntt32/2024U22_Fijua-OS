@@ -5,4 +5,6 @@ void Halt();
 
 void Functions_SPrintIntX(uintn number, uintn buffsize, ascii buff[]);
 
+sintn Functions_Log2(uintn number);
+
 #endif

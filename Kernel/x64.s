@@ -45,13 +45,13 @@ Timer_Wrapper:
 
 # void Mutex_Lock(uintn* lockvar);
 Mutex_Lock:
-    cmpq $0, [%rdi]
+    cmpq $0, (%rdi)
     je Mutex_Lock_GetLock
     pause
     jmp Mutex_Lock
 Mutex_Lock_GetLock:
     movq $1, %rax
-    xchg [%rdi], %rax
+    xchg (%rdi), %rax
     cmpq $0, %rax
     jne Mutex_Lock
     ret
@@ -60,7 +60,7 @@ Mutex_Lock_GetLock:
 # void Mutex_UnLock(uintn* lockvar);
 Mutex_UnLock:
     movq $0, %rax
-    xchg %rax, [%rdi]
+    xchg %rax, (%rdi)
     cmpq $1, %rax
     jne Mutex_UnLock_Err
     movq $0, %rax

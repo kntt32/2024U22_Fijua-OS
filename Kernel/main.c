@@ -57,16 +57,16 @@ int kernel_main(KernelInputStruct* kernelInput) {
     void* memptr1 =  Memory_AllocPages(2, 2);
     Functions_SPrintIntX((uintn)memptr1, 17, strbuff);
     Console_Print(strbuff);
-    Console_Print("\n");
+    Console_Print("A\n");
     void* memptr2 =  Memory_AllocPages(2, 2);
     Functions_SPrintIntX((uintn)memptr2, 17, strbuff);
     Console_Print(strbuff);
-    Console_Print("\n");
+    Console_Print("B\n");
     Memory_FreePages(2, 1, memptr1+0x1000);
     void* memptr3 = Memory_AllocPages(2, 1);
     Functions_SPrintIntX((uintn)memptr3, 17, strbuff);
     Console_Print(strbuff);
-    Console_Print("\n");
+    Console_Print("C\n");
     
     Memory_FreeAll(2);
 

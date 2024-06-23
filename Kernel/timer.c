@@ -40,43 +40,6 @@ void Timer_Init(void) {
 }
 
 
-void b() {
-    Console_Print("Timer Notify\n");
-}
-
-//time:100ns
-sintn Timer_Set(void (*notifyFunction)(void), uintn time) {
-    EFI_EVENT event;
-    uintn status;
-    
-    status = wrapper(Efi_CreateEvent, EVT_TIMER | EVT_NOTIFY_SIGNAL, TPL_CALLBACK, (uintn)Timer_Wrapper, (uintn)notifyFunction, (uintn)&event);
-    if(status) return -1;
-
-    status = wrapper(Efi_SetTimer, (uintn)event, TimerPeriodic, time, 0, 0);
-    if(status) {
-        wrapper(Efi_CloseEvent, (uintn)event, 0, 0, 0, 0);
-        return -1;
-    }
-
-    for(int i=0; i<TIMER_MAX_NUMBER; i++) {
-        if(!TimerTable[i].isEnabled) {
-            TimerTable[i].eventId = event;
-            TimerTable[i].isEnabled = 1;
-            return i;
-        }
-    }
-
-
-    return -2;
-}
-
-void Timer_Delete() {
-
-}
-
-
-
-
 
 
 
