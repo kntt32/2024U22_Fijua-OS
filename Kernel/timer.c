@@ -22,6 +22,7 @@ static EFI_SIGNAL_EVENT Efi_SignalEvent = NULL;
 
 static Timer_TimerTable TimerTable[TIMER_MAX_NUMBER];
 
+
 void Timer_Init(void) {
     EFI_BOOT_SERVICES* bootServices = KernelInput->LoadedImage->SystemTable->BootServices;
 
@@ -39,6 +40,16 @@ void Timer_Init(void) {
     return;
 }
 
+
+uintn Timer_Start(void (*callback)(void), uintn sec100ns) {
+
+    return 0;
+}
+
+
+void Timer_Stop() {
+
+}
 
 
 

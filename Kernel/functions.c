@@ -42,6 +42,16 @@ sintn Functions_Log2(uintn number) {
     return -1;
 }
 
+/*
+void Functions_MemDump(void* start, uintn count16) {
+    ascii buff[]
+    for(uintn i=0; i<count16; i++) {
+
+    }
+
+    return;
+}*/
+
 
 void BlueScreen(uintn errCode, ascii moduleName[]) {
 

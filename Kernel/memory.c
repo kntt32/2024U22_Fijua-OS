@@ -67,6 +67,7 @@ void* Memory_AllocPages(uint16 ownerid, uintn pages) {
             for(uintn k=i-pages+1; k<=i; k++) {
                 Memory_MemMap[k] = ownerid;
             }
+            Mutex_UnLock(&Memory_Mutex);
             return (void*)((i-pages+1)<<12);
         }
     }

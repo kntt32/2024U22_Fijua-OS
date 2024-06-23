@@ -23,9 +23,25 @@ static uintn*  Kmalloc_PagesPool_EachPagesCounts = NULL;
 
 static uintn KMalloc_Mutex = 0;
 
-static uintn KMalloc_AddPagePool(uintn pages) {
 
+static sintn KMalloc_AddPagePool(uintn pages) {
+    if(pages == 0) return 1;
+
+    //allocate memory for pagepool list
+    if(KMalloc_PagesPoolSize == KMalloc_PagesCount) {
+        uint64** KMalloc_PagesPool_Temp = Memory_AllocPages(2, (((KMalloc_PagesPoolSize==0)?(1):(KMalloc_PagesPoolSize))*2*sizeof(uint64*)+0xfff)>>12);
+        uintn*   Kmalloc_PagesPool_EachPagesCounts_Temp = Memory_AllocPages(2, (((KMalloc_PagesPoolSize==0)?(1):(KMalloc_PagesPoolSize))*2*sizeof(uintn)+0xfff)>>12);
+        if(KMalloc_PagesPool_Temp == NULL) return -1;
+        //for()//copy kmalloc_pagepool
+        //free old kmalloc_pagepool
+        //update kmalloc_pagespoolsize
+    }
+
+
+
+    return 0;
 }
+
 
 static void KMalloc_AllocArea(uint64* targTag, uintn size) {
     if(targTag[0]-size <= 2) {
@@ -40,11 +56,13 @@ static void KMalloc_AllocArea(uint64* targTag, uintn size) {
     return;
 }
 
+
 void* KMalloc_Allocate(uintn size) {
     if(size == 0) return NULL;
 
     Mutex_Lock(&KMalloc_Mutex);
 
+    //seek pagepool
     for(uintn i=0; i<KMalloc_PagesCount; i++) {
         uint64* targTag = KMalloc_PagesPool[i];
         uintn k=0;
