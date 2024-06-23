@@ -3,7 +3,7 @@
 
 uintn wrapper(void* callback, uintn, uintn, uintn, uintn, uintn);
 
-void Timer_Wrapper(uintn (*callback)(void));
+void Timer_Wrapper(void*, uintn (*callback)(void));
 
 void Mutex_Lock(uintn* lockvar);
 

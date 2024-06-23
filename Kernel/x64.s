@@ -28,7 +28,7 @@ wrapper:
     ret
 
 
-# void Timer_Wrapper(uintn (*callback)(void));
+# void Timer_Wrapper(void*, uintn (*callback)(void));
 Timer_Wrapper:
     push %rbp
     push %rdi

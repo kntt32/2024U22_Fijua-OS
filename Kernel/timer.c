@@ -19,8 +19,7 @@ static EFI_RAISE_TPL Efi_RaiseTPL       = NULL;
 static EFI_RESTORE_TPL Efi_RestoreTPL   = NULL;
 static EFI_CLOSE_EVENT Efi_CloseEvent   = NULL;
 static EFI_SIGNAL_EVENT Efi_SignalEvent = NULL;
-
-static Timer_TimerTable TimerTable[TIMER_MAX_NUMBER];
+static EFI_EVENT eventId;
 
 
 void Timer_Init(void) {
@@ -33,22 +32,25 @@ void Timer_Init(void) {
     Efi_CloseEvent  = bootServices->CloseEvent;
     Efi_SignalEvent = bootServices->SignalEvent;
 
-    for(uintn i=0; i<TIMER_MAX_NUMBER; i++) {
-        TimerTable[i].isEnabled = 0;
-    }
-
     return;
 }
 
 
-uintn Timer_Start(void (*callback)(void), uintn sec100ns) {
+sintn Timer_Set(void (*callback)(void), uintn sec100ns) {
+    uintn status;
+    status = wrapper(Efi_CreateEvent, EVT_TIMER | EVT_NOTIFY_SIGNAL, TPL_CALLBACK, (uintn)Timer_Wrapper, (uintn)callback, (uintn)&eventId);
+    if(status) return -1;
+    status = wrapper(Efi_SetTimer, (uintn)eventId, TimerPeriodic, sec100ns, 0, 0);
+    if(status) return -2;
 
     return 0;
 }
 
 
-void Timer_Stop() {
-
+sintn Timer_Stop() {
+    uintn status;
+    status = wrapper(Efi_CloseEvent, (uintn)eventId, 0, 0, 0, 0);
+    return 0;
 }
 
 

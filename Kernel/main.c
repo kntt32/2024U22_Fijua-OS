@@ -70,6 +70,9 @@ int kernel_main(KernelInputStruct* kernelInput) {
     
     Memory_FreeAll(2);
 
+    Timer_Set(a, 10000000);
+
+
 
     Halt();
 
