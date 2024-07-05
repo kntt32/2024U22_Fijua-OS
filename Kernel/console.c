@@ -32,7 +32,7 @@ void Console_Init() {
     frameBuff_Height = KernelInput->Graphic.height;
     frameBuff_Mode = KernelInput->Graphic.mode;
 
-    Console_BackGroundColor = (frameBuff_Mode == 1)?(0x003ec3f0):(0x00f0c33e);
+    Console_BackGroundColor = (frameBuff_Mode == 1)?(0x0081382d):(0x002d3881);
 
     Console_CursorX = 0;
     Console_CursorY = 0;

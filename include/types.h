@@ -1,8 +1,6 @@
 #ifndef INCLUDED_TYPES_H
 #define INCLUDED_TYPES_H
 
-#include <build.h>
-
 #define NULL ((void*)0)
 
 #define in
@@ -25,14 +23,8 @@ typedef struct {unsigned long long ln; unsigned long long rn;} uint128;
 typedef float float32;
 typedef double float64;
 
-#if PLATFORM_64BIT
 typedef sint64 sintn;
 typedef uint64 uintn;
 #define TYPES_UINTN_LN2_SIZE (4)
-#else
-typedef sint32 sintn;
-typedef uint32 uintn;
-#define TYPES_UINTN_LN2_SIZE (3)
-#endif
 
 #endif

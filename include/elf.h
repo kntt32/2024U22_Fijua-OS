@@ -1,18 +1,25 @@
 #ifndef INCLUDED_ELF_H
 #define INCLUDED_ELF_H
 
-#include <build.h>
 #include <types.h>
 
 #define EI_NIDENT 16
 
 #define Elf_Header_ET_EXEC 2
 #define Elf_Header_ET_DYN  3
-
 #define Elf_Header_EM_AMD64 62
 
-
 #define Elf_ProgramHeader_PT_LOAD 1
+
+#define Elf_SectionHeader_SYMTAB 2
+#define Elf_SectionHeader_STRTAB 3
+#define Elf_SectionHeader_RELA 4
+#define Elf_SectionHeader_REL 9
+
+#define Elf_RelRela_Sym(info) ((info) >> 32)
+#define Elf_RelRela_Type(info) (info  0xffffffff)
+#define Elf_RelRela_Info(sym, type) ((((uint64)sym) << 32) + type)
+
 
 typedef struct {
     unsigned char   e_ident[EI_NIDENT]; 
@@ -31,7 +38,6 @@ typedef struct {
     uint16      e_shstrndx;
 } Elf_Header;
 
-#if PLATFORM_64BIT
 
 typedef struct {
         uint32      p_type;
@@ -44,20 +50,41 @@ typedef struct {
         uint64     p_align;
 } Elf_ProgramHeader;
 
-#else
 
 typedef struct {
-        uint32      p_type;
-        uintn       p_offset;
-        uintn      p_vaddr;
-        uintn      p_paddr;
-        uint32      p_filesz;
-        uint32      p_memsz;
-        uint32      p_flags;
-        uint32      p_align;
-} Elf_ProgramHeader;
+        uint32      sh_name;
+        uint32      sh_type;
+        uint64     sh_flags;
+        uint64      sh_addr;
+        uint64       sh_offset;
+        uint64     sh_size;
+        uint32      sh_link;
+        uint32      sh_info;
+        uint64     sh_addralign;
+        uint64     sh_entsize;
+} Elf_SectionHeader;
 
-#endif
 
+typedef struct {
+        uint32      st_name;
+        uint8   st_info;
+        uint8   st_other;
+        uint16      st_shndx;
+        uint64      st_value;
+        uint64     st_size;
+} Elf_Section_SymbolTable;
+
+
+typedef struct {
+        uint64      r_offset;
+        uint64     r_info;
+} Elf_Section_Rel;
+
+ 
+typedef struct {
+        uint64      r_offset;
+        uint64     r_info;
+        sint64    r_addend;
+} Elf64_Section_Rela;
 
 #endif

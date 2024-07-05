@@ -23,6 +23,13 @@ EFI_PHYSICAL_ADDRESS tempPhysicalAddress = 0;
 
 KernelEntryPoint* entryPoint = NULL;
 
+void cac(uintn n) {
+    CHAR16 a[2];
+    a[0] = L'0' + (uint16)n;
+    a[1] = L'\0';
+    SysTbl->ConOut->OutputString(SysTbl->ConOut, a);
+}
+
 void __chkstk() {}
 
 void a(uintn n1, uintn n2, uintn n3, uintn n4, uintn n5) {
@@ -72,7 +79,6 @@ EFI_STATUS efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE* SystemTable)
     allocate_memory_to_load_kernelfile();
     load_kernelfile_to_buffer();
 
-    get_memarea_to_expand_kernelfile();
     allocate_pages_to_expand_kernelfile();
     expand_kernelfile();
 

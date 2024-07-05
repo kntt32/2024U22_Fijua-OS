@@ -12,9 +12,6 @@
 
 #define NULL ((void*)0)
 
-#define KERNEL_LOAD_ADDR ((void*)0x200000)
-#define ELFLOADERMEMLOADAREA_BUFFSIZE (20)
-
 
 extern KernelInputStruct kernelInput;
 extern EFI_SYSTEM_TABLE* SysTbl;
@@ -36,9 +33,8 @@ EFI_FILE_PROTOCOL* efiFileProtocol_root = NULL;
 EFI_FILE_PROTOCOL* efiFileProtocol_kernelfile = NULL;
 unsigned int kernelSize = 0;
 char* buff_kernelfile = NULL;
-ElfLoader_MemLoadArea elfloaderMemloadarea_buff[ELFLOADERMEMLOADAREA_BUFFSIZE];
-uintn elfloaderMemloadarea_buffCount = ELFLOADERMEMLOADAREA_BUFFSIZE;
 
+uintn loadKernelBase = 0x200000;
 
 int Functions_SPrintIntX(uintn number, uintn buffsize, CHAR16 buff[]) {
     uintn n = 0;
@@ -112,36 +108,22 @@ void load_kernelfile_to_buffer() {
     return;
 }
 
-void get_memarea_to_expand_kernelfile() {
-    SysTbl->ConOut->OutputString(SysTbl->ConOut, L"Getting memarea to expand kernelfile\n\r");
-    status = ElfLoader_GetLoadArea(buff_kernelfile, KERNEL_LOAD_ADDR, &elfloaderMemloadarea_buffCount, elfloaderMemloadarea_buff);
-    if(status) err();
-    return;
-}
-
 void allocate_pages_to_expand_kernelfile() {
     SysTbl->ConOut->OutputString(SysTbl->ConOut, L"Allocating pages to expand kernelfile\n\r");
-    EFI_PHYSICAL_ADDRESS memstart;
-    EFI_PHYSICAL_ADDRESS memend;
-    for(unsigned int i=0; i<elfloaderMemloadarea_buffCount; i++) {
-        if(i == 0 || (EFI_PHYSICAL_ADDRESS)(elfloaderMemloadarea_buff[i].startAddr) < memstart) {
-            memstart = (EFI_PHYSICAL_ADDRESS)(elfloaderMemloadarea_buff[i].startAddr);
-        }
-        if(i == 0 || memend < (EFI_PHYSICAL_ADDRESS)(elfloaderMemloadarea_buff[i].startAddr)+(EFI_PHYSICAL_ADDRESS)(elfloaderMemloadarea_buff[i].memSize)) {
-            memend = (EFI_PHYSICAL_ADDRESS)(elfloaderMemloadarea_buff[i].startAddr)+(EFI_PHYSICAL_ADDRESS)(elfloaderMemloadarea_buff[i].memSize);
-        }
-    }
-    memstart = (memstart >> 12) << 12;
-    memend = ((memend+0xfff) >> 12) << 12;
-    status = SysTbl->BootServices->AllocatePages(AllocateAddress, EfiLoaderData, (memend-memstart) >> 12, &memstart);
+    uintn loadKernelSize = 0;
+    status = ElfLoader_GetLoadArea(buff_kernelfile, &loadKernelBase, &loadKernelSize);
     if(status) err();
+
+    status = SysTbl->BootServices->AllocatePages(AllocateAddress, EfiLoaderData, ((loadKernelSize+0xfff)>>12), (EFI_PHYSICAL_ADDRESS*)&loadKernelBase);
+    if(status) err();
+
     return;
 }
 
 void expand_kernelfile() {
     SysTbl->ConOut->OutputString(SysTbl->ConOut, L"Expanding kernelfile\n\r");
-    ElfLoader_Load(buff_kernelfile, KERNEL_LOAD_ADDR);
-    ElfLoader_GetProperty(buff_kernelfile, KERNEL_LOAD_ADDR, (void**)&entryPoint, NULL);
+    ElfLoader_Load(buff_kernelfile, (void*)loadKernelBase);
+    ElfLoader_GetProperty(buff_kernelfile, (void*)loadKernelBase, (void**)&entryPoint, NULL);
     return;
 }
 

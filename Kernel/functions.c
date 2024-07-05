@@ -16,7 +16,7 @@ void Halt() {
     }
     
     while(1) {
-        wrapper((void*)Stall, 0xffffffff, 0, 0 ,0 ,0);
+        wrapper((void*)Stall, 1, 0, 0 ,0 ,0);
     }
 }
 
