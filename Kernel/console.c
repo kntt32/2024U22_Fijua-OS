@@ -70,7 +70,7 @@ void Console_Scroll() {
         Console_Buff[(Console_Height-1)*Console_Width+i] = ' ';
     }
 
-    Mutex_Lock(&Console_Mutex);
+    Mutex_UnLock(&Console_Mutex);
 
     return;
 }

@@ -1,5 +1,0 @@
-#ifndef INCLUDED_KMALLOC_H
-#define INCLUDED_KMALLOC_H
-
-
-#endif

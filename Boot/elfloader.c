@@ -99,18 +99,18 @@ unsigned int ElfLoader_Load(in const void* file, in uintn* loadAddr) {
 
     Elf_Section_SymbolTable* symbolTable = NULL;
     uintn symbolTable_entrySize = 0;
-    uint8* sectionHeader_strTab = NULL;
-    //get .symtab section
+    uintn sectionHeader_gotAddr = 0;
+    //get .symtab, .strtab and .got section
     for(uintn i=0; i<sectionHeader_number; i++) {
         char* targstr = (char*)((uintn)sectionHeader_shStrTab + sectionHeader->sh_name);
 
         if(ElfLoader_CmpStr(".symtab", targstr)) {
             if(sectionHeader->sh_type != Elf_SectionHeader_SYMTAB) return 5;//invalid type of .symtab section
             symbolTable = (Elf_Section_SymbolTable*)(sectionHeader->sh_offset + (uintn)file);
-            symbolTable_entrySize = sectionHeader->st_entsize;
-        }else if(ElfLoader_CmpStr(".strtab", targstr)) {
-            if(sectionHeader->sh_type != Elf_SectionHeader_STRTAB) return 6;//invalid type of .strtab section
-            sectionHeader_strTab = (uint8*)(sectionHeader->sh_offset + (uintn)file);
+            symbolTable_entrySize = sectionHeader->sh_entsize;
+        }else if(ElfLoader_CmpStr(".got", targstr)) {
+            if(sectionHeader->sh_type != Elf_SectionHeader_PROGBITS) return 7;//invalid type of .got section
+            sectionHeader_gotAddr = sectionHeader->sh_offset + (uintn)file;
         }
 
         sectionHeader = (Elf_SectionHeader*)((uintn)sectionHeader + sectionHeader_entrySize);
@@ -125,47 +125,189 @@ unsigned int ElfLoader_Load(in const void* file, in uintn* loadAddr) {
             if(sectionHeader->sh_type != Elf_SectionHeader_RELA) return 7;
 
             Elf_Section_Rela* relaSection = (Elf_Section_Rela*)(sectionHeader->sh_offset + (uintn)file);
-            const uintn relaSection_entrySize = sectionHeader->st_entsize;
+            const uintn relaSection_entrySize = sectionHeader->sh_entsize;
             const uintn relaSection_number = sectionHeader->sh_size / relaSection_entrySize;
-            if(ElfLoader_CmpStr(".rela.text", targstr)) {
-                for(uintn k=0; k<relaSection_number; k++) {
-                    uint64 relaType = Elf_RelRela_Type(relaSection->r_info);
-                    uint64 symtabIndex = Elf_RelRela_Sym(relaSection->r_info);
-
-                    uint64 A = relaSection->r_append;//elf64_section_rela.append
-                    uint64 B = *loadAddr;
-                    
-
-                    switch(relaType) {
-                        default:
-                            return 8;//unsupported rela type
-                    }
-
-                    relaSection = (Elf_Section_Rela*)((uintn)relaSection + relaSection_entrySize);
+            uintn isrelaText = 0;
+            if(ElfLoader_CmpStr(".rela.text", targstr)) isrelaText = 1;
+            uint64 relaType;
+            uint64 symtabIndex;
+            uint64 A;//elf64_section_rela.append
+            uint64 B;//base addr
+            uint64 GOT;//addr of .got
+            uint64 P;//addr of relocate area
+            uint64 S;//value of symbol
+            uint64 Z;//size of symbol
+            for(uintn k=0; k<relaSection_number; k++) {
+                if(isrelaText) {
+                    relaType = Elf_RelRela_Type(relaSection->r_info);
+                    symtabIndex = Elf_RelRela_Sym(relaSection->r_info);
+                    A = relaSection->r_addend;//elf64_section_rela.append
+                    B = *loadAddr;//base addr
+                    GOT = sectionHeader_gotAddr;//addr of .got
+                    P = relaSection->r_offset + (uintn)file;//addr of relocate area
+                    S = ((Elf_Section_SymbolTable*)(symtabIndex*symbolTable_entrySize + (uintn)symbolTable))->st_value;
+                    Z = ((Elf_Section_SymbolTable*)(symtabIndex*symbolTable_entrySize + (uintn)symbolTable))->st_size;
+                }else {
+                    relaType = Elf_RelRela_Type(relaSection->r_info);
+                    symtabIndex = 0;
+                    A = relaSection->r_addend;//elf64_section_rela.append
+                    B = *loadAddr;//base addr
+                    GOT = sectionHeader_gotAddr;//addr of .got
+                    P = relaSection->r_offset + (uintn)file;//addr of relocate area
+                    S = 0;
+                    Z = 0;
                 }
-            }else {
-                for(uintn k=0; k<relaSection_number; k++) {
 
+                switch(relaType) {
+                    case Elf_RelRela_Type_64:
+                        *((uint64*)(relaSection->r_offset + (uintn)file)) = S+A;
+                        break;
+                    case Elf_RelRela_Type_PC32:
+                        *((uint32*)(relaSection->r_offset + (uintn)file)) = S+A-P;
+                        break;
+                    case Elf_RelRela_Type_GLOB_DAT:
+                        *((uint64*)(relaSection->r_offset + (uintn)file)) = S;
+                        break;
+                    case Elf_RelRela_Type_JUMP_SLOT:
+                        *((uint64*)(relaSection->r_offset + (uintn)file)) = S;
+                        break;
+                    case Elf_RelRela_Type_RELATIVE:
+                        *((uint64*)(relaSection->r_offset + (uintn)file)) = B+A;
+                        break;
+                    case Elf_RelRela_Type_32:
+                        *((uint32*)(relaSection->r_offset + (uintn)file)) = S+A;
+                        break;
+                    case Elf_RelRela_Type_32S:
+                        *((uint32*)(relaSection->r_offset + (uintn)file)) = S+A;
+                        break;
+                    case Elf_RelRela_Type_16:
+                        *((uint16*)(relaSection->r_offset + (uintn)file)) = S+A;
+                        break;
+                    case Elf_RelRela_Type_PC16:
+                        *((uint16*)(relaSection->r_offset + (uintn)file)) = S+A-P;
+                        break;
+                    case Elf_RelRela_Type_8:
+                        *((uint8*)(relaSection->r_offset + (uintn)file)) = S+A;
+                        break;
+                    case Elf_RelRela_Type_PC8:
+                        *((uint8*)(relaSection->r_offset + (uintn)file)) = S+A-P;
+                        break;
+                    case Elf_RelRela_Type_PC64:
+                        *((uint64*)(relaSection->r_offset + (uintn)file)) = S+A-P;
+                        break;
+                    case Elf_RelRela_Type_GOTOFF64:
+                        *((uint64*)(relaSection->r_offset + (uintn)file)) = S+A-GOT;
+                        break;
+                    case Elf_RelRela_Type_GOTPC32:
+                        *((uint32*)(relaSection->r_offset + (uintn)file)) = GOT+A+P;
+                        break;
+                    case Elf_RelRela_Type_SIZE32:
+                        *((uint32*)(relaSection->r_offset + (uintn)file)) = Z+A;
+                        break;
+                    case Elf_RelRela_Type_SIZE64:
+                        *((uint64*)(relaSection->r_offset + (uintn)file)) = Z+A;
+                        break;
+                    default:
+                        return 8;//unsupported rela type
                 }
+
+                relaSection = (Elf_Section_Rela*)((uintn)relaSection + relaSection_entrySize);
             }
         }else if(ElfLoader_CmpStr(".rel", targstr)) {
-            if(sectionHeader->sh_type != Elf_SectionHeader_REL) return 8;
+            if(sectionHeader->sh_type != Elf_SectionHeader_REL) return 7;
 
             Elf_Section_Rel* relSection = (Elf_Section_Rel*)(sectionHeader->sh_offset + (uintn)file);
-            const uintn relSection_entrySize = sectionHeader->st_entsize;
+            const uintn relSection_entrySize = sectionHeader->sh_entsize;
             const uintn relSection_number = sectionHeader->sh_size / relSection_entrySize;
-            if(ElfLoader_CmpStr(".rel.text", targstr)) {
+            uintn isrelText = 0;
+            if(ElfLoader_CmpStr(".rel.text", targstr)) isrelText = 1;
+            uint64 relType;
+            uint64 symtabIndex;
+            const uint64 A = 0;
+            uint64 B;//base addr
+            uint64 GOT;//addr of .got
+            uint64 P;//addr of relocate area
+            uint64 S;//value of symbol
+            uint64 Z;//size of symbol
+            for(uintn k=0; k<relSection_number; k++) {
+                if(isrelText) {
+                    relType = Elf_RelRela_Type(relSection->r_info);
+                    symtabIndex = Elf_RelRela_Sym(relSection->r_info);
+                    B = *loadAddr;//base addr
+                    GOT = sectionHeader_gotAddr;//addr of .got
+                    P = relSection->r_offset + (uintn)file;//addr of relocate area
+                    S = ((Elf_Section_SymbolTable*)(symtabIndex*symbolTable_entrySize + (uintn)symbolTable))->st_value;
+                    Z = ((Elf_Section_SymbolTable*)(symtabIndex*symbolTable_entrySize + (uintn)symbolTable))->st_size;
+                }else {
+                    relType = Elf_RelRela_Type(relSection->r_info);
+                    symtabIndex = 0;
+                    B = *loadAddr;//base addr
+                    GOT = sectionHeader_gotAddr;//addr of .got
+                    P = relSection->r_offset + (uintn)file;//addr of relocate area
+                    S = 0;
+                    Z = 0;
+                }
 
-            }else {
+                switch(relType) {
+                    case Elf_RelRela_Type_64:
+                        *((uint64*)(relSection->r_offset + (uintn)file)) = S+A;
+                        break;
+                    case Elf_RelRela_Type_PC32:
+                        *((uint32*)(relSection->r_offset + (uintn)file)) = S+A-P;
+                        break;
+                    case Elf_RelRela_Type_GLOB_DAT:
+                        *((uint64*)(relSection->r_offset + (uintn)file)) = S;
+                        break;
+                    case Elf_RelRela_Type_JUMP_SLOT:
+                        *((uint64*)(relSection->r_offset + (uintn)file)) = S;
+                        break;
+                    case Elf_RelRela_Type_RELATIVE:
+                        *((uint64*)(relSection->r_offset + (uintn)file)) = B+A;
+                        break;
+                    case Elf_RelRela_Type_32:
+                        *((uint32*)(relSection->r_offset + (uintn)file)) = S+A;
+                        break;
+                    case Elf_RelRela_Type_32S:
+                        *((uint32*)(relSection->r_offset + (uintn)file)) = S+A;
+                        break;
+                    case Elf_RelRela_Type_16:
+                        *((uint16*)(relSection->r_offset + (uintn)file)) = S+A;
+                        break;
+                    case Elf_RelRela_Type_PC16:
+                        *((uint16*)(relSection->r_offset + (uintn)file)) = S+A-P;
+                        break;
+                    case Elf_RelRela_Type_8:
+                        *((uint8*)(relSection->r_offset + (uintn)file)) = S+A;
+                        break;
+                    case Elf_RelRela_Type_PC8:
+                        *((uint8*)(relSection->r_offset + (uintn)file)) = S+A-P;
+                        break;
+                    case Elf_RelRela_Type_PC64:
+                        *((uint64*)(relSection->r_offset + (uintn)file)) = S+A-P;
+                        break;
+                    case Elf_RelRela_Type_GOTOFF64:
+                        *((uint64*)(relSection->r_offset + (uintn)file)) = S+A-GOT;
+                        break;
+                    case Elf_RelRela_Type_GOTPC32:
+                        *((uint32*)(relSection->r_offset + (uintn)file)) = GOT+A+P;
+                        break;
+                    case Elf_RelRela_Type_SIZE32:
+                        *((uint32*)(relSection->r_offset + (uintn)file)) = Z+A;
+                        break;
+                    case Elf_RelRela_Type_SIZE64:
+                        *((uint64*)(relSection->r_offset + (uintn)file)) = Z+A;
+                        break;
+                    default:
+                        return 8;//unsupported rela type
+                }
 
+                relSection = (Elf_Section_Rel*)((uintn)relSection + relSection_entrySize);
             }
         }
 
 
         sectionHeader = (Elf_SectionHeader*)((uintn)sectionHeader + sectionHeader_entrySize);
     }
-while(1) {}
-
     
     return 0;
 }
