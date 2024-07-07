@@ -37,50 +37,14 @@ void a() {
 int kernel_main(KernelInputStruct* kernelInput) {
     KernelInput = kernelInput;
 
+    Graphic_Init();
     Console_Init();
+    
     Memory_Init();
     Timer_Init();
 
-    Graphic_Init();
-    Graphic_Color color = {0xaa, 0xee, 0xf0};
-    Graphic_DrawSquare(0, 0, 500, 500, color);
-
-    uint32 space[16*8*10*2];
-    for(uintn i=0; i<16*8*10*2; i++) space[i] = 0xffffffff;
-    Graphic_Color black = {0x00, 0x00, 0x00};
-    Graphic_FrameBuff fbdata = {space, 8*10, 16*2};
-
-    Font_DrawStr(fbdata, 0, 20, "ABCDE\nFGHIJ", black, 11);
-    //Font_Draw(fbdata, 0, 0, 'C', black);
-
-    Graphic_DrawFrom(0, 0, 8*10, 16*2, fbdata);
-
-    Halt();
-
-    wrapper((void*)(kernelInput->LoadedImage->SystemTable->ConOut->OutputString), (uintn)(kernelInput->LoadedImage->SystemTable->ConOut), (uintn)(L"HELLO!"), 0, 0, 0);
-
-
-    Console_Print("Hello, Console!\n");
-    Console_Print("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-=^~\\|[]{}@:;*+./?<>!_#\"$%&\'()\n");
-
-    ascii strbuff[17];
-    void* memptr1 =  Memory_AllocPages(2, 2);
-    Functions_SPrintIntX((uintn)memptr1, 17, strbuff);
-    Console_Print(strbuff);
-    Console_Print("A\n");
-    void* memptr2 =  Memory_AllocPages(2, 2);
-    Functions_SPrintIntX((uintn)memptr2, 17, strbuff);
-    Console_Print(strbuff);
-    Console_Print("B\n");
-    Memory_FreePages(2, 1, memptr1+0x1000);
-    void* memptr3 = Memory_AllocPages(2, 1);
-    Functions_SPrintIntX((uintn)memptr3, 17, strbuff);
-    Console_Print(strbuff);
-    Console_Print("C\n");
-    
-    Memory_FreeAll(2);
-
-    Timer_Set(a, 10000);
+    Console_Print("Hello!\n");
+    Console_Print("iadgilfuhsoiuhaoisughoiasuhgioauhgoiuashogiuhaoiruhgoisauhgroiaurhgoisuahgiouhsarg");
 
 
 

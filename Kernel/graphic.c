@@ -1,7 +1,9 @@
 #include <types.h>
 #include <kernel.h>
 
-//#include "graphic.h"
+#define Graphic_RGB2BGR_UINT64(rgb) (((rgb & 0x00ff000000ff0000) >> 16) + (rgb & 0x0000ff000000ff00) + ((rgb & 0x000000ff000000ff) << 16))
+#define Graphic_RGB2BGR_UINT32(rgb) (((rgb & 0x00ff0000) >> 16) + (rgb & 0x0000ff00) + ((rgb & 0x000000ff) << 16))
+
 
 typedef struct {
     uint8 red;
@@ -23,13 +25,13 @@ static uintn Height;
 static uintn ScanlineWidth;
 
 void (*Graphic_DrawSquare)(sintn x, sintn y, uintn width, uintn height, Graphic_Color) = NULL;
-void (*Graphic_DrawFrom)(sintn x, sintn y, uintn width, uintn height, Graphic_FrameBuff from) = NULL;
+void (*Graphic_DrawFrom)(sintn x, sintn y, uintn xfrom, uintn yfrom, uintn width, uintn height, Graphic_FrameBuff from) = NULL;
 
 void Graphic_DrawSquare_BGR(sintn x, sintn y, uintn width, uintn height, Graphic_Color color);
 void Graphic_DrawSquare_RGB(sintn x, sintn y, uintn width, uintn height, Graphic_Color color);
 
-void Graphic_DrawFrom_BGR(sintn x, sintn y, uintn width, uintn height, Graphic_FrameBuff from);
-void Graphic_DrawFrom_RGB(sintn x, sintn y, uintn width, uintn height, Graphic_FrameBuff from);
+void Graphic_DrawFrom_BGR(sintn x, sintn y, uintn xfrom, uintn yfrom, uintn width, uintn height, Graphic_FrameBuff from);
+void Graphic_DrawFrom_RGB(sintn x, sintn y, uintn xfrom, uintn yfrom, uintn width, uintn height, Graphic_FrameBuff from);
 
 
 void Graphic_Init(void) {
@@ -114,82 +116,85 @@ void Graphic_DrawSquare_RGB(sintn x, sintn y, uintn width, uintn height, Graphic
 }
 
 
-void Graphic_DrawFrom_BGR(sintn x, sintn y, uintn width, uintn height, Graphic_FrameBuff from) {
-    void* fromMemStart = from.frameBuff;
-
-    if(from.width <= width) width = from.width;
-    if(from.height <= height) height = from.height;
+void Graphic_DrawFrom_BGR(sintn x, sintn y, uintn xfrom, uintn yfrom, uintn width, uintn height, Graphic_FrameBuff from) {
+    if(from.frameBuff == NULL) return;
 
     if(x<0) {
-        width += x;
-        fromMemStart = (void*)((uintn)fromMemStart - (x<<2));
+        width -= (uintn)(-x);
         x = 0;
     }
     if(y<0) {
-        height += y;
-        fromMemStart = (void*)((uintn)fromMemStart - (y*from.width << 2));
+        height -= (uintn)(-y);
         y = 0;
     }
-    if(Width <= (uintn)x) return;
-    if(Height <= (uintn)y) return;
-    if(Width <= (uintn)x+width) width = Width-x;
-    if(Height <= (uintn)y+height) height = Height-y;
 
-    uint64* targetFrameBuff = (uint64*)((uintn)Framebuff + ((x + y*ScanlineWidth) << 2));
-    uint64* targetFromFrameBuff = (uint64*)fromMemStart;
+    if(Width <= (uintn)x || Height <= (uintn)y) return;
+    if(Width <= (uintn)x+width) width = Width-(uintn)x;
+    if(Height <= (uintn)y+height) height = Height-(uintn)y;
+
+    if(from.width <= xfrom || from.height <= yfrom) return;
+    if(from.width <= xfrom+width) width = from.width-xfrom;
+    if(from.height <= yfrom+height) height = from.height-yfrom;
+
+    uint64* targetFrameBuff = (uint64*)((uintn)Framebuff + (x<<2) + ((y*ScanlineWidth)<<2));
+    uint64* targetFromFrameBuff = (uint64*)((uintn)from.frameBuff + (xfrom<<2) + ((y*from.width)<<2));
 
     for(uintn i=0; i<height; i++) {
-        for(uintn k=0; k<width>>1; k++) {
-            *targetFrameBuff = *targetFromFrameBuff;
+        for(uintn k=0; k<(width>>1); k++) {
+            *targetFrameBuff = *targetFromFrameBuff & 0x00ffffff00ffffff;
+
             targetFrameBuff++;
             targetFromFrameBuff++;
         }
+        if(width & 0x1) {
+            *((uint32*)targetFrameBuff) = *((uint32*)targetFromFrameBuff);
+        }
 
-        if((width&0x1) == 0x1) *((uint32*)targetFrameBuff) = *((uint32*)targetFromFrameBuff);
-        targetFrameBuff = (uint64*)(((uintn)targetFrameBuff) + ((ScanlineWidth - ((width>>1)<<1))<<2));
-        targetFromFrameBuff = (uint64*)(((uintn)targetFromFrameBuff) + ((from.width - ((width>>1)<<1))<<2));
+        targetFrameBuff = (uint64*)((uintn)targetFrameBuff + ((ScanlineWidth - width)<<2));
+        targetFromFrameBuff = (uint64*)((uintn)targetFromFrameBuff + ((from.width - width)<<2));
     }
 
     return;
 }
 
 
-void Graphic_DrawFrom_RGB(sintn x, sintn y, uintn width, uintn height, Graphic_FrameBuff from) {
-    void* fromMemStart = from.frameBuff;
-
-    if(from.width <= width) width = from.width;
-    if(from.height <= height) height = from.height;
+void Graphic_DrawFrom_RGB(sintn x, sintn y, uintn xfrom, uintn yfrom, uintn width, uintn height, Graphic_FrameBuff from) {
+    if(from.frameBuff == NULL) return;
 
     if(x<0) {
-        width += x;
-        fromMemStart = (void*)((uintn)fromMemStart - (x<<2));
+        width -= (uintn)(-x);
         x = 0;
     }
     if(y<0) {
-        height += y;
-        fromMemStart = (void*)((uintn)fromMemStart - (y*from.width << 2));
+        height -= (uintn)(-y);
         y = 0;
     }
-    if(Width <= (uintn)x) return;
-    if(Height <= (uintn)y) return;
-    if(Width <= (uintn)x+width) width = Width-x;
-    if(Height <= (uintn)y+height) height = Height-y;
 
-    uint64* targetFrameBuff = (uint64*)((uintn)Framebuff + ((x + y*ScanlineWidth) << 2));
-    uint64* targetFromFrameBuff = (uint64*)fromMemStart;
+    if(Width <= (uintn)x || Height <= (uintn)y) return;
+    if(Width <= (uintn)x+width) width = Width-(uintn)x;
+    if(Height <= (uintn)y+height) height = Height-(uintn)y;
+
+    if(from.width <= xfrom || from.height <= yfrom) return;
+    if(from.width <= xfrom+width) width = from.width-xfrom;
+    if(from.height <= yfrom+height) height = from.height-yfrom;
+
+    uint64* targetFrameBuff = (uint64*)((uintn)Framebuff + (x<<2) + ((y*ScanlineWidth)<<2));
+    uint64* targetFromFrameBuff = (uint64*)((uintn)from.frameBuff + (xfrom<<2) + ((y*from.width)<<2));
 
     for(uintn i=0; i<height; i++) {
-        for(uintn k=0; k<width>>1; k++) {
-            *targetFrameBuff = ((*targetFromFrameBuff & 0xff000000ff)<<16) + (*targetFromFrameBuff & 0xff0000ff00) + ((*targetFromFrameBuff & 0xff000000ff0000)>>16);
+        for(uintn k=0; k<(width>>1); k++) {
+            *targetFrameBuff = Graphic_RGB2BGR_UINT64((*targetFromFrameBuff));
+
             targetFrameBuff++;
             targetFromFrameBuff++;
         }
+        if(width & 0x1) {
+            *((uint32*)targetFrameBuff) = Graphic_RGB2BGR_UINT32((*((uint32*)targetFromFrameBuff)));
+        }
 
-        if((width&0x1) == 0x1) *((uint32*)targetFrameBuff) = ((*((uint32*)targetFromFrameBuff) & 0xff)<<16) + (*((uint32*)targetFromFrameBuff) & 0xff00) + ((*((uint32*)targetFromFrameBuff) & 0xff0000)>>16);
-        targetFrameBuff = (uint64*)(((uintn)targetFrameBuff) + ((ScanlineWidth - ((width>>1)<<1))<<2));
-        targetFromFrameBuff = (uint64*)(((uintn)targetFromFrameBuff) + ((from.width - ((width>>1)<<1))<<2));
+        targetFrameBuff = (uint64*)((uintn)targetFrameBuff + ((ScanlineWidth - width)<<2));
+        targetFromFrameBuff = (uint64*)((uintn)targetFromFrameBuff + ((from.width - width)<<2));
     }
 
     return;
 }
-

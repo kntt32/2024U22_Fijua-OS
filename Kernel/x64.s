@@ -4,7 +4,7 @@
 .global Mutex_UnLock
 
 
-# uintn wrapper(uintn (*callback)(), uintn input1, uintn input2, uintn input3, uintn input4, uintn input5);
+# uintn wrapper(uintn (*callback)(), ...);
 wrapper:
     push %r9
     push %r8
