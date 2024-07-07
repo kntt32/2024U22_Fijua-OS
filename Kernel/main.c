@@ -3,6 +3,7 @@
 #include <kernel.h>
 #include "functions.h"
 #include "x64.h"
+#include "graphic.h"
 #include "font.h"
 #include "console.h"
 #include "timer.h"
@@ -36,16 +37,25 @@ void a() {
 int kernel_main(KernelInputStruct* kernelInput) {
     KernelInput = kernelInput;
 
-    uint32* framebuffptr = (uint32*)(kernelInput->Graphic.startAddr);
-    for(int i=0; i<100; i++) {
-        *framebuffptr = 0xFFFFFFFF;
-        framebuffptr++;
-    }
-
-    Font_Init();
     Console_Init();
     Memory_Init();
     Timer_Init();
+
+    Graphic_Init();
+    Graphic_Color color = {0xaa, 0xee, 0xf0};
+    Graphic_DrawSquare(0, 0, 500, 500, color);
+
+    uint32 space[16*8*10*2];
+    for(uintn i=0; i<16*8*10*2; i++) space[i] = 0xffffffff;
+    Graphic_Color black = {0x00, 0x00, 0x00};
+    Graphic_FrameBuff fbdata = {space, 8*10, 16*2};
+
+    Font_DrawStr(fbdata, 0, 20, "ABCDE\nFGHIJ", black, 11);
+    //Font_Draw(fbdata, 0, 0, 'C', black);
+
+    Graphic_DrawFrom(0, 0, 8*10, 16*2, fbdata);
+
+    Halt();
 
     wrapper((void*)(kernelInput->LoadedImage->SystemTable->ConOut->OutputString), (uintn)(kernelInput->LoadedImage->SystemTable->ConOut), (uintn)(L"HELLO!"), 0, 0, 0);
 

@@ -24,9 +24,10 @@ else
 	cp a.elf ../disk/kernel.elf
 endif
 
-main.o: main.c console.h x64.h functions.h timer.h memory.h
+main.o: main.c console.h x64.h functions.h timer.h memory.h graphic.h
 functions.o: functions.c functions.h x64.h console.h
-font.o: font.c font.h fontdata_monospace
+font.o: font.c font.h fontdata_monospace graphic.h
+font_legacy.o: font_legacy.c font_legacy.h fontdata_monospace
 console.o: console.c console.h font.h x64.h
 bootwrapper.o: bootwrapper.s
 x64.o: x64.s

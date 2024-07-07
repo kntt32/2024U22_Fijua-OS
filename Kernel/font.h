@@ -1,10 +1,8 @@
 #ifndef INCLUDED_FONT_H
 #define INCLUDED_FONT_H
 
-void Font_Init(void);
+void Font_Draw(Graphic_FrameBuff drawto, uintn x, uintn y, ascii asciicode, Graphic_Color color);
 
-void Font_Draw_WhiteFont(in const ascii asciicode, in const uintn x, in const uintn y);
-
-void Font_Draw(in const ascii str[], in const uintn x, in const uintn y, in const uintn red, in const uintn green, in const uintn blue);
+void Font_DrawStr(Graphic_FrameBuff drawto, uintn x, uintn y, ascii str[], Graphic_Color color, uintn length);
 
 #endif
