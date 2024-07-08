@@ -12,6 +12,7 @@
 static ascii buff[buffwidth * buffheight];//80x30
 static uintn cursorX = 0;
 static uintn cursorY = 0;
+static uintn lineChangedFlag[buffheight];
 
 static uint32 backgroundColor = 0x002d3881;
 static Graphic_Color fontColor;
@@ -34,6 +35,9 @@ void Console_Init(void) {
     for(uintn i=0; i<buffwidth*buffheight*16*8>>1; i++) {
         *(((uint32*)console_framebuff)+i) = backgroundColor;
     }
+    for(uintn i=0; i<buffheight; i++) {
+        lineChangedFlag[i] = 0;
+    }
 
     fontColor.red = 0xff;
     fontColor.green = 0xff;
@@ -52,10 +56,19 @@ void Console_Init(void) {
 
 
 void Console_Print(ascii str[]) {
+    lineChangedFlag[cursorY] = 1;
     for(uintn i=0; 1; i++) {
         switch(str[i]) {
             case '\0':
-                for(uintn i=0; i<buffheight; i++) Console_FlushLine(i);
+                for(uintn i=0; i<buffheight; i++) {
+                    if(lineChangedFlag[i]) Console_FlushLine(i);
+                }
+                for(uintn i=0; i<buffheight; i++) {
+                    if(lineChangedFlag[i]) {
+                        lineChangedFlag[i] = 0;
+                        Graphic_DrawFrom(0, i*16, 0, i*16, buffwidth*8, 16, console_framebuffData);
+                    }
+                }
                 return;
             case '\n':
                 cursorY++;
@@ -71,6 +84,7 @@ void Console_Print(ascii str[]) {
                     cursorY++;
                 }
                 if(buffheight <= cursorY) Console_Scroll();
+                lineChangedFlag[cursorY] = 1;
                 buff[cursorX + cursorY*buffwidth] = str[i];
                 cursorX++;
 
@@ -93,6 +107,10 @@ static void Console_Scroll(void) {
         buff[(buffheight-1)*buffwidth+i] = ' ';
     }
 
+    for(uintn i=0; i<buffheight; i++) {
+        lineChangedFlag[i] = 1;
+    }
+
     cursorY--;
     return;
 }
@@ -110,8 +128,6 @@ static void Console_FlushLine(uintn line) {
     for(uintn i=0; i<buffwidth*buffheight; i++) {
         Font_Draw(console_framebuffData, i*8, line*16, buff[buffwidth*line+i], fontColor);
     }
-
-    Graphic_DrawFrom(0, line*16, 0, line*16, buffwidth*8, 16, console_framebuffData);
 
     return ;
 }
