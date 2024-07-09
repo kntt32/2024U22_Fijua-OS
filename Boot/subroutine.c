@@ -209,7 +209,7 @@ void get_memory_for_kernel() {
         targetMemDescriptor = memoryMap;
         tempUint16ptr = (uint16*)(kernelInput.Memory.AvailableMemoryMap);
         for(uintn i=0; i<memoryMapSize/descriptorSize; i++) {
-            if(targetMemDescriptor->Type == EfiConventionalMemory && 0x500000 <= targetMemDescriptor->PhysicalStart) {//allocate memory larger than 0x500000
+            if(targetMemDescriptor->Type == EfiConventionalMemory && 0x100000 <= targetMemDescriptor->PhysicalStart) {//allocate memory larger than 0x500000
                 tempPhysicalAddress = targetMemDescriptor->PhysicalStart;
                 status = SysTbl->BootServices->AllocatePages(AllocateAddress, EfiLoaderData, targetMemDescriptor->NumberOfPages, &tempPhysicalAddress);
                 if(status) err();

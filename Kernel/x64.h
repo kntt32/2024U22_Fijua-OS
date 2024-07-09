@@ -1,7 +1,7 @@
 #ifndef INCLUDED_X64_H
 #define INCLUDED_X64_H
 
-uintn wrapper(void* callback, uintn, uintn, uintn, uintn, uintn);
+uintn Efi_Wrapper(void* callback, ...);
 
 void Timer_Wrapper(void*, uintn (*callback)(void));
 

@@ -33,7 +33,7 @@ void Memory_Print_Memmap(void) {
     ascii strbuff[17];
     for(uintn i=0; i<Memory_PageCount; i++) {
         if(Memory_MemMap[i] != 0) {
-            Functions_SPrintIntX(i, sizeof(strbuff), strbuff);
+            SPrintIntX(i, sizeof(strbuff), strbuff);
             Console_Print(strbuff);
             Console_Print("\n");
         }

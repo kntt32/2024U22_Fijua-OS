@@ -45,6 +45,9 @@ int kernel_main(KernelInputStruct* kernelInput) {
 
     Console_Print("Hello!\n");
     Console_Print("iadgilfuhsoiuhaoisughoiasuhgioauhgoiuashogiuhaoiruhgoisauhgroiaurhgoisuahgiouhsarg");
+    for(uintn i=0; i<100; i++) {
+        Console_Print("abcdefghijklmnopqrstuvwxyz\n");
+    }
 
 
 

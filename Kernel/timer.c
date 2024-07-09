@@ -38,9 +38,9 @@ void Timer_Init(void) {
 
 sintn Timer_Set(void (*callback)(void), uintn sec100ns) {
     uintn status;
-    status = wrapper(Efi_CreateEvent, EVT_TIMER | EVT_NOTIFY_SIGNAL, TPL_CALLBACK, (uintn)Timer_Wrapper, (uintn)callback, (uintn)&eventId);
+    status = Efi_Wrapper(Efi_CreateEvent, EVT_TIMER | EVT_NOTIFY_SIGNAL, TPL_CALLBACK, (uintn)Timer_Wrapper, (uintn)callback, (uintn)&eventId);
     if(status) return -1;
-    status = wrapper(Efi_SetTimer, (uintn)eventId, TimerPeriodic, sec100ns, 0, 0);
+    status = Efi_Wrapper(Efi_SetTimer, (uintn)eventId, (uintn)TimerPeriodic, sec100ns);
     if(status) return -2;
 
     return 0;
@@ -49,7 +49,7 @@ sintn Timer_Set(void (*callback)(void), uintn sec100ns) {
 
 sintn Timer_Stop() {
     uintn status;
-    status = wrapper(Efi_CloseEvent, (uintn)eventId, 0, 0, 0, 0);
+    status = Efi_Wrapper(Efi_CloseEvent, (uintn)eventId);
     return 0;
 }
 

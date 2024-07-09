@@ -8,6 +8,9 @@
 extern KernelInputStruct* KernelInput;
 
 
+/* Miscellaneous Functions */
+
+//Halt (BootServices->Stall)
 void Halt() {
     static EFI_STALL Stall = NULL;
 
@@ -16,12 +19,13 @@ void Halt() {
     }
     
     while(1) {
-        wrapper((void*)Stall, 1, 0, 0 ,0 ,0);
+        Efi_Wrapper((void*)Stall, 1, 0, 0 ,0 ,0);
     }
 }
 
 
-void Functions_SPrintIntX(uintn number, uintn buffsize, ascii buff[]) {
+//convert number to string
+void SPrintIntX(uintn number, uintn buffsize, ascii buff[]) {
     uintn n;
     for(sintn i=buffsize-2; 0<=i; i--) {
         n = number & 0xf;
@@ -35,28 +39,19 @@ void Functions_SPrintIntX(uintn number, uintn buffsize, ascii buff[]) {
 }
 
 
-sintn Functions_Log2(uintn number) {
+//log2
+sintn Log2(uintn number) {
     for(sintn i=0; i<64; i++) {
         if(number>>i == 0) return i-1;
     }
     return -1;
 }
 
-/*
-void Functions_MemDump(void* start, uintn count16) {
-    ascii buff[]
-    for(uintn i=0; i<count16; i++) {
 
-    }
-
-    return;
-}*/
-
-
-void BlueScreen(uintn errCode, ascii moduleName[]) {
+//blueScreen
+void BlueScreen(ascii moduleName[], ascii errStr[]) {
 
 
     Halt();
 }
-
 

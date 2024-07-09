@@ -1,11 +1,17 @@
-.global wrapper
+.data
+
+
+
+.text
+
+.global Efi_Wrapper
 .global Timer_Wrapper
 .global Mutex_Lock
 .global Mutex_UnLock
 
 
-# uintn wrapper(uintn (*callback)(), ...);
-wrapper:
+# uintn Efi_Wrapper(uintn (*callback)(), ...);
+Efi_Wrapper:
     push %r9
     push %r8
     push %rcx

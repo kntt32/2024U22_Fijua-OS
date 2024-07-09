@@ -2,8 +2,24 @@
 #define INCLUDED_TASK_H
 
 typedef struct {
-    void* stackPtr;
-    uintn taskType;
+    uintn taskId;
+    void* stackptr;
 } Task;
+
+
+typedef struct {
+    Queue taskQueue_app;
+    Queue taskQueue_graphic;
+    Queue taskQueue_driver;
+
+    struct {
+        uintn count;
+        uintn size;
+        
+        Task* list;
+    } TaskList;
+} TaskManager;
+
+
 
 #endif

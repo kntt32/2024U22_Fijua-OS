@@ -49,6 +49,7 @@ void Console_Init(void) {
     for(uintn i=0; i<buffheight; i++) {
         Console_FlushLine(i);
     }
+    Graphic_DrawFrom(0, 0, 0, 0, buffwidth*8, buffheight*16, console_framebuffData);
 
 
     return;
