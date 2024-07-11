@@ -40,7 +40,7 @@ typedef struct {
 
 
 void Task_Init(void);
-uintn Task_NewTask(uintn* taskid);
+uintn Task_NewTask(uint16* taskid);
 
 
 

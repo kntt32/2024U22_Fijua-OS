@@ -109,7 +109,7 @@ uintn Task_SetStackPtr(uint16 taskid, void* stackptr) {
 
     uintn taskIndex;
     if(Task_GetIndexOfTaskList(taskid, &taskIndex) == 0) {
-        Task_State.TaskList.list[taskIndex].stackptr = stackptr
+        Task_State.TaskList.list[taskIndex].stackptr = stackptr;
         return 0;
     }
     
@@ -180,7 +180,7 @@ uintn Task_ChangeLevel(uint16 taskid, uint8 tasklevel) {
 
     uintn taskIndex;
     if(Task_GetIndexOfTaskList(taskid, &taskIndex) == 0) {
-        Task_State.TaskList.list[i].mode = tasklevel;
+        Task_State.TaskList.list[taskIndex].mode = tasklevel;
         return 0;
     }
 
@@ -213,14 +213,14 @@ void Task_Switch() {
             break;
         }
     }
-    if(newTaskID == 0 && taskid.Queue.graphic.count != 0) {
+    if(newTaskID == 0 && Task_State.Queue.graphic.count != 0) {
         while(1) {
             newTaskID = Queue_DeQueue(&(Task_State.Queue.graphic));
             if(newTaskID == Task_TaskId_NULL && Task_State.Queue.graphic.count != 0) continue;
             break;
         }
     }
-    if(newTaskID == 0 && taskid.Queue.app.count != 0) {
+    if(newTaskID == 0 && Task_State.Queue.app.count != 0) {
         while(1) {
             newTaskID = Queue_DeQueue(&(Task_State.Queue.app));
             if(newTaskID == Task_TaskId_NULL && Task_State.Queue.app.count != 0) continue;

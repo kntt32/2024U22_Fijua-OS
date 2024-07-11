@@ -47,6 +47,9 @@ void Graphic_Init(void) {
         Graphic_DrawSquare = Graphic_DrawSquare_BGR;
         Graphic_DrawFrom = Graphic_DrawFrom_BGR;
     }
+
+    Graphic_Color backcolor = {0x2d, 0x38, 0x81};
+    Graphic_DrawSquare(0, 0, Width, Height, backcolor);
     
     return;
 }
