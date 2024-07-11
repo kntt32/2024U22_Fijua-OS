@@ -1,24 +1,37 @@
 #ifndef INCLUDED_TASK_H
 #define INCLUDED_TASK_H
 
+
+#define Task_Object_Tasklevel_app (0)
+#define Task_Object_Tasklevel_graphic (1)
+#define Task_Object_Tasklevel_driver (2)
+
+
 typedef struct {
-    uintn taskId;
+    uint16 taskid;//disable 0
+    uint8 tasklevel;//0: app, 1:graphic, 2: driver
     void* stackptr;
+} Task_Object;
+
+
+typedef struct {
+    struct {
+        Queue app;
+        Queue graphic;
+        Queue driver;
+    } Queue;
+
+    struct {
+        uint16 count;
+        uintn listpages;
+        
+        Task_Object* list;
+    } TaskList;
 } Task;
 
 
-typedef struct {
-    Queue taskQueue_app;
-    Queue taskQueue_graphic;
-    Queue taskQueue_driver;
-
-    struct {
-        uintn count;
-        uintn size;
-        
-        Task* list;
-    } TaskList;
-} TaskManager;
+void Task_Init(void);
+uintn Task_NewTask(uintn* taskid);
 
 
 

@@ -16,7 +16,7 @@ else
 	rm *.o *.elf
 endif
 
-a.elf: main.o font.o bootwrapper.o x64.o console.o timer.o functions.o queue.o memory.o graphic.o
+a.elf: main.o font.o bootwrapper.o x64.o console.o timer.o functions.o queue.o memory.o graphic.o task.o
 	ld.lld --entry entrypoint -z norelro --static -pie -o a.elf $^
 ifeq ($(OS), Windows_NT)
 	copy a.elf ..\disk\kernel.elf
@@ -24,7 +24,7 @@ else
 	cp a.elf ../disk/kernel.elf
 endif
 
-main.o: main.c console.h x64.h functions.h timer.h memory.h graphic.h
+main.o: main.c console.h x64.h functions.h timer.h memory.h graphic.h task.h queue.h
 functions.o: functions.c functions.h x64.h console.h
 queue.o: queue.c queue.h memory.h
 font.o: font.c font.h fontdata_monospace graphic.h

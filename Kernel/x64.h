@@ -9,5 +9,7 @@ void Mutex_Lock(uintn* lockvar);
 
 void Mutex_UnLock(uintn* lockvar);
 
+void Task_ContextSwitch(void** saveRspTo, void* switchRspTo);
+
 
 #endif

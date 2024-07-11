@@ -8,6 +8,8 @@
 #include "console.h"
 #include "timer.h"
 #include "memory.h"
+#include "queue.h"
+#include "task.h"
 
 /*
 https://docs.oracle.com/cd/E19253-01/819-0389/fcowb/index.html
@@ -43,10 +45,19 @@ int kernel_main(KernelInputStruct* kernelInput) {
     Memory_Init();
     Timer_Init();
 
+    Task_Init();
+
+
+
+
     Console_Print("Hello!\n");
     Console_Print("iadgilfuhsoiuhaoisughoiasuhgioauhgoiuashogiuhaoiruhgoisauhgroiaurhgoisuahgiouhsarg");
+    ascii strbuff[18];
     for(uintn i=0; i<100; i++) {
-        Console_Print("abcdefghijklmnopqrstuvwxyz\n");
+        SPrintIntX(i, 17, strbuff);
+        strbuff[16] = '\n';
+        strbuff[17] = '\0';
+        Console_Print(strbuff);
     }
 
 
