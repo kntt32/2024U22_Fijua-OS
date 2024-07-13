@@ -7,14 +7,10 @@
 #define Task_Object_Tasklevel_graphic (1)
 #define Task_Object_Tasklevel_driver (2)
 
-#define Task_Object_Mode_Sleep (0)
-#define Task_Object_Mode_Working (1)
-
 
 typedef struct {
     uint16 taskid;//disable 0
     uint8 tasklevel;//0: app, 1: graphic, 2: driver
-    uint8 mode;//0: sleepmode, 1: working mode
     void* stackptr;
 } Task_Object;
 
@@ -23,6 +19,11 @@ typedef struct {
     uint8 enableChangeTaskFlag;
 
     uint16 runningTaskId;
+
+    uint8 yieldFlag;
+
+    void* haltStackPtr;
+    Task_Object newTask;
 
     struct {
         Queue app;

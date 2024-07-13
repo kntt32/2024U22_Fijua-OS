@@ -13,6 +13,7 @@ extern KernelInputStruct* kernelInput;
 
 
 static Task Task_State;
+static const uintn Task_StackSize = 1000000;//1MB
 
 
 //Initialize Task Module
@@ -20,6 +21,7 @@ void Task_Init(void) {
     //reset value of Task_State
     Task_State.enableChangeTaskFlag = 1;
     Task_State.runningTaskId = Task_TaskId_NULL;
+    Task_State.yieldFlag = 0;
 
     Queue_Init(&(Task_State.Queue.app));
     Queue_Init(&(Task_State.Queue.graphic));
@@ -28,6 +30,10 @@ void Task_Init(void) {
     Task_State.TaskList.count = 0;
     Task_State.TaskList.listpages = 0;
     Task_State.TaskList.list = NULL;
+
+    Task_State.haltStackPtr = NULL;
+
+    Task_State.newTask.taskid = 0;
 
     //Set Timer
 
@@ -96,13 +102,45 @@ uintn Task_NewTask(uint16* taskid) {
     Task_Object* targetTaskObject = Task_State.TaskList.list + Task_State.TaskList.count;
     targetTaskObject->taskid = seeking_taskid;
     targetTaskObject->tasklevel = Task_Object_Tasklevel_app;
-    targetTaskObject->mode = Task_Object_Mode_Sleep;
     targetTaskObject->stackptr = NULL;
 
     return 0;
 }
 
 
+//Start New Task
+uintn Task_Start(uint16 taskid, sintn (*taskEntry)(void)) {
+    if(taskid == 0 || taskEntry == NULL) return 1;
+    if(Task_GetIndexOfTaskList(taskid, NULL)) return 2;
+//
+
+    return 0;
+}
+
+
+static void Task_WaitForSwitchTask(void) {
+    uint16 nowTaskId = Task_State.runningTaskId;
+    while(1) {
+        if(Task_State.runningTaskId != nowTaskId) break;
+    }
+    return;
+}
+
+
+void Task_Yield(void) {
+    Task_State.yieldFlag = 1;
+
+    Queue_Replace(&(Task_State.Queue.driver), Task_State.runningTaskId, 0);
+    Queue_Replace(&(Task_State.Queue.graphic), Task_State.runningTaskId, 0);
+    Queue_Replace(&(Task_State.Queue.app), Task_State.runningTaskId, 0);
+
+    Task_WaitForSwitchTask();
+
+    return;
+}
+
+
+/*
 //Set stackptr to Task_Object with taskid
 uintn Task_SetStackPtr(uint16 taskid, void* stackptr) {
     if(taskid == Task_TaskId_NULL || stackptr == NULL) return 1;
@@ -114,35 +152,7 @@ uintn Task_SetStackPtr(uint16 taskid, void* stackptr) {
     }
     
     return 2;
-}
-
-
-//Set sleepmode
-uintn Task_SetSleep(uint16 taskid) {
-    if(taskid == Task_TaskId_NULL) return 1;
-
-    uintn taskIndex;
-    if(Task_GetIndexOfTaskList(taskid, &taskIndex) == 0) {
-        Task_State.TaskList.list[taskIndex].mode = Task_Object_Mode_Sleep;
-        return 0;
-    }
-
-    return 2;
-}
-
-
-//Set workingmode
-uintn Task_SetWork(uint16 taskid) {
-    if(taskid == Task_TaskId_NULL) return 1;
-
-    uintn taskIndex;
-    if(Task_GetIndexOfTaskList(taskid, &taskIndex) == 0) {
-        Task_State.TaskList.list[taskIndex].mode = Task_Object_Mode_Working;
-        return 0;
-    }
-
-    return 2;
-}
+}*/
 
 
 //Append to TaskQueue and change mode to Task_Object_Mode_WorkingMode
@@ -151,9 +161,7 @@ uintn Task_EnQueueTask(uint16 taskid) {
 
     uintn taskIndex;
     if(Task_GetIndexOfTaskList(taskid, &taskIndex) == 0) {
-        Task_State.TaskList.list[taskIndex].mode = Task_Object_Mode_Working;
-
-        switch(Task_State.TaskList.list[taskIndex].mode) {
+        switch(Task_State.TaskList.list[taskIndex].tasklevel) {
             case Task_Object_Tasklevel_app:
                 Queue_EnQueue(&(Task_State.Queue.app), taskid);
                 break;
@@ -180,7 +188,7 @@ uintn Task_ChangeLevel(uint16 taskid, uint8 tasklevel) {
 
     uintn taskIndex;
     if(Task_GetIndexOfTaskList(taskid, &taskIndex) == 0) {
-        Task_State.TaskList.list[taskIndex].mode = tasklevel;
+        Task_State.TaskList.list[taskIndex].tasklevel = tasklevel;
         return 0;
     }
 
@@ -190,52 +198,67 @@ uintn Task_ChangeLevel(uint16 taskid, uint8 tasklevel) {
 
 //Delete Task
 uintn Task_Delete(uint16 taskid) {
-    return 1;
+    if(taskid == 0) return 1;
+
+    Queue_Replace(&(Task_State.Queue.driver), taskid, 0);
+    Queue_Replace(&(Task_State.Queue.graphic), taskid, 0);
+    Queue_Replace(&(Task_State.Queue.app), taskid, 0);
+
+    //coding now
+
+    return 2;
 }
 
 
 //Switch Task
-void Task_Switch() {
-    //check changing task is enabled
-    if(!Task_State.enableChangeTaskFlag) return;
+void* Task_Switch(void* runningTaskRsp) {
+    /*
+    input now task's rsp and return next task's rsp
+    */
 
-    //append to taskqueue if the task is working mode
-    if(!(Task_State.runningTaskId == Task_TaskId_NULL || Task_State.TaskList.list[Task_State.runningTaskId].mode == Task_Object_Mode_Sleep)) {
-        Task_EnQueueTask(Task_State.runningTaskId);
-    }
+    uintn indexOfQueue = 0;
 
-    //get newtaskid
-    uint16 newTaskID = 0;
-    if(newTaskID == 0 && Task_State.Queue.driver.count != 0) {
-        while(1) {
-            newTaskID = Queue_DeQueue(&(Task_State.Queue.driver));
-            if(newTaskID == Task_TaskId_NULL && Task_State.Queue.driver.count != 0) continue;
-            break;
+    //save rsp and enqueue task if it is working mode
+    if(Task_State.runningTaskId == 0) {
+        Task_State.haltStackPtr = runningTaskRsp;
+    }else if(!Task_GetIndexOfTaskList(Task_State.runningTaskId, &indexOfQueue)) {
+        Task_State.TaskList.list[indexOfQueue].stackptr = runningTaskRsp;
+        if(!Task_State.yieldFlag) {
+            Task_EnQueueTask(Task_State.runningTaskId);
         }
     }
-    if(newTaskID == 0 && Task_State.Queue.graphic.count != 0) {
+    Task_State.yieldFlag = 0;
+
+    //get nexttaskid
+    uint16 nextTaskId = 0;
+    if(Task_State.Queue.driver.count != 0) {
         while(1) {
-            newTaskID = Queue_DeQueue(&(Task_State.Queue.graphic));
-            if(newTaskID == Task_TaskId_NULL && Task_State.Queue.graphic.count != 0) continue;
-            break;
+            nextTaskId = Queue_DeQueue(&(Task_State.Queue.driver));
+            if(nextTaskId != 0 || Task_State.Queue.driver.count == 0) break;
         }
     }
-    if(newTaskID == 0 && Task_State.Queue.app.count != 0) {
+    if(nextTaskId == 0 && Task_State.Queue.graphic.count != 0) {
         while(1) {
-            newTaskID = Queue_DeQueue(&(Task_State.Queue.app));
-            if(newTaskID == Task_TaskId_NULL && Task_State.Queue.app.count != 0) continue;
-            break;
+            nextTaskId = Queue_DeQueue(&(Task_State.Queue.graphic));
+            if(nextTaskId != 0 || Task_State.Queue.graphic.count == 0) break;
         }
     }
-    if(newTaskID == 0) {
-        //halt
-        while(1);
+    if(nextTaskId == 0 && Task_State.Queue.app.count != 0) {
+        while(1) {
+            nextTaskId = Queue_DeQueue(&(Task_State.Queue.app));
+            if(nextTaskId != 0 || Task_State.Queue.app.count == 0) break;
+        }
     }
 
-    //coding now
-    
+    //switch to next task
+    if(!Task_GetIndexOfTaskList(nextTaskId, &indexOfQueue)) {
+        Task_State.runningTaskId = nextTaskId;
+        return Task_State.TaskList.list[indexOfQueue].stackptr;
+    }
 
-    return;
+    //switch to default task
+    Task_State.runningTaskId = 0;
+    return Task_State.haltStackPtr;
+
+    return NULL;
 }
-
-

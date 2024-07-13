@@ -8,7 +8,8 @@
 .global Timer_Wrapper
 .global Mutex_Lock
 .global Mutex_UnLock
-.global Task_SaveContext
+.global Task_ContextSwitch
+.global Task_Start_NewStack
 
 
 # uintn Efi_Wrapper(uintn (*callback)(), ...);
@@ -77,7 +78,7 @@ Mutex_UnLock_Err:
     ret
 
 
-# void Task_ContextSwitch(void** saveRspTo, void* switchRspTo);
+# void Task_ContextSwitch(void);
 Task_ContextSwitch:
     push %rsp
     push %rbp
@@ -87,8 +88,9 @@ Task_ContextSwitch:
     push %r15
     push %rbx
 
-    mov %rsp, (%rdi)
-    mov %rsi, %rsp
+    mov %rsp, %rdi
+    call Task_Switch
+    mov %rax, %rsp
 
     pop %rbx
     pop %r15
@@ -99,4 +101,5 @@ Task_ContextSwitch:
     pop %rsp
 
     ret
+
 
