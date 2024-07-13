@@ -3,45 +3,38 @@
 
 #define Task_TaskId_NULL (0)
 
-#define Task_Object_Tasklevel_app (0)
-#define Task_Object_Tasklevel_graphic (1)
-#define Task_Object_Tasklevel_driver (2)
-
 
 typedef struct {
-    uint16 taskid;//disable 0
-    uint8 tasklevel;//0: app, 1: graphic, 2: driver
-    void* stackptr;
+    uint16 taskId;//disable 0
+    uint8 taskLevel;//0: app, 1: graphic, 2: driver
+    void* stackPtr;
 } Task_Object;
 
 
 typedef struct {
     uint8 enableChangeTaskFlag;
-
-    uint16 runningTaskId;
-
     uint8 yieldFlag;
 
-    void* haltStackPtr;
-    Task_Object newTask;
+    uintn switchCount;
+
+    void* kernelStackPtr;
 
     struct {
+        uint16 runningTaskId;
+        
         Queue app;
         Queue graphic;
         Queue driver;
     } Queue;
 
     struct {
-        uint16 count;
-        uintn listpages;
+        uintn count;
+        uintn listPages;
         
         Task_Object* list;
-    } TaskList;
+    } Table;
 } Task;
 
-
-void Task_Init(void);
-uintn Task_NewTask(uint16* taskid);
 
 
 

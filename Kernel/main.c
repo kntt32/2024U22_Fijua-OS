@@ -45,7 +45,7 @@ int kernel_main(KernelInputStruct* kernelInput) {
     Memory_Init();
     Timer_Init();
 
-    Task_Init();
+    //Task_Init();
 
 
 

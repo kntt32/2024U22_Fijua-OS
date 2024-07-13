@@ -103,3 +103,14 @@ Task_ContextSwitch:
     ret
 
 
+# void Task_WaitSwitch(uintn* switchCount)
+Task_WaitSwitch:
+    mov (%rdi), %rax
+Task_WaitSwitch_Loop:
+    pause
+    mov (%rdi), %rsi
+    cmp %rsi, %rax
+    jeq Task_WaitSwitch_Loop
+    
+    ret
+
