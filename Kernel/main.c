@@ -11,6 +11,8 @@
 #include "queue.h"
 #include "task.h"
 
+#include "test.h"
+
 /*
 https://docs.oracle.com/cd/E19253-01/819-0389/fcowb/index.html
 https://ameblo.jp/reverse-eg-mal-memo/entry-12608477931.html
@@ -45,10 +47,9 @@ int kernel_main(KernelInputStruct* kernelInput) {
     Memory_Init();
     Timer_Init();
 
-    //Task_Init();
+    Task_Init();
 
-
-
+    Task_NewTask(Test_Tester1);
 
     Console_Print("Hello!\n");
     Console_Print("iadgilfuhsoiuhaoisughoiasuhgioauhgoiuashogiuhaoiruhgoisauhgroiaurhgoisuahgiouhsarg");
@@ -59,8 +60,6 @@ int kernel_main(KernelInputStruct* kernelInput) {
         strbuff[17] = '\0';
         Console_Print(strbuff);
     }
-
-
 
     Halt();
 

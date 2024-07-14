@@ -14,6 +14,7 @@ void Queue_DeInit(Queue* this);
 Queue* Queue_EnQueue(Queue* this, uintn object);
 Queue* Queue_Replace(Queue* this, uintn from, uintn to);
 uintn Queue_DeQueue(Queue* this);
+uintn Queue_IsExist(Queue* this, uintn object);
 
 
 #endif

@@ -3,6 +3,10 @@
 
 #define Task_TaskId_NULL (0)
 
+#define Task_Object_Tasklevel_app (0)
+#define Task_Object_Tasklevel_graphic (1)
+#define Task_Object_Tasklevel_driver (2)
+
 
 typedef struct {
     uint16 taskId;//disable 0
@@ -36,6 +40,13 @@ typedef struct {
 } Task;
 
 
+void Task_Init(void);
+
+void Task_EnableSwitchTask(void);
+void Task_DisableSwitchTask(void);
+
+uint16 Task_NewTask(sintn (*taskEntry)(void));
+uintn Task_EnQueueTask(uint16 taskId);
 
 
 #endif

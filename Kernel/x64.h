@@ -9,7 +9,9 @@ void Mutex_Lock(uintn* lockvar);
 
 void Mutex_UnLock(uintn* lockvar);
 
-void Task_ContextSwitch(void** saveRspTo, void* switchRspTo);
+void Task_ContextSwitch(void);
+
+uint16 Task_NewTask_Asm(uintn* switchCount, uint8* enableChangeTaskFlag, sintn (*entry)(void));
 
 
 #endif
