@@ -129,6 +129,16 @@ void* Task_NewTask_Asm_AddTaskTable(uintn* taskId) {
 
     if(*taskId == Task_TaskId_NULL) return NULL;
 
+#if 0
+    {
+        ascii strbuff[5];
+        SPrintIntX(task.Queue.runningTaskId, 4, strbuff);
+        strbuff[3] = '\n';
+        strbuff[4] = '\0';
+        Console_Print(strbuff);
+    }
+#endif
+
     void* stackPtr = Memory_AllocPages(*taskId, Task_DefaultPageSize);
     if(stackPtr == NULL) {
         *taskId = Task_TaskId_NULL;
@@ -142,7 +152,8 @@ void* Task_NewTask_Asm_AddTaskTable(uintn* taskId) {
         return NULL;
     }
 
-    Task_EnQueueTask(task.Queue.runningTaskId);////??bug
+    //
+    if(task.Queue.runningTaskId != 0) Task_EnQueueTask(task.Queue.runningTaskId);////??bug
 
     task.Queue.runningTaskId = *taskId;
 
@@ -203,6 +214,8 @@ uintn Task_EnQueueTask(uint16 taskId) {
 void* Task_ContextSwitch_Subroutine(void* currentStackPtr) {
     if(!task.enableChangeTaskFlag) return currentStackPtr;
 
+    task.enableChangeTaskFlag = 0;
+
     task.switchCount++;
 
     if(task.Queue.runningTaskId == 0) {
@@ -217,6 +230,16 @@ void* Task_ContextSwitch_Subroutine(void* currentStackPtr) {
         }
     }
     task.yieldFlag = 0;
+
+#if 0
+{
+    ascii tempStrBuff[6];
+    SPrintIntX(task.Queue.app.count, 5, tempStrBuff);
+    tempStrBuff[4] = '\n';
+    tempStrBuff[5] = '\0';
+    Console_Print(tempStrBuff);
+}
+#endif
 
     //seek nextTaskId
     uint16 nextTaskId = 0;
@@ -245,14 +268,25 @@ void* Task_ContextSwitch_Subroutine(void* currentStackPtr) {
             if(nextTaskId != 0 || task.Queue.app.count == 0) break;
         }
     }
+#if 1
+{
+    ascii tempStrBuff[6];
+    SPrintIntX(nextTaskId, 5, tempStrBuff);
+    tempStrBuff[4] = '\n';
+    tempStrBuff[5] = '\0';
+    Console_Print(tempStrBuff);
+}
+#endif
 
     //switch to KernelStackPtr
     if(nextTaskId == 0) {
         task.Queue.runningTaskId = 0;
+        task.enableChangeTaskFlag = 1;
         return task.kernelStackPtr;
     }
 
     task.Queue.runningTaskId = nextTaskId;
+    task.enableChangeTaskFlag = 1;
     return task.Table.list[nextTaskIndex].stackPtr;
 }
 

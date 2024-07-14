@@ -119,6 +119,7 @@ uintn Queue_DeQueue(Queue* this) {
 
     uintn result = this->queue[this->start];
     this->start ++;
+    this->count --;
     if(this->start == this->size) this->start = 0;
 
     return result;
