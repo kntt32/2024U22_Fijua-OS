@@ -48,5 +48,8 @@ void Task_DisableSwitchTask(void);
 uint16 Task_NewTask(sintn (*taskEntry)(void));
 uintn Task_EnQueueTask(uint16 taskId);
 
+void Task_Yield(void);
+
+void Task_ChangeContext(void);
 
 #endif

@@ -13,6 +13,7 @@
 
 #include "test.h"
 
+#define slow for(uintn k=0; k<10000; k++) {}
 /*
 https://docs.oracle.com/cd/E19253-01/819-0389/fcowb/index.html
 https://ameblo.jp/reverse-eg-mal-memo/entry-12608477931.html
@@ -38,6 +39,11 @@ void a() {
     n = n%3;
 }
 
+sintn tt(void) {
+    Console_Print("TT\n");
+    return 0;
+}
+
 int kernel_main(KernelInputStruct* kernelInput) {
     KernelInput = kernelInput;
 
@@ -48,8 +54,18 @@ int kernel_main(KernelInputStruct* kernelInput) {
     Timer_Init();
 
     Task_Init();
+    //Test_Tester1();
 
-    Task_NewTask(Test_Tester1);
+    Task_NewTask(Test_Tester3);
+
+    for(uintn i=0; ; i++) {
+        Graphic_Color color;
+    color.red = 0;
+    color.green = 0;
+    color.blue = i*10;
+    Graphic_DrawSquare(20, 0, 10, 10, color);
+    slow;
+    }
 
     Console_Print("Hello!\n");
     Console_Print("iadgilfuhsoiuhaoisughoiasuhgioauhgoiuashogiuhaoiruhgoisauhgroiaurhgoisuahgiouhsarg");

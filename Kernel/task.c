@@ -8,6 +8,9 @@
 #include "task.h"
 #include "console.h"
 
+#include "test.h"
+#include "graphic.h"
+
 static const uintn Task_DefaultPageSize = 1000;//4KiB*1000
 
 static Task task;
@@ -123,6 +126,11 @@ static sintn Task_GetIndexOfTaskList(uint16 taskId) {
 
 //Subroutine of Asm function "Task_NewTask_Asm"
 void* Task_NewTask_Asm_AddTaskTable(uintn* taskId) {
+#if 0
+    static int debugc = 0;
+    debugc ++ ;
+    if(debugc != 1) Test_Tester3();
+#endif
     //return newStack Ptr
     //this function must be called in disabled taskswitching
     *taskId = (uintn)(Task_AllocNewTaskID());
@@ -154,6 +162,8 @@ void* Task_NewTask_Asm_AddTaskTable(uintn* taskId) {
 
     //
     if(task.Queue.runningTaskId != 0) Task_EnQueueTask(task.Queue.runningTaskId);////??bug
+
+    Task_DisableSwitchTask();
 
     task.Queue.runningTaskId = *taskId;
 
@@ -210,16 +220,53 @@ uintn Task_EnQueueTask(uint16 taskId) {
 }
 
 
+//Yield
+void Task_Yield(void) {
+    task.yieldFlag = 1;
+    return;
+}
+
 //Subroutine of Asm function "Task_ContextSwitch"
 void* Task_ContextSwitch_Subroutine(void* currentStackPtr) {
     if(!task.enableChangeTaskFlag) return currentStackPtr;
 
     task.enableChangeTaskFlag = 0;
 
+#if 1
+{
+    ascii tempStrBuff[6];
+    SPrintIntX(task.Queue.runningTaskId, 5, tempStrBuff);
+    tempStrBuff[4] = ':';
+    tempStrBuff[5] = '\0';
+    Graphic_Color color;
+    color.red = 0;
+    color.green = 0;
+    color.blue = task.switchCount*10;
+    Graphic_DrawSquare(0, 0, 10, 10, color);
+    //Console_Print(tempStrBuff);
+}
+#endif
+
     task.switchCount++;
 
     if(task.Queue.runningTaskId == 0) {
         task.kernelStackPtr = currentStackPtr;
+#if 1
+{
+    ascii tempStrBuff[18];
+    SPrintIntX((uintn)currentStackPtr, 17, tempStrBuff);
+    tempStrBuff[16] = '[';
+    tempStrBuff[17] = '\0';
+    Console_Print(tempStrBuff);
+
+    for(uintn i=0; i<1; i++) {
+        SPrintIntX(*(((uintn*)currentStackPtr) + i), 17,tempStrBuff);
+        tempStrBuff[16] = '\n';
+    tempStrBuff[17] = '\0';
+    Console_Print(tempStrBuff);
+    }
+}
+#endif
     }else {
         sintn taskIndex = Task_GetIndexOfTaskList(task.Queue.runningTaskId);
         if(!(task.yieldFlag) && taskIndex != -1) {
@@ -231,19 +278,12 @@ void* Task_ContextSwitch_Subroutine(void* currentStackPtr) {
     }
     task.yieldFlag = 0;
 
-#if 0
-{
-    ascii tempStrBuff[6];
-    SPrintIntX(task.Queue.app.count, 5, tempStrBuff);
-    tempStrBuff[4] = '\n';
-    tempStrBuff[5] = '\0';
-    Console_Print(tempStrBuff);
-}
-#endif
+
 
     //seek nextTaskId
     uint16 nextTaskId = 0;
     sintn nextTaskIndex = 0;
+
     if(task.Queue.driver.count != 0) {
         while(1) {
             nextTaskId = Queue_DeQueue(&(task.Queue.driver));
@@ -252,7 +292,7 @@ void* Task_ContextSwitch_Subroutine(void* currentStackPtr) {
             if(nextTaskId != 0 || task.Queue.driver.count == 0) break;
         }
     }
-    if(nextTaskId == 0 || task.Queue.graphic.count != 0) {
+    if(nextTaskId == 0 && task.Queue.graphic.count != 0) {
         while(1) {
             nextTaskId = Queue_DeQueue(&(task.Queue.graphic));
             nextTaskIndex = Task_GetIndexOfTaskList(nextTaskId);
@@ -260,7 +300,7 @@ void* Task_ContextSwitch_Subroutine(void* currentStackPtr) {
             if(nextTaskId != 0 || task.Queue.graphic.count == 0) break;
         }
     }
-    if(nextTaskId == 0 || task.Queue.app.count != 0) {
+    if(nextTaskId == 0 && task.Queue.app.count != 0) {
         while(1) {
             nextTaskId = Queue_DeQueue(&(task.Queue.app));
             nextTaskIndex = Task_GetIndexOfTaskList(nextTaskId);
@@ -268,18 +308,36 @@ void* Task_ContextSwitch_Subroutine(void* currentStackPtr) {
             if(nextTaskId != 0 || task.Queue.app.count == 0) break;
         }
     }
-#if 1
+
+#if 0
 {
     ascii tempStrBuff[6];
     SPrintIntX(nextTaskId, 5, tempStrBuff);
     tempStrBuff[4] = '\n';
     tempStrBuff[5] = '\0';
     Console_Print(tempStrBuff);
+    slow;
 }
 #endif
 
     //switch to KernelStackPtr
     if(nextTaskId == 0) {
+#if 1
+{
+    ascii tempStrBuff[18];
+    SPrintIntX((uintn)task.kernelStackPtr, 17, tempStrBuff);
+    tempStrBuff[16] = ']';
+    tempStrBuff[17] = '\0';
+    Console_Print(tempStrBuff);
+
+    for(uintn i=0; i<1; i++) {
+        SPrintIntX(*(((uintn*)task.kernelStackPtr) + i), 17,tempStrBuff);
+        tempStrBuff[16] = '\n';
+    tempStrBuff[17] = '\0';
+    Console_Print(tempStrBuff);
+    }
+}
+#endif
         task.Queue.runningTaskId = 0;
         task.enableChangeTaskFlag = 1;
         return task.kernelStackPtr;
@@ -288,5 +346,72 @@ void* Task_ContextSwitch_Subroutine(void* currentStackPtr) {
     task.Queue.runningTaskId = nextTaskId;
     task.enableChangeTaskFlag = 1;
     return task.Table.list[nextTaskIndex].stackPtr;
+}
+
+
+void Task_ChangeContext(void) {
+    task.switchCount++;
+
+    void** saveStackArea = NULL;
+    if(task.Queue.runningTaskId == 0) {
+        saveStackArea = &(task.kernelStackPtr);
+    }else {
+        sintn taskIndex = Task_GetIndexOfTaskList(task.Queue.runningTaskId);
+        if(taskIndex != -1) {
+            saveStackArea = &(task.kernelStackPtr);
+            if(!task.yieldFlag) {
+                Task_EnQueueTask(task.Queue.runningTaskId);
+            }
+        }else {
+            while(1);//Err coding now
+        }
+    }
+    task.yieldFlag = 0;
+
+
+    //seek nextTaskId
+    uint16 nextTaskId = 0;
+    sintn nextTaskIndex = 0;
+
+    if(task.Queue.driver.count != 0) {
+        while(1) {
+            nextTaskId = Queue_DeQueue(&(task.Queue.driver));
+            nextTaskIndex = Task_GetIndexOfTaskList(nextTaskId);
+            if(nextTaskIndex == -1) nextTaskId = 0;
+            if(nextTaskId != 0 || task.Queue.driver.count == 0) break;
+        }
+    }
+    if(nextTaskId == 0 && task.Queue.graphic.count != 0) {
+        while(1) {
+            nextTaskId = Queue_DeQueue(&(task.Queue.graphic));
+            nextTaskIndex = Task_GetIndexOfTaskList(nextTaskId);
+            if(nextTaskIndex == -1) nextTaskId = 0;
+            if(nextTaskId != 0 || task.Queue.graphic.count == 0) break;
+        }
+    }
+    if(nextTaskId == 0 && task.Queue.app.count != 0) {
+        while(1) {
+            nextTaskId = Queue_DeQueue(&(task.Queue.app));
+            nextTaskIndex = Task_GetIndexOfTaskList(nextTaskId);
+            if(nextTaskIndex == -1) nextTaskId = 0;
+            if(nextTaskId != 0 || task.Queue.app.count == 0) break;
+        }
+    }
+
+    //switch to KernelStackPtr
+    void* nextStack = NULL;
+    if(nextTaskId == 0) {
+        task.Queue.runningTaskId = 0;
+        nextStack = (task.kernelStackPtr);
+    }else {
+        task.Queue.runningTaskId = nextTaskId;
+        task.enableChangeTaskFlag = 1;
+        nextStack = (task.Table.list[nextTaskIndex].stackPtr);
+    }
+
+
+    Task_ContextSwitch2(saveStackArea, nextStack);
+
+    return;
 }
 

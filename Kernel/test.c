@@ -3,7 +3,7 @@
 #include "task.h"
 #include "graphic.h"
 
-#define slow for(uintn k=0; k<100; k++) {}
+#define slow for(uintn k=0; k<10000; k++) {}
 
 //task test2
 sintn Test_Tester3(void) {
@@ -44,6 +44,7 @@ sintn Test_Tester3(void) {
             slow;
             color.blue--;
         }
+        Task_Yield();
     }
 }
 
