@@ -38,7 +38,7 @@ memory.o: memory.c memory.h console.h functions.h x64.h
 graphic.o: graphic.c graphic.h functions.h
 task.o: task.c task.h memory.h console.h functions.h x64.h
 
-test.o: test.c test.h graphic.h queue.h task.h
+test.o: test.c test.h graphic.h queue.h task.h x64.h
 
 
 %.o: %.c

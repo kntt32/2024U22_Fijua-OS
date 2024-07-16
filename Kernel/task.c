@@ -3,7 +3,6 @@
 #include <efi.h>
 #include "x64.h"
 #include "functions.h"
-#include "timer.h"
 #include "queue.h"
 #include "memory.h"
 #include "task.h"
@@ -12,19 +11,9 @@
 #include "test.h"
 #include "graphic.h"
 
-
-extern EFI_RESTORE_TPL Efi_RestoreTPL;
-extern EFI_CREATE_EVENT Efi_CreateEvent;
-extern EFI_SET_TIMER Efi_SetTimer;
-
 static const uintn Task_DefaultStackPageSize = 5000;//4KiB*1000
 
 static Task task;
-
-void ababa() {
-    Console_Print("ababa");
-    return;
-}
 
 
 //Initialize TaskScheduler
@@ -43,10 +32,6 @@ void Task_Init(void) {
     task.Table.count = 0;
     task.Table.listPages = 0;
     task.Table.list = NULL;
-
-
-    //enable timer
-    Timer_Set(Task_ContextSwitch, 10000000);
 
     return;
 }
@@ -144,7 +129,7 @@ uint16 Task_NewTask(sintn (*taskEntry)(void)) {
 
     task.Table.list[task.Table.count].taskId = newTaskId;
     task.Table.list[task.Table.count].taskLevel = Task_Object_Tasklevel_app;
-    task.Table.list[task.Table.count].stackPtr = Task_NewTask_Asm_SetStartContext((void*)(((uintn)stackPtr) + Task_DefaultStackPageSize - 1));
+    task.Table.list[task.Table.count].stackPtr = Task_NewTask_Asm_SetStartContext((void*)(((uintn)stackPtr)+Task_DefaultStackPageSize-1));
     task.Table.list[task.Table.count].taskEntry = taskEntry;
 
     task.Table.count++;
@@ -167,7 +152,7 @@ void Task_NewTask_StartPoint() {
     }
 
     //end task
-    //Task_Yield();
+    Task_Yield();
     while(1);
 }
 
@@ -215,37 +200,28 @@ uintn Task_EnQueueTask(uint16 taskId) {
 
 //Yield
 void Task_Yield(void) {
-    //task.yieldFlag = 1;
-    Console_Print("Yield Called!");
-    Task_EnableSwitchTask();
-    //Task_WaitTaskSwitch(&(task.switchCount));
-    Console_Print("Task_Switched");
-    while(1);
+    task.yieldFlag = 1;
+    Task_ContextSwitch();
     return;
 }
 
 
 //Subroutine of Asm function "Task_ContextSwitch"
 void* Task_ContextSwitch_Subroutine(void* currentStackPtr) {
-    Console_Print(";0");
     if(!task.enableChangeTaskFlag) return currentStackPtr;
-    Console_Print(";-");
 
     task.enableChangeTaskFlag = 0;
 
     task.switchCount++;
 
     if(task.Queue.runningTaskId == 0) {
-        Console_Print(";1");
         task.kernelStackPtr = currentStackPtr;
     }else {
         sintn taskIndex = Task_GetIndexOfTaskList(task.Queue.runningTaskId);
         if(!(task.yieldFlag) && taskIndex != -1) {
-            Console_Print(";2");
             Task_EnQueueTask(task.Queue.runningTaskId);
         }
         if(taskIndex != -1) {
-            Console_Print(";3");
             task.Table.list[taskIndex].stackPtr = currentStackPtr;
         }
     }

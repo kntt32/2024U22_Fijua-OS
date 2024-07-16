@@ -57,6 +57,8 @@ int kernel_main(KernelInputStruct* kernelInput) {
     //Test_Tester1();
 
     Task_NewTask(Test_Tester1);
+    Task_NewTask(Test_Tester2);
+    Task_ContextSwitch();
 
     for(uintn i=0; ; i++) {
         Graphic_Color color;
@@ -65,6 +67,7 @@ int kernel_main(KernelInputStruct* kernelInput) {
     color.blue = i*10;
     Graphic_DrawSquare(20, 0, 10, 10, color);
     slow;
+    Task_ContextSwitch();
     }
 
     Console_Print("Hello!\n");

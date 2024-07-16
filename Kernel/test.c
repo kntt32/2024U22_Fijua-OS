@@ -2,6 +2,7 @@
 #include "queue.h"
 #include "task.h"
 #include "graphic.h"
+#include "x64.h"
 
 #define slow for(uintn k=0; k<10000; k++) {}
 
@@ -61,32 +62,38 @@ sintn Test_Tester2(void) {
             slow;
             color.red++;
         }
+        Task_ContextSwitch();
         for(uintn i=0; i<0xff; i++) {
             Graphic_DrawSquare(200, 500, 100, 100, color);
             slow;
             color.green++;
         }
+        Task_ContextSwitch();
         for(uintn i=0; i<0xff; i++) {
             Graphic_DrawSquare(200, 500, 100, 100, color);
             slow;
             color.blue++;
         }
+        Task_ContextSwitch();
 
         for(uintn i=0; i<0xff; i++) {
             Graphic_DrawSquare(200, 500, 100, 100, color);
             slow;
             color.red--;
         }
+        Task_ContextSwitch();
         for(uintn i=0; i<0xff; i++) {
             Graphic_DrawSquare(200, 500, 100, 100, color);
             slow;
             color.green--;
         }
+        Task_ContextSwitch();
         for(uintn i=0; i<0xff; i++) {
             Graphic_DrawSquare(200, 500, 100, 100, color);
             slow;
             color.blue--;
         }
+        Task_ContextSwitch();
     }
 }
 
@@ -103,27 +110,32 @@ sintn Test_Tester1(void) {
             slow;
             color.red++;
         }
+        Task_ContextSwitch();
         for(uintn i=0; i<0xff; i++) {
             Graphic_DrawSquare(0, 500, 100, 100, color);
             slow;
             color.green++;
         }
+        Task_ContextSwitch();
         for(uintn i=0; i<0xff; i++) {
             Graphic_DrawSquare(0, 500, 100, 100, color);
             slow;
             color.blue++;
         }
+        Task_ContextSwitch();
 
         for(uintn i=0; i<0xff; i++) {
             Graphic_DrawSquare(0, 500, 100, 100, color);
             slow;
             color.red--;
         }
+        Task_ContextSwitch();
         for(uintn i=0; i<0xff; i++) {
             Graphic_DrawSquare(0, 500, 100, 100, color);
             slow;
             color.green--;
         }
+        Task_ContextSwitch();
         for(uintn i=0; i<0xff; i++) {
             Graphic_DrawSquare(0, 500, 100, 100, color);
             slow;
@@ -131,5 +143,6 @@ sintn Test_Tester1(void) {
         }
 
         //Task_NewTask(Test_Tester2);
+        Task_ContextSwitch();
     }
 }
