@@ -1,8 +1,8 @@
 #include <types.h>
-#include "functions.h"
-#include "memory.h"
 #include "queue.h"
+#include "memory.h"
 #include "console.h"
+#include "functions.h"
 
 
 #define Queue_OwnerID (2)
@@ -115,7 +115,7 @@ Queue* Queue_Replace(Queue* this, uintn from, uintn to) {
 
 
 uintn Queue_DeQueue(Queue* this) {
-    if(this == NULL) return 0;
+    if(this == NULL || this->count == 0) return 0;
 
     uintn result = this->queue[this->start];
     this->start ++;

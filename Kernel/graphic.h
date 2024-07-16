@@ -16,7 +16,11 @@ typedef struct {
     uintn height;
 } Graphic_FrameBuff;
 
+#ifndef FILE_GRAPHIC_C
+
 extern void (*Graphic_DrawSquare)(sintn x, sintn y, uintn width, uintn height, Graphic_Color color);//draw square
 extern void (*Graphic_DrawFrom)(sintn x, sintn y, uintn xfrom, uintn yfrom, uintn width, uintn height, Graphic_FrameBuff from);//draw memmapped bgr frame
+
+#endif
 
 #endif

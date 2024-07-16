@@ -1,27 +1,22 @@
 #include <types.h>
 #include <kernel.h>
 #include <efi.h>
-#include "x64.h"
-#include "functions.h"
 #include "queue.h"
-#include "memory.h"
 #include "task.h"
-#include "console.h"
+#include "memory.h"
+#include "x64.h"
 
-#include "test.h"
-#include "graphic.h"
+void* Task_NewTask_Asm_SetStartContext(void* stackptr);
+void Task_ContextSwitch(void);
 
 static const uintn Task_DefaultStackPageSize = 5000;//4KiB*1000
 
 static Task task;
 
-
 //Initialize TaskScheduler
 void Task_Init(void) {
     //reset
-    task.enableChangeTaskFlag = 1;
-    task.yieldFlag = 0;
-    task.switchCount = 0;
+    task.haltFlag = 0;
     task.kernelStackPtr = NULL;
 
     task.Queue.runningTaskId = 0;
@@ -33,20 +28,6 @@ void Task_Init(void) {
     task.Table.listPages = 0;
     task.Table.list = NULL;
 
-    return;
-}
-
-
-//Enable Switch Task
-void Task_EnableSwitchTask(void) {
-    task.enableChangeTaskFlag = 1;
-    return;
-}
-
-
-//Disable Switch Task
-void Task_DisableSwitchTask(void) {
-    task.enableChangeTaskFlag = 0;
     return;
 }
 
@@ -106,22 +87,14 @@ static sintn Task_GetIndexOfTaskList(uint16 taskId) {
 uint16 Task_NewTask(sintn (*taskEntry)(void)) {
     if(taskEntry == NULL) return 0;
 
-    Task_DisableSwitchTask();
     uint16 newTaskId = Task_SeekNewTaskID();
-    if(newTaskId == 0) {
-        Task_EnableSwitchTask();
-        return 0;
-    }
+    if(newTaskId == 0) return 0;
 
     void* stackPtr = Memory_AllocPages(newTaskId, Task_DefaultStackPageSize);
-    if(stackPtr == NULL) {
-        Task_EnableSwitchTask();
-        return 0;
-    }
+    if(stackPtr == NULL) return 0;
 
     if(task.Table.listPages < (((task.Table.count+1)*sizeof(Task_Object)+0xfff)>>12)) {
         if(Task_Table_Expand()) {
-            Task_EnableSwitchTask();
             Memory_FreeAll(newTaskId);
             return 0;
         }
@@ -136,24 +109,44 @@ uint16 Task_NewTask(sintn (*taskEntry)(void)) {
 
     Task_EnQueueTask(newTaskId);
 
-    Task_EnableSwitchTask();
-
     return newTaskId;
+}
+
+
+//Delete Task
+void Task_Delete(uint16 taskId) {
+    if(taskId == 0) return;
+
+    sintn taskIndex = Task_GetIndexOfTaskList(taskId);
+    if(taskIndex == -1) return;
+
+    for(uintn i=taskIndex; i<task.Table.count; i++) {
+        task.Table.list[i] = task.Table.list[i+1];
+    }
+    task.Table.count--;
+
+    Queue_Replace(&(task.Queue.app), taskId, 0);
+    Queue_Replace(&(task.Queue.graphic), taskId, 0);
+    Queue_Replace(&(task.Queue.driver), taskId, 0);
+
+    Memory_FreeAll(taskId);
+
+    Task_Yield();
+
+    return;
 }
 
 
 //NewTask StartPoint
 void Task_NewTask_StartPoint() {
-    //Efi_Wrapper(Efi_RestoreTPL, TPL_APPLICATION);
-
     sintn taskIndex = Task_GetIndexOfTaskList(task.Queue.runningTaskId);
     if(taskIndex != -1) {
         task.Table.list[taskIndex].taskEntry();
     }
 
     //end task
-    Task_Yield();
-    while(1);
+    Task_Delete(task.Queue.runningTaskId);
+    while(1) Task_Yield();
 }
 
 
@@ -162,12 +155,10 @@ uintn Task_EnQueueTask(uint16 taskId) {
     if(taskId == 0 || taskId == 1 || taskId == 2) {
         return 1;
     }
-    Task_DisableSwitchTask();
 
     sintn taskIndex;
     taskIndex = Task_GetIndexOfTaskList(taskId);
     if(taskIndex == -1) {
-        Task_EnableSwitchTask();
         return 2;
     }
 
@@ -188,11 +179,8 @@ uintn Task_EnQueueTask(uint16 taskId) {
             }
             break;
         default:
-            Task_EnableSwitchTask();
             return 3;
     }
-
-    Task_EnableSwitchTask();
 
     return 0;
 }
@@ -200,7 +188,14 @@ uintn Task_EnQueueTask(uint16 taskId) {
 
 //Yield
 void Task_Yield(void) {
-    task.yieldFlag = 1;
+    Task_ContextSwitch();
+    return;
+}
+
+
+//Halt
+void Task_Halt(void) {
+    task.haltFlag = 1;
     Task_ContextSwitch();
     return;
 }
@@ -208,24 +203,18 @@ void Task_Yield(void) {
 
 //Subroutine of Asm function "Task_ContextSwitch"
 void* Task_ContextSwitch_Subroutine(void* currentStackPtr) {
-    if(!task.enableChangeTaskFlag) return currentStackPtr;
-
-    task.enableChangeTaskFlag = 0;
-
-    task.switchCount++;
-
     if(task.Queue.runningTaskId == 0) {
         task.kernelStackPtr = currentStackPtr;
     }else {
         sintn taskIndex = Task_GetIndexOfTaskList(task.Queue.runningTaskId);
-        if(!(task.yieldFlag) && taskIndex != -1) {
+        if(!(task.haltFlag) && taskIndex != -1) {
             Task_EnQueueTask(task.Queue.runningTaskId);
         }
         if(taskIndex != -1) {
             task.Table.list[taskIndex].stackPtr = currentStackPtr;
         }
     }
-    task.yieldFlag = 0;
+    task.haltFlag = 0;
 
 
 
@@ -262,11 +251,9 @@ void* Task_ContextSwitch_Subroutine(void* currentStackPtr) {
     //switch to KernelStackPtr
     if(nextTaskId == 0) {
         task.Queue.runningTaskId = 0;
-        task.enableChangeTaskFlag = 1;
         return task.kernelStackPtr;
     }
 
     task.Queue.runningTaskId = nextTaskId;
-    task.enableChangeTaskFlag = 1;
     return task.Table.list[nextTaskIndex].stackPtr;
 }

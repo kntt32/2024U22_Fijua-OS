@@ -1,10 +1,9 @@
 #include <types.h>
 #include <kernel.h>
 #include <efi.h>
-#include "x64.h"
 #include "graphic.h"
-#include "font.h"
 #include "console.h"
+#include "font.h"
 
 #define buffwidth (80)
 #define buffheight (30)

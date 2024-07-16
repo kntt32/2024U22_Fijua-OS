@@ -17,10 +17,7 @@ typedef struct {
 
 
 typedef struct {
-    uint8 enableChangeTaskFlag;
-    uint8 yieldFlag;
-
-    uintn switchCount;
+    uint8 haltFlag;
 
     void* kernelStackPtr;
 
@@ -43,13 +40,12 @@ typedef struct {
 
 void Task_Init(void);
 
-void Task_EnableSwitchTask(void);
-void Task_DisableSwitchTask(void);
-
 uint16 Task_NewTask(sintn (*taskEntry)(void));
+void Task_Delete(uint16 taskId);
 uintn Task_EnQueueTask(uint16 taskId);
 
 void Task_Yield(void);
+void Task_Halt(void);
 
 void Task_ChangeContext(void);
 

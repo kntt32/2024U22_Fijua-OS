@@ -1,10 +1,14 @@
 #include <types.h>
 #include <efi.h>
 #include <kernel.h>
+#include "timer.h"
 #include "x64.h"
 #include "console.h"
 
 #define TIMER_MAX_NUMBER (10)
+
+
+void Timer_Wrapper(void*, uintn (*callback)(void));
 
 typedef struct {
     EFI_EVENT eventId;
@@ -50,7 +54,7 @@ sintn Timer_Set(void (*callback)(void), uintn sec100ns) {
 sintn Timer_Stop() {
     uintn status;
     status = Efi_Wrapper(Efi_CloseEvent, (uintn)eventId);
-    return 0;
+    return status;
 }
 
 

@@ -10,7 +10,6 @@
 .global Mutex_UnLock
 .global Task_ContextSwitch
 .global Task_NewTask_Asm_SetStartContext
-.global Task_WaitTaskSwitch
 
 
 # uintn Efi_Wrapper(uintn (*callback)(), ...);
@@ -131,15 +130,3 @@ Task_NewTask_Asm_SetStartContext:
 
     mov %rdi, %rax
     ret
-
-
-# void Task_WaitTaskSwitch(uintn* switchCount);
-Task_WaitTaskSwitch:
-    mov (%rdi), %r10
-Task_WaitTaskSwitch_Loop:
-    mov (%rdi), %r11
-    cmp %r10, %r11
-    je Task_WaitTaskSwitch_Loop
-
-    ret
-

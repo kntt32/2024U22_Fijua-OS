@@ -4,8 +4,6 @@
 
 void Memory_Init(void);
 
-void Memory_Print_Memmap(void);
-
 void* Memory_AllocPages(uint16 ownerid, uintn pages);
 
 uintn Memory_FreePages(uint16 ownerid, uintn pages, void* pageaddr);

@@ -1,8 +1,7 @@
 #include <types.h>
 #include <kernel.h>
-#include "functions.h"
 #include "memory.h"
-#include "console.h"
+#include "functions.h"
 #include "x64.h"
 
 
@@ -25,19 +24,6 @@ void Memory_Init(void) {
     Memory_PageCount = KernelInput->Memory.PageCount;
     Memory_MemMap = (uint16*)(KernelInput->Memory.AvailableMemoryMap);
 
-    return;
-}
-
-
-void Memory_Print_Memmap(void) {
-    ascii strbuff[17];
-    for(uintn i=0; i<Memory_PageCount; i++) {
-        if(Memory_MemMap[i] != 0) {
-            SPrintIntX(i, sizeof(strbuff), strbuff);
-            Console_Print(strbuff);
-            Console_Print("\n");
-        }
-    }
     return;
 }
 

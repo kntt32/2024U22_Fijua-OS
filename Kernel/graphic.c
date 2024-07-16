@@ -1,21 +1,11 @@
+#define FILE_GRAPHIC_C
+
 #include <types.h>
 #include <kernel.h>
+#include "graphic.h"
 
 #define Graphic_RGB2BGR_UINT64(rgb) (((rgb & 0x00ff000000ff0000) >> 16) + (rgb & 0x0000ff000000ff00) + ((rgb & 0x000000ff000000ff) << 16))
 #define Graphic_RGB2BGR_UINT32(rgb) (((rgb & 0x00ff0000) >> 16) + (rgb & 0x0000ff00) + ((rgb & 0x000000ff) << 16))
-
-
-typedef struct {
-    uint8 red;
-    uint8 green;
-    uint8 blue;
-} Graphic_Color;
-
-typedef struct {
-    void* frameBuff;
-    uintn width;
-    uintn height;
-} Graphic_FrameBuff;
 
 extern KernelInputStruct* KernelInput;
 
