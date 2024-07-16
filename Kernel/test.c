@@ -44,7 +44,7 @@ sintn Test_Tester3(void) {
             slow;
             color.blue--;
         }
-        Task_Yield();
+        return 0;
     }
 }
 
@@ -130,6 +130,6 @@ sintn Test_Tester1(void) {
             color.blue--;
         }
 
-        Task_NewTask(Test_Tester2);
+        //Task_NewTask(Test_Tester2);
     }
 }

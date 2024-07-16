@@ -9,8 +9,8 @@
 .global Mutex_Lock
 .global Mutex_UnLock
 .global Task_ContextSwitch
-.global Task_NewTask_Asm
-.global Task_WaitSwitch
+.global Task_NewTask_Asm_SetStartContext
+.global Task_WaitTaskSwitch
 
 
 # uintn Efi_Wrapper(uintn (*callback)(), ...);
@@ -82,139 +82,64 @@ Mutex_UnLock_Err:
 # void Task_ContextSwitch(void);
 Task_ContextSwitch:
     push %rax
-    push %rbx
-    push %rcx
-    push %rdx
-    push %rsi
-    push %rdi
     push %rbp
-    push %r8
-    push %r9
-    push %r10
-    push %r11
     push %r12
     push %r13
     push %r14
     push %r15
+    push %rbx
 
     mov %rsp, %rdi
     call Task_ContextSwitch_Subroutine
     mov %rax, %rsp
 
+    pop %rbx
     pop %r15
     pop %r14
     pop %r13
     pop %r12
-    pop %r11
-    pop %r10
-    pop %r9
-    pop %r8
     pop %rbp
-    pop %rdi
-    pop %rsi
-    pop %rdx
-    pop %rcx
-    pop %rbx
     pop %rax
 
     ret
 
 
+# void* Task_NewTask_Asm_SetStartContext(void* stackptr);
+# input: stack ptr
+# return: context saved stack ptr
+Task_NewTask_Asm_SetStartContext:
+    and $0xfffffffffffffff0, %rdi
+    mov %rsp, %rax
+    mov %rdi, %rsp
+    
+    leaq Task_NewTask_StartPoint(%rip), %r10
 
+    pushq $0x0 #dummy
 
-.global Task_ContextSwitch2
+    pushq %r10   #rip
 
-Task_ContextSwitch2:
-    push %rsp
-    push %rbp
-    push %r12
-    push %r13
-    push %r14
-    push %r15
-    push %rbx
+    pushq $0x0                      #rax
+    pushq $0x0                  #rbp
+    pushq $0x0                  #r12
+    pushq $0x0                  #r13
+    pushq $0x0                  #r14
+    pushq $0x0                  #r15
+    pushq $0x0                  #rbx
 
-    mov %rsp, (%rdi)
-    mov %rsi, %rsp
+    mov %rsp, %rdi
+    mov %rax, %rsp
 
-    pop %rbx
-    pop %r15
-    pop %r14
-    pop %r13
-    pop %r12
-    pop %rbp
-    pop %rsp
-
+    mov %rdi, %rax
     ret
 
 
-# void Task_WaitSwitch(uintn* switchCount);
-Task_WaitSwitch:
+# void Task_WaitTaskSwitch(uintn* switchCount);
+Task_WaitTaskSwitch:
     mov (%rdi), %r10
-Task_WaitSwitch_Loop:
+Task_WaitTaskSwitch_Loop:
     mov (%rdi), %r11
     cmp %r10, %r11
-    je Task_WaitSwitch_Loop
-    
-    ret
-
-
-
-# uint16 Task_NewTask_Asm(uintn* switchCount, uint8* enableChangeTaskFlag, sintn (*entry)(void));
-Task_NewTask_Asm:
-    push %rbp
-    mov %rsp, %rbp
-
-    push %rdi   #uintn* switchCount;
-    push %rsi   #uint8* enableChangeTaskFlag;
-    push %rdx   #sintn (*entry)(void);
-
-    pushq $0x0  #uintn taskid = 0;
-
-#wait for taskswitch
-
-    mov -0x8(%rbp), %r10
-    mov (%r10), %r10        #save switchCount
-    mov -0x10(%rbp), %rax
-    movb $0x1, (%rax)       #*enableChangeTaskFlag = 1; enable taskswitch
-
-Task_NewTask_Asm_Loop:
-    mov -0x8(%rbp), %r11
-    mov (%r11), %r11
-    cmp %r10, %r11
-    je Task_NewTask_Asm_Loop
-
-    mov -0x10(%rbp), %rax
-    movb $0x0, (%rax)       #disable taskswitch
-
-    cmpq $0x0, -0x20(%rbp)
-    jne Task_NewTask_Ret    #if(flag) goto Task_NewTask_Ret
-
-#jump to newtask
-
-    leaq -0x20(%rbp), %rdi
-
-    call Task_NewTask_Asm_AddTaskTable
-    cmpq $0x0, -0x20(%rbp)
-    je Task_NewTask_Ret
-    cmpq $0x0, %rax
-    je Task_NewTask_Ret
-
-    andq $0xfffffffffffffff0, %rax
-    mov %rax, %rsp
-    pushq $0x00
-
-    mov -0x10(%rbp), %rax
-    movb $0x1, (%rax)       #enable taskswitch
-    jmpq *-0x18(%rbp)
-
-Task_NewTask_Ret:
-    mov -0x10(%rbp), %rax
-    movb $0x1, (%rax)   #enable taskswitch
-
-    mov -0x20(%rbp), %rax
-
-    mov %rbp, %rsp
-    pop %rbp
+    je Task_WaitTaskSwitch_Loop
 
     ret
 

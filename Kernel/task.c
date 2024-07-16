@@ -1,5 +1,6 @@
 #include <types.h>
 #include <kernel.h>
+#include <efi.h>
 #include "x64.h"
 #include "functions.h"
 #include "timer.h"
@@ -11,9 +12,19 @@
 #include "test.h"
 #include "graphic.h"
 
-static const uintn Task_DefaultPageSize = 1000;//4KiB*1000
+
+extern EFI_RESTORE_TPL Efi_RestoreTPL;
+extern EFI_CREATE_EVENT Efi_CreateEvent;
+extern EFI_SET_TIMER Efi_SetTimer;
+
+static const uintn Task_DefaultStackPageSize = 5000;//4KiB*1000
 
 static Task task;
+
+void ababa() {
+    Console_Print("ababa");
+    return;
+}
 
 
 //Initialize TaskScheduler
@@ -35,7 +46,7 @@ void Task_Init(void) {
 
 
     //enable timer
-    Timer_Set(Task_ContextSwitch, 10);
+    Timer_Set(Task_ContextSwitch, 10000000);
 
     return;
 }
@@ -75,7 +86,7 @@ static uintn Task_Table_Expand(void) {
 
 
 //Allocate NewTaskID
-static uint16 Task_AllocNewTaskID(void) {
+static uint16 Task_SeekNewTaskID(void) {
     uint16 nextTaskId = 3;
 
     uintn i = 0;
@@ -94,24 +105,6 @@ static uint16 Task_AllocNewTaskID(void) {
 }
 
 
-//Add taskId to TaskTable
-static uintn Task_AddTaskTable(uint16 taskId) {
-    //this function must be called in disabled taskswitching
-    if(taskId == 0) return 1;
-
-    if((task.Table.listPages<<12) < (task.Table.count+1)*sizeof(Task_Object)) {
-        if(Task_Table_Expand()) return 2;
-    }
-
-    task.Table.list[task.Table.count].taskId = taskId;
-    task.Table.list[task.Table.count].taskLevel = Task_Object_Tasklevel_app;
-    task.Table.list[task.Table.count].stackPtr = NULL;
-    task.Table.count++;
-
-    return 0;
-}
-
-
 //Get Index in TaskList
 static sintn Task_GetIndexOfTaskList(uint16 taskId) {
     if(taskId == 0 || taskId == 1) return -1;
@@ -124,58 +117,58 @@ static sintn Task_GetIndexOfTaskList(uint16 taskId) {
 }
 
 
-//Subroutine of Asm function "Task_NewTask_Asm"
-void* Task_NewTask_Asm_AddTaskTable(uintn* taskId) {
-#if 0
-    static int debugc = 0;
-    debugc ++ ;
-    if(debugc != 1) Test_Tester3();
-#endif
-    //return newStack Ptr
-    //this function must be called in disabled taskswitching
-    *taskId = (uintn)(Task_AllocNewTaskID());
-
-    if(*taskId == Task_TaskId_NULL) return NULL;
-
-#if 0
-    {
-        ascii strbuff[5];
-        SPrintIntX(task.Queue.runningTaskId, 4, strbuff);
-        strbuff[3] = '\n';
-        strbuff[4] = '\0';
-        Console_Print(strbuff);
-    }
-#endif
-
-    void* stackPtr = Memory_AllocPages(*taskId, Task_DefaultPageSize);
-    if(stackPtr == NULL) {
-        *taskId = Task_TaskId_NULL;
-        return NULL;
-    }
-
-    stackPtr = (void*)((uintn)stackPtr + (Task_DefaultPageSize<<12) - 1);
-    if(Task_AddTaskTable(*taskId)) {
-        Memory_FreeAll(*taskId);
-        *taskId = 0;
-        return NULL;
-    }
-
-    //
-    if(task.Queue.runningTaskId != 0) Task_EnQueueTask(task.Queue.runningTaskId);////??bug
+//Add NewTask and return taskID
+uint16 Task_NewTask(sintn (*taskEntry)(void)) {
+    if(taskEntry == NULL) return 0;
 
     Task_DisableSwitchTask();
+    uint16 newTaskId = Task_SeekNewTaskID();
+    if(newTaskId == 0) {
+        Task_EnableSwitchTask();
+        return 0;
+    }
 
-    task.Queue.runningTaskId = *taskId;
+    void* stackPtr = Memory_AllocPages(newTaskId, Task_DefaultStackPageSize);
+    if(stackPtr == NULL) {
+        Task_EnableSwitchTask();
+        return 0;
+    }
 
-    return stackPtr;
+    if(task.Table.listPages < (((task.Table.count+1)*sizeof(Task_Object)+0xfff)>>12)) {
+        if(Task_Table_Expand()) {
+            Task_EnableSwitchTask();
+            Memory_FreeAll(newTaskId);
+            return 0;
+        }
+    }
+
+    task.Table.list[task.Table.count].taskId = newTaskId;
+    task.Table.list[task.Table.count].taskLevel = Task_Object_Tasklevel_app;
+    task.Table.list[task.Table.count].stackPtr = Task_NewTask_Asm_SetStartContext((void*)(((uintn)stackPtr) + Task_DefaultStackPageSize - 1));
+    task.Table.list[task.Table.count].taskEntry = taskEntry;
+
+    task.Table.count++;
+
+    Task_EnQueueTask(newTaskId);
+
+    Task_EnableSwitchTask();
+
+    return newTaskId;
 }
 
 
-//Add NewTask and return taskID
-uint16 Task_NewTask(sintn (*taskEntry)(void)) {
-    if(taskEntry == NULL) return 1;
+//NewTask StartPoint
+void Task_NewTask_StartPoint() {
+    //Efi_Wrapper(Efi_RestoreTPL, TPL_APPLICATION);
 
-    return Task_NewTask_Asm(&(task.switchCount), &(task.enableChangeTaskFlag), taskEntry);
+    sintn taskIndex = Task_GetIndexOfTaskList(task.Queue.runningTaskId);
+    if(taskIndex != -1) {
+        task.Table.list[taskIndex].taskEntry();
+    }
+
+    //end task
+    //Task_Yield();
+    while(1);
 }
 
 
@@ -222,57 +215,37 @@ uintn Task_EnQueueTask(uint16 taskId) {
 
 //Yield
 void Task_Yield(void) {
-    task.yieldFlag = 1;
+    //task.yieldFlag = 1;
+    Console_Print("Yield Called!");
+    Task_EnableSwitchTask();
+    //Task_WaitTaskSwitch(&(task.switchCount));
+    Console_Print("Task_Switched");
+    while(1);
     return;
 }
 
+
 //Subroutine of Asm function "Task_ContextSwitch"
 void* Task_ContextSwitch_Subroutine(void* currentStackPtr) {
+    Console_Print(";0");
     if(!task.enableChangeTaskFlag) return currentStackPtr;
+    Console_Print(";-");
 
     task.enableChangeTaskFlag = 0;
-
-#if 1
-{
-    ascii tempStrBuff[6];
-    SPrintIntX(task.Queue.runningTaskId, 5, tempStrBuff);
-    tempStrBuff[4] = ':';
-    tempStrBuff[5] = '\0';
-    Graphic_Color color;
-    color.red = 0;
-    color.green = 0;
-    color.blue = task.switchCount*10;
-    Graphic_DrawSquare(0, 0, 10, 10, color);
-    //Console_Print(tempStrBuff);
-}
-#endif
 
     task.switchCount++;
 
     if(task.Queue.runningTaskId == 0) {
+        Console_Print(";1");
         task.kernelStackPtr = currentStackPtr;
-#if 1
-{
-    ascii tempStrBuff[18];
-    SPrintIntX((uintn)currentStackPtr, 17, tempStrBuff);
-    tempStrBuff[16] = '[';
-    tempStrBuff[17] = '\0';
-    Console_Print(tempStrBuff);
-
-    for(uintn i=0; i<1; i++) {
-        SPrintIntX(*(((uintn*)currentStackPtr) + i), 17,tempStrBuff);
-        tempStrBuff[16] = '\n';
-    tempStrBuff[17] = '\0';
-    Console_Print(tempStrBuff);
-    }
-}
-#endif
     }else {
         sintn taskIndex = Task_GetIndexOfTaskList(task.Queue.runningTaskId);
         if(!(task.yieldFlag) && taskIndex != -1) {
+            Console_Print(";2");
             Task_EnQueueTask(task.Queue.runningTaskId);
         }
         if(taskIndex != -1) {
+            Console_Print(";3");
             task.Table.list[taskIndex].stackPtr = currentStackPtr;
         }
     }
@@ -309,35 +282,9 @@ void* Task_ContextSwitch_Subroutine(void* currentStackPtr) {
         }
     }
 
-#if 0
-{
-    ascii tempStrBuff[6];
-    SPrintIntX(nextTaskId, 5, tempStrBuff);
-    tempStrBuff[4] = '\n';
-    tempStrBuff[5] = '\0';
-    Console_Print(tempStrBuff);
-    slow;
-}
-#endif
 
     //switch to KernelStackPtr
     if(nextTaskId == 0) {
-#if 1
-{
-    ascii tempStrBuff[18];
-    SPrintIntX((uintn)task.kernelStackPtr, 17, tempStrBuff);
-    tempStrBuff[16] = ']';
-    tempStrBuff[17] = '\0';
-    Console_Print(tempStrBuff);
-
-    for(uintn i=0; i<1; i++) {
-        SPrintIntX(*(((uintn*)task.kernelStackPtr) + i), 17,tempStrBuff);
-        tempStrBuff[16] = '\n';
-    tempStrBuff[17] = '\0';
-    Console_Print(tempStrBuff);
-    }
-}
-#endif
         task.Queue.runningTaskId = 0;
         task.enableChangeTaskFlag = 1;
         return task.kernelStackPtr;
@@ -347,71 +294,3 @@ void* Task_ContextSwitch_Subroutine(void* currentStackPtr) {
     task.enableChangeTaskFlag = 1;
     return task.Table.list[nextTaskIndex].stackPtr;
 }
-
-
-void Task_ChangeContext(void) {
-    task.switchCount++;
-
-    void** saveStackArea = NULL;
-    if(task.Queue.runningTaskId == 0) {
-        saveStackArea = &(task.kernelStackPtr);
-    }else {
-        sintn taskIndex = Task_GetIndexOfTaskList(task.Queue.runningTaskId);
-        if(taskIndex != -1) {
-            saveStackArea = &(task.kernelStackPtr);
-            if(!task.yieldFlag) {
-                Task_EnQueueTask(task.Queue.runningTaskId);
-            }
-        }else {
-            while(1);//Err coding now
-        }
-    }
-    task.yieldFlag = 0;
-
-
-    //seek nextTaskId
-    uint16 nextTaskId = 0;
-    sintn nextTaskIndex = 0;
-
-    if(task.Queue.driver.count != 0) {
-        while(1) {
-            nextTaskId = Queue_DeQueue(&(task.Queue.driver));
-            nextTaskIndex = Task_GetIndexOfTaskList(nextTaskId);
-            if(nextTaskIndex == -1) nextTaskId = 0;
-            if(nextTaskId != 0 || task.Queue.driver.count == 0) break;
-        }
-    }
-    if(nextTaskId == 0 && task.Queue.graphic.count != 0) {
-        while(1) {
-            nextTaskId = Queue_DeQueue(&(task.Queue.graphic));
-            nextTaskIndex = Task_GetIndexOfTaskList(nextTaskId);
-            if(nextTaskIndex == -1) nextTaskId = 0;
-            if(nextTaskId != 0 || task.Queue.graphic.count == 0) break;
-        }
-    }
-    if(nextTaskId == 0 && task.Queue.app.count != 0) {
-        while(1) {
-            nextTaskId = Queue_DeQueue(&(task.Queue.app));
-            nextTaskIndex = Task_GetIndexOfTaskList(nextTaskId);
-            if(nextTaskIndex == -1) nextTaskId = 0;
-            if(nextTaskId != 0 || task.Queue.app.count == 0) break;
-        }
-    }
-
-    //switch to KernelStackPtr
-    void* nextStack = NULL;
-    if(nextTaskId == 0) {
-        task.Queue.runningTaskId = 0;
-        nextStack = (task.kernelStackPtr);
-    }else {
-        task.Queue.runningTaskId = nextTaskId;
-        task.enableChangeTaskFlag = 1;
-        nextStack = (task.Table.list[nextTaskIndex].stackPtr);
-    }
-
-
-    Task_ContextSwitch2(saveStackArea, nextStack);
-
-    return;
-}
-

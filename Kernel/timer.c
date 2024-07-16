@@ -13,13 +13,13 @@ typedef struct {
 
 extern KernelInputStruct* KernelInput;
 
-static EFI_CREATE_EVENT Efi_CreateEvent = NULL;
-static EFI_SET_TIMER Efi_SetTimer       = NULL;
-static EFI_RAISE_TPL Efi_RaiseTPL       = NULL;
-static EFI_RESTORE_TPL Efi_RestoreTPL   = NULL;
-static EFI_CLOSE_EVENT Efi_CloseEvent   = NULL;
-static EFI_SIGNAL_EVENT Efi_SignalEvent = NULL;
-static EFI_EVENT eventId;
+EFI_CREATE_EVENT Efi_CreateEvent = NULL;
+EFI_SET_TIMER Efi_SetTimer       = NULL;
+EFI_RAISE_TPL Efi_RaiseTPL       = NULL;
+EFI_RESTORE_TPL Efi_RestoreTPL   = NULL;
+EFI_CLOSE_EVENT Efi_CloseEvent   = NULL;
+EFI_SIGNAL_EVENT Efi_SignalEvent = NULL;
+EFI_EVENT eventId;
 
 
 void Timer_Init(void) {

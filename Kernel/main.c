@@ -39,9 +39,9 @@ void a() {
     n = n%3;
 }
 
-sintn tt(void) {
+void tt(void) {
     Console_Print("TT\n");
-    return 0;
+    return;
 }
 
 int kernel_main(KernelInputStruct* kernelInput) {
@@ -56,7 +56,7 @@ int kernel_main(KernelInputStruct* kernelInput) {
     Task_Init();
     //Test_Tester1();
 
-    Task_NewTask(Test_Tester3);
+    Task_NewTask(Test_Tester1);
 
     for(uintn i=0; ; i++) {
         Graphic_Color color;

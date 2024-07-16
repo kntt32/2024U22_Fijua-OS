@@ -11,11 +11,9 @@ void Mutex_UnLock(uintn* lockvar);
 
 void Task_ContextSwitch(void);
 
-void Task_WaitSwitch(uintn* switchCount);
+void* Task_NewTask_Asm_SetStartContext(void* stackptr);
 
-uint16 Task_NewTask_Asm(uintn* switchCount, uint8* enableChangeTaskFlag, sintn (*entry)(void));
-
-void Task_ContextSwitch2(void**, void*);
+void Task_WaitTaskSwitch(uintn* switchCount);
 
 
 #endif

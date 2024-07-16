@@ -12,6 +12,7 @@ typedef struct {
     uint16 taskId;//disable 0
     uint8 taskLevel;//0: app, 1: graphic, 2: driver
     void* stackPtr;
+    sintn (*taskEntry)(void);
 } Task_Object;
 
 
