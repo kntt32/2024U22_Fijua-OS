@@ -13,12 +13,6 @@
 
 KernelInputStruct* KernelInput = NULL;
 
-
-void tt(void) {
-    Console_Print("TT\n");
-    return;
-}
-
 int kernel_main(KernelInputStruct* kernelInput) {
     KernelInput = kernelInput;
 
