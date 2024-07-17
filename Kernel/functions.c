@@ -3,6 +3,7 @@
 #include <kernel.h>
 #include "functions.h"
 #include "x64.h"
+#include "task.h"
 #include "console.h"
 
 extern KernelInputStruct* KernelInput;
@@ -19,7 +20,8 @@ void Halt() {
     }
     
     while(1) {
-        Efi_Wrapper((void*)Stall, 1, 0, 0 ,0 ,0);
+        Task_Yield();
+        Efi_Wrapper((void*)Stall, 100);
     }
 }
 

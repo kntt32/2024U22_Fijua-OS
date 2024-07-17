@@ -25,7 +25,7 @@ else
 endif
 
 main.o: main.c functions.h graphic.h console.h timer.h memory.h queue.h task.h test.h
-functions.o: functions.c functions.h x64.h console.h
+functions.o: functions.c functions.h x64.h task.h console.h
 queue.o: queue.c queue.h memory.h console.h functions.h
 font.o: font.c graphic.h font.h fontdata_monospace
 console.o: console.c graphic.h console.h font.h
