@@ -8,6 +8,7 @@
 #include "memory.h"
 #include "queue.h"
 #include "task.h"
+#include "layer.h"
 
 #include "test.h"
 
@@ -23,6 +24,7 @@ int kernel_main(KernelInputStruct* kernelInput) {
     Timer_Init();
 
     Task_Init();
+    Layer_Init();
 
     Task_NewTask(Test_Tester1);
     Task_NewTask(Test_Tester2);

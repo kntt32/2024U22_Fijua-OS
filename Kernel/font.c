@@ -4,7 +4,7 @@
 #include "font.h"
 
 static uint8 fontdata_monospace[] = {
-#include "fontdata_monospace"
+#include "font_bitmap"
 };
 
 

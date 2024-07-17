@@ -3,6 +3,7 @@
 #include <kernel.h>
 #include "functions.h"
 #include "x64.h"
+#include "queue.h"
 #include "task.h"
 #include "console.h"
 

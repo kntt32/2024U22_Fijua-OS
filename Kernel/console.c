@@ -55,6 +55,14 @@ void Console_Init(void) {
 }
 
 
+void Console_Layer_OutData(void** frameBuff, uintn* width, uintn* height) {
+    *frameBuff = console_framebuff;
+    *width = buffwidth*8;
+    *height = buffheight*16;
+    return;
+}
+
+
 void Console_Print(ascii str[]) {
     lineChangedFlag[cursorY] = 1;
     for(uintn i=0; 1; i++) {
