@@ -1,15 +1,32 @@
 #ifndef INCLUDED_LAYER_H
 #define INCLUDED_LAYER_H
 
+
+typedef struct {
+    struct {
+        uintn x;
+        uintn y;
+        uintn width;
+        uintn height;
+    } Draw;
+
+    struct {
+        uintn x;
+        uintn y;
+        uintn width;
+        uintn height;
+    } Change;
+
+    struct {
+        Graphic_FrameBuff Data;
+    } FrameBuff;
+} Layer_Console;
+
+
 typedef struct {
     uint16 taskId;
 
     uint8 hiddenFlag;
-
-    enum {
-        Layer_Object_Type_Console,
-        Layer_Object_Type_Window
-    } type;
 
     struct {
         uintn x;
@@ -36,14 +53,20 @@ typedef struct {
     } FrameBuff;
 } Layer_Object;
 
+
 typedef struct {
     uintn x;
     uintn y;
-    //uintn 
+    uintn width;
+    uintn height;
+
+    uintn oldx;
+    uintn oldy;
 } Layer_Mouse;
 
+
 typedef struct {
-    Layer_Object console;
+    Layer_Console Console;
 
     struct {
         uintn count;
@@ -51,9 +74,11 @@ typedef struct {
         Layer_Object* Data;
     } Object;
 
-    Layer_Mouse mouse;
+    Layer_Mouse Mouse;
 } Layer;
 
+
 void Layer_Init(void);
+
 
 #endif
