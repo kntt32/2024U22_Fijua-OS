@@ -28,6 +28,8 @@ typedef struct {
 
     uint8 hiddenFlag;
 
+    uintn layerId;//!=0
+
     struct {
         uintn x;
         uintn y;
@@ -51,28 +53,30 @@ typedef struct {
         uintn pages;
         Graphic_FrameBuff Data;
     } FrameBuff;
-} Layer_Object;
+} Layer_Window;
 
 
 typedef struct {
-    uintn x;
-    uintn y;
-    uintn width;
-    uintn height;
+    struct {
+        uintn x;
+        uintn y;
+        uintn width;
+        uintn height;
 
-    uintn oldx;
-    uintn oldy;
+        uintn oldx;
+        uintn oldy;
+    } Draw;
 } Layer_Mouse;
 
 
 typedef struct {
-    Layer_Console Console;
+    Layer_Console Console;//LayerId: 0
 
     struct {
         uintn count;
         uintn pages;
-        Layer_Object* Data;
-    } Object;
+        Layer_Window* Data;
+    } Window;
 
     Layer_Mouse Mouse;
 } Layer;

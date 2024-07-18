@@ -4,12 +4,18 @@
 
 .text
 
+.global Halt_Asm_Hlt
 .global Efi_Wrapper
 .global Timer_Wrapper
 .global Mutex_Lock
 .global Mutex_UnLock
 .global Task_ContextSwitch
 .global Task_NewTask_Asm_SetStartContext
+
+
+Halt_Asm_Hlt:
+    hlt
+    ret
 
 
 # uintn Efi_Wrapper(uintn (*callback)(), ...);

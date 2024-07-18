@@ -34,7 +34,7 @@ x64.o: x64.s
 keyboard.o: keyboard.c x64.h keyboard.h
 timer.o: timer.c timer.h x64.h console.h
 memory.o: memory.c memory.h functions.h x64.h
-graphic.o: graphic.c graphic.h
+graphic.o: graphic.c graphic.h graphic_mouse_bitmap
 task.o: task.c queue.h task.h memory.h x64.h
 layer.o: layer.c graphic.h layer.h
 

@@ -14,6 +14,10 @@ static uintn Width;
 static uintn Height;
 static uintn ScanlineWidth;
 
+static uint8 mouseCursor_Bitmap[mouseCursor_width*mouseCursor_height*2] = {
+#include "graphic_mouse_bitmap"
+};
+
 void (*Graphic_DrawSquare)(sintn x, sintn y, uintn width, uintn height, Graphic_Color) = NULL;
 void (*Graphic_DrawFrom)(sintn x, sintn y, uintn xfrom, uintn yfrom, uintn width, uintn height, Graphic_FrameBuff from) = NULL;
 
@@ -114,10 +118,12 @@ void Graphic_DrawFrom_BGR(sintn x, sintn y, uintn xfrom, uintn yfrom, uintn widt
 
     if(x<0) {
         width -= (uintn)(-x);
+        xfrom += (uintn)(-x);
         x = 0;
     }
     if(y<0) {
         height -= (uintn)(-y);
+        yfrom += (uintn)(-y);
         y = 0;
     }
 
@@ -129,8 +135,8 @@ void Graphic_DrawFrom_BGR(sintn x, sintn y, uintn xfrom, uintn yfrom, uintn widt
     if(from.width <= xfrom+width) width = from.width-xfrom;
     if(from.height <= yfrom+height) height = from.height-yfrom;
 
-    uint64* targetFrameBuff = (uint64*)((uintn)Framebuff + (x<<2) + ((y*ScanlineWidth)<<2));
-    uint64* targetFromFrameBuff = (uint64*)((uintn)from.frameBuff + (xfrom<<2) + ((y*from.width)<<2));
+    uint64* targetFrameBuff = (uint64*)((uintn)Framebuff + (x+xfrom)*4 + (y+yfrom)*ScanlineWidth*4);
+    uint64* targetFromFrameBuff = (uint64*)((uintn)from.frameBuff + xfrom*4 + y*from.width*4);
 
     for(uintn i=0; i<height; i++) {
         for(uintn k=0; k<(width>>1); k++) {
@@ -156,10 +162,12 @@ void Graphic_DrawFrom_RGB(sintn x, sintn y, uintn xfrom, uintn yfrom, uintn widt
 
     if(x<0) {
         width -= (uintn)(-x);
+        xfrom += (uintn)(-x);
         x = 0;
     }
     if(y<0) {
         height -= (uintn)(-y);
+        yfrom += (uintn)(-y);
         y = 0;
     }
 
@@ -171,8 +179,8 @@ void Graphic_DrawFrom_RGB(sintn x, sintn y, uintn xfrom, uintn yfrom, uintn widt
     if(from.width <= xfrom+width) width = from.width-xfrom;
     if(from.height <= yfrom+height) height = from.height-yfrom;
 
-    uint64* targetFrameBuff = (uint64*)((uintn)Framebuff + (x<<2) + ((y*ScanlineWidth)<<2));
-    uint64* targetFromFrameBuff = (uint64*)((uintn)from.frameBuff + (xfrom<<2) + ((y*from.width)<<2));
+    uint64* targetFrameBuff = (uint64*)((uintn)Framebuff + (x+xfrom)*4 + (y+yfrom)*ScanlineWidth*4);
+    uint64* targetFromFrameBuff = (uint64*)((uintn)from.frameBuff + xfrom*4 + y*from.width*4);
 
     for(uintn i=0; i<height; i++) {
         for(uintn k=0; k<(width>>1); k++) {
@@ -185,9 +193,54 @@ void Graphic_DrawFrom_RGB(sintn x, sintn y, uintn xfrom, uintn yfrom, uintn widt
             *((uint32*)targetFrameBuff) = Graphic_RGB2BGR_UINT32((*((uint32*)targetFromFrameBuff)));
         }
 
-        targetFrameBuff = (uint64*)((uintn)targetFrameBuff + ((ScanlineWidth - width)<<2));
-        targetFromFrameBuff = (uint64*)((uintn)targetFromFrameBuff + ((from.width - width)<<2));
+        targetFrameBuff = (uint64*)((uintn)targetFrameBuff + (ScanlineWidth - width)*4);
+        targetFromFrameBuff = (uint64*)((uintn)targetFromFrameBuff + (from.width - width)*4);
     }
 
     return;
 }
+
+
+void Graphic_DrawMouse(uintn x, uintn y) {
+    uintn targFrameBuff_Index = y*ScanlineWidth+x;
+    const uintn width =
+                        (Width <= x+mouseCursor_width)
+                            ?((x<mouseCursor_width)?(y-mouseCursor_width):(0))
+                            :(mouseCursor_width);
+    const uintn width1 = (width<8)?(width):(8);
+    const uintn width2 = (width<8)?(0):(width);
+    const uintn height =
+                        (Height <= y+mouseCursor_height)
+                            ?((y<mouseCursor_height)?(y-mouseCursor_height):(0))
+                            :(mouseCursor_height);
+
+    for(uintn i=0; i<height; i++) {
+        //draw white
+        for(uintn k=0; k<width1; k++) {
+            if(mouseCursor_Bitmap[i*4+2] & (0x80 >> k)) {
+                Framebuff[targFrameBuff_Index + k] = 0x00ffffff;
+            }
+        }
+        for(uintn k=8; k<width2; k++) {
+            if(mouseCursor_Bitmap[i*4+3] & (0x80 >> (k-8))) {
+                Framebuff[targFrameBuff_Index + k] = 0x00ffffff;
+            }
+        }
+
+        //draw black
+        for(uintn k=0; k<width1; k++) {
+            if(mouseCursor_Bitmap[i*4] & (0x80 >> k)) {
+                Framebuff[targFrameBuff_Index + k] = 0x00000000;
+            }
+        }
+        for(uintn k=8; k<width2; k++) {
+            if(mouseCursor_Bitmap[i*4+1] & (0x80 >> (k-8))) {
+                Framebuff[targFrameBuff_Index + k] = 0x00000000;
+            }
+        }
+
+        targFrameBuff_Index += ScanlineWidth;
+    }
+    return;
+}
+

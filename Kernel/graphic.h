@@ -1,5 +1,8 @@
 #ifndef INCLUDED_GRAPHIC_H
 
+#define mouseCursor_width (16)
+#define mouseCursor_height (18)
+
 #define Graphic_Color2BGR(color) ((((uint32)color.red) << 16) + (((uint32)color.green) << 8) + ((uint32)color.blue))
 
 void Graphic_Init(void);
@@ -20,6 +23,8 @@ typedef struct {
 
 extern void (*Graphic_DrawSquare)(sintn x, sintn y, uintn width, uintn height, Graphic_Color color);//draw square
 extern void (*Graphic_DrawFrom)(sintn x, sintn y, uintn xfrom, uintn yfrom, uintn width, uintn height, Graphic_FrameBuff from);//draw memmapped bgr frame
+
+void Graphic_DrawMouse(uintn x, uintn y);//draw mouseCursor
 
 #endif
 

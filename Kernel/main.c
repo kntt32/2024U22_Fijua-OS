@@ -26,6 +26,10 @@ int kernel_main(KernelInputStruct* kernelInput) {
     Task_Init();
     Layer_Init();
 
+    Graphic_DrawMouse(0,0);
+
+    Halt();
+
     Task_NewTask(Test_Tester1);
     Task_NewTask(Test_Tester2);
     Task_Yield();

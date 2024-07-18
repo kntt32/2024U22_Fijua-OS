@@ -22,7 +22,7 @@ void Halt() {
     
     while(1) {
         Task_Yield();
-        Efi_Wrapper((void*)Stall, 100);
+        Halt_Asm_Hlt();
     }
 }
 
@@ -51,11 +51,21 @@ sintn Log2(uintn number) {
 }
 
 
-//blueScreen
-void BlueScreen(ascii moduleName[], ascii errStr[]) {
-
-
-    Halt();
+//MemCpy
+void Functions_MemCpy(void* to, void* from, uintn size) {
+    uint64* targTo64 = (uint64*)to;
+    uint64* targFrom64 = (uint64*)from;
+    for(uintn i=0; i<(size >> 3); i++) {
+        *targTo64 = *targFrom64;
+        targTo64++;
+        targFrom64++;
+    }
+    uint8* targTo8 = (uint8*)targTo64;
+    uint8* targFrom8 = (uint8*)targFrom64;
+    for(uintn i=0; i<size&0x07; i++) {
+        *targTo8 = *targFrom8;
+        targTo8++;
+        targFrom8++;
+    }
+    return;
 }
-
-
