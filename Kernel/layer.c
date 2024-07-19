@@ -1,6 +1,9 @@
 #include <types.h>
 #include "graphic.h"
 #include "layer.h"
+#include "mouse.h"
+#include "functions.h"
+#include "console.h"
 
 void Console_Layer_OutData(void** frameBuff, uintn* width, uintn* height);
 
@@ -50,8 +53,8 @@ static uintn Layer_Update_IsWaste() {
     return 0;
 }
 
-
 void Layer_Update(void) {
+    /*
     //draw Console
     if(!(layer.Console.Change.width == 0 || layer.Console.Change.height == 0))
         Graphic_DrawFrom(
@@ -64,20 +67,44 @@ void Layer_Update(void) {
     layer.Console.Change.y = 0;
     layer.Console.Change.width = 0;
     layer.Console.Change.height = 0;
-
+*/
     //draw Window
 
     //draw Mouse
-    if(!(layer.Mouse.Draw.x == layer.Mouse.Draw.oldx && layer.Mouse.Draw.y == layer.Mouse.Draw.oldy)
-        || !Layer_Update_IsWaste()) Graphic_DrawMouse(layer.Mouse.Draw.x, layer.Mouse.Draw.y);
-    layer.Mouse.Draw.oldx = layer.Mouse.Draw.x;
-    layer.Mouse.Draw.oldy = layer.Mouse.Draw.y;
+    if(!(layer.Mouse.Draw.x == layer.Mouse.Draw.oldx && layer.Mouse.Draw.y == layer.Mouse.Draw.oldy)) {
+        
+#if 0
+        ascii strbuff[19];
+        SPrintIntX(layer.Mouse.Draw.x, 17, strbuff);
+        strbuff[16] = ']';
+        strbuff[17] = '\n';
+        strbuff[18] = '\0';
+        Console_Print(strbuff);
+#endif
+#if 1
+        Graphic_Color backcolor = {0x2d, 0x38, 0x81};
+        Graphic_DrawSquare(layer.Mouse.Draw.oldx, layer.Mouse.Draw.oldy, layer.Mouse.Draw.width, layer.Mouse.Draw.height, backcolor);
+#endif
+
+        Graphic_DrawMouse(layer.Mouse.Draw.x, layer.Mouse.Draw.y);
+
+        layer.Mouse.Draw.oldx = layer.Mouse.Draw.x;
+        layer.Mouse.Draw.oldy = layer.Mouse.Draw.y;
+    }
 
     return;
 }
 
 
 void Layer_NotifyChanged(uintn layerId, uintn x, uintn y, uintn width, uintn height) {
+    return;
+}
+
+
+//マウスが動いたことをLayerモジュールに通知
+void Layer_Mouse_NotifyMove(uintn x, uintn y) {
+    layer.Mouse.Draw.x = x;
+    layer.Mouse.Draw.y = y;
     return;
 }
 

@@ -9,6 +9,7 @@
 #include "queue.h"
 #include "task.h"
 #include "layer.h"
+#include "mouse.h"
 
 #include "test.h"
 
@@ -22,17 +23,24 @@ int kernel_main(KernelInputStruct* kernelInput) {
     
     Memory_Init();
     Timer_Init();
+    Console_Print("Initializing Mouse...\n");
+#if 1
+    Mouse_Init();
+    Console_Print("Mouse Initialization Done!\n");
 
     Task_Init();
     Layer_Init();
-
-    Graphic_DrawMouse(0,0);
+    
+    while(1) {
+        Layer_Update();
+    }
 
     Halt();
 
     Task_NewTask(Test_Tester1);
     Task_NewTask(Test_Tester2);
     Task_Yield();
+#endif
 
     Console_Print("Hello!\n");
     Console_Print("iadgilfuhsoiuhaoisughoiasuhgioauhgoiuashogiuhaoiruhgoisauhgroiaurhgoisuahgiouhsarg");

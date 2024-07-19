@@ -84,5 +84,9 @@ typedef struct {
 
 void Layer_Init(void);
 
+void Layer_Update(void);
+
+void Layer_Mouse_NotifyMove(uintn x, uintn y);
+
 
 #endif
