@@ -70,6 +70,8 @@ typedef struct {
 
 
 typedef struct {
+    uintn changedFlag;
+
     Layer_Console Console;//LayerId: 0
 
     struct {
@@ -86,7 +88,8 @@ void Layer_Init(void);
 
 void Layer_Update(void);
 
-void Layer_Mouse_NotifyMove(uintn x, uintn y);
+void Layer_Mouse_NotifyUpdate(uintn x, uintn y);
 
+void Layer_Console_NotifyUpdate(uintn x, uintn y, uintn width, uintn height);
 
 #endif

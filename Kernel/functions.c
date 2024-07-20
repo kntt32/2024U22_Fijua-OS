@@ -62,7 +62,7 @@ void Functions_MemCpy(void* to, void* from, uintn size) {
     }
     uint8* targTo8 = (uint8*)targTo64;
     uint8* targFrom8 = (uint8*)targFrom64;
-    for(uintn i=0; i<size&0x07; i++) {
+    for(uintn i=0; i<(size&0x07); i++) {
         *targTo8 = *targFrom8;
         targTo8++;
         targFrom8++;

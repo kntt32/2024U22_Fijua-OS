@@ -4,6 +4,7 @@
 #include "graphic.h"
 #include "console.h"
 #include "font.h"
+#include "layer.h"
 
 #define buffwidth (80)
 #define buffheight (30)
@@ -18,6 +19,8 @@ static Graphic_Color fontColor;
 
 static uint32* console_framebuff[buffwidth*buffheight*16*8];
 static Graphic_FrameBuff console_framebuffData;
+
+static uintn isLayerMode = 0;
 
 static void Console_FlushLine(uintn line);
 static void Console_Scroll(void);
@@ -55,10 +58,11 @@ void Console_Init(void) {
 }
 
 
-void Console_Layer_OutData(void** frameBuff, uintn* width, uintn* height) {
+void Console_Layer_SwitchToLayerMode(void** frameBuff, uintn* width, uintn* height) {
     *frameBuff = console_framebuff;
     *width = buffwidth*8;
     *height = buffheight*16;
+    isLayerMode = 1;
     return;
 }
 
@@ -74,7 +78,11 @@ void Console_Print(ascii str[]) {
                 for(uintn i=0; i<buffheight; i++) {
                     if(lineChangedFlag[i]) {
                         lineChangedFlag[i] = 0;
-                        Graphic_DrawFrom(0, 0, 0, i*16, buffwidth*8, 16, console_framebuffData);
+                        if(isLayerMode) {
+                            Layer_Console_NotifyUpdate(0, i*16, buffwidth*8, 16);
+                        }else {
+                            Graphic_DrawFrom(0, 0, 0, i*16, buffwidth*8, 16, console_framebuffData);
+                        }
                     }
                 }
                 return;

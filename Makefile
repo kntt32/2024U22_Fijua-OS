@@ -19,4 +19,4 @@ clean:
 	
 
 run:
-	qemu-system-x86_64 --monitor stdio -usb -device usb-mouse -bios $(OVMFFDPATH) -hda fat:rw:disk
+	qemu-system-x86_64 --monitor stdio -usb -device usb-mouse -device usb-kbd -bios $(OVMFFDPATH) -hda fat:rw:disk
