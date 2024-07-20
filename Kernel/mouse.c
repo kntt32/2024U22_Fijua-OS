@@ -19,7 +19,7 @@ static EFI_SIMPLE_POINTER_PROTOCOL* Efi_SimplePointerProtocol[Mouse_SupportHardw
 
 static sintn Mouse_y = 0;
 static sintn Mouse_x = 0;
-static const sintn Mouse_speed = 20;
+static const sintn Mouse_speed = 30;
 
 void Mouse_Init(void) {
     uintn status;
@@ -71,7 +71,7 @@ void Mouse_Init(void) {
             status = Efi_Wrapper(Efi_SimplePointerProtocol[i]->Reset, Efi_SimplePointerProtocol[i], 0);
             if(status) {
                 for(uintn k=i+1; k<Efi_SimplePointerProtocol_Count; k++) {
-                    Efi_SimplePointerProtocol[i-1] = Efi_SimplePointerProtocol[i];
+                    Efi_SimplePointerProtocol[k-1] = Efi_SimplePointerProtocol[k];
                 }
                 Efi_SimplePointerProtocol_Count--;
                 i--;
@@ -81,6 +81,14 @@ void Mouse_Init(void) {
             Console_Print("Mouse_Init: Mouse interface not found\n");
             Halt();
         }
+#if 1
+        ascii strbuff[18];
+        SPrintIntX(Efi_SimplePointerProtocol[0]->Mode->ResolutionX, 17, strbuff);
+        strbuff[16] = '\n';
+        strbuff[17] = '\0';
+        Console_Print(strbuff);
+
+#endif
     }
 #endif
 
@@ -110,12 +118,19 @@ void Mouse_Move(void) {
     for(uintn i=0; i<Efi_SimplePointerProtocol_Count; i++) {
         status = Efi_Wrapper(Efi_SimplePointerProtocol[i]->GetState, Efi_SimplePointerProtocol[i], &Efi_Mouse_State);
         if(status == 0) {
+#if 0
+            ascii strbuff[18];
+            SPrintIntX(i, 17, strbuff);
+            strbuff[16] = '\n';
+            strbuff[17] = '\0';
+            Console_Print(strbuff);
+#endif
             updateFlag = 1;
 
             divNumX = Efi_SimplePointerProtocol[i]->Mode->ResolutionX;
             divNumY = Efi_SimplePointerProtocol[i]->Mode->ResolutionY;
-            if(divNumX != 0) Mouse_x += Mouse_speed*Efi_Mouse_State.RelativeMovementX/divNumX;
-            if(divNumY != 0) Mouse_y += Mouse_speed*Efi_Mouse_State.RelativeMovementY/divNumY;
+            if(divNumX != 0) Mouse_x += (Mouse_speed*Efi_Mouse_State.RelativeMovementX)/divNumX;
+            if(divNumY != 0) Mouse_y += (Mouse_speed*Efi_Mouse_State.RelativeMovementY)/divNumY;
         }
     }
     if(updateFlag) {
