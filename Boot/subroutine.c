@@ -212,7 +212,7 @@ void get_memory_for_kernel() {
             if(targetMemDescriptor->Type == EfiConventionalMemory && 0x100000 <= targetMemDescriptor->PhysicalStart) {//allocate memory larger than 0x500000
                 tempPhysicalAddress = targetMemDescriptor->PhysicalStart;
                 status = SysTbl->BootServices->AllocatePages(AllocateAddress, EfiLoaderData, targetMemDescriptor->NumberOfPages, &tempPhysicalAddress);
-                if(status) err();
+                if(status) continue;
                 for(uintn k=(uintn)(targetMemDescriptor->PhysicalStart >> 12); k<(uintn)(targetMemDescriptor->PhysicalStart >> 12) + targetMemDescriptor->NumberOfPages; k++) {
                     tempUint16ptr[k] = 1;
                 }
