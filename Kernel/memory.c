@@ -28,15 +28,15 @@ void Memory_Init(void) {
 }
 
 
-void* Memory_AllocPages(uint16 ownerid, uintn pages) {
+void* Memory_AllocPages(uint16 taskId, uintn pages) {
     /*
-    ownerid:
+    taskId:
         0:firmware
         1:available
         2:kernel
         10~:app
     */
-    if(ownerid == Memory_MemType_Unavailable || ownerid == Memory_MemType_Available) return NULL;
+    if(taskId == Memory_MemType_Unavailable || taskId == Memory_MemType_Available) return NULL;
     if(pages == 0) return NULL;
 
     Mutex_Lock(&Memory_Mutex);
@@ -51,7 +51,7 @@ void* Memory_AllocPages(uint16 ownerid, uintn pages) {
 
         if(memareaPages == pages) {
             for(uintn k=i-pages+1; k<=i; k++) {
-                Memory_MemMap[k] = ownerid;
+                Memory_MemMap[k] = taskId;
             }
             Mutex_UnLock(&Memory_Mutex);
             return (void*)((i-pages+1)<<12);
@@ -66,8 +66,8 @@ void* Memory_AllocPages(uint16 ownerid, uintn pages) {
 
 //free pages
 //if indecaded page isn't owned by ownerid, it is ignored.
-uintn Memory_FreePages(uint16 ownerid, uintn pages, void* pageaddr) {
-    if(ownerid == Memory_MemType_Unavailable || ownerid == Memory_MemType_Available) return 1;
+uintn Memory_FreePages(uint16 taskId, uintn pages, void* pageaddr) {
+    if(taskId == Memory_MemType_Unavailable || taskId == Memory_MemType_Available) return 1;
     if(pageaddr == NULL) return 2;
     if((((uintn)pageaddr)&0xfff) != 0) return 3;
     if(Memory_PageCount < (((uintn)pageaddr)>>12)+pages) return 4;
@@ -77,7 +77,7 @@ uintn Memory_FreePages(uint16 ownerid, uintn pages, void* pageaddr) {
 
     uintn pageCount = ((uintn)pageaddr)>>12;
     for(uintn i=0; i<pages; i++) {
-        if(Memory_MemMap[i+pageCount] == ownerid) {
+        if(Memory_MemMap[i+pageCount] == taskId) {
             Memory_MemMap[i+pageCount] = Memory_MemType_Available;
         }
     }
@@ -88,13 +88,13 @@ uintn Memory_FreePages(uint16 ownerid, uintn pages, void* pageaddr) {
 }
 
 
-uintn Memory_FreeAll(uint16 ownerid) {
-    if(ownerid == Memory_MemType_Unavailable || ownerid == Memory_MemType_Available) return 1;
+uintn Memory_FreeAll(uint16 taskId) {
+    if(taskId == Memory_MemType_Unavailable || taskId == Memory_MemType_Available) return 1;
 
     Mutex_Lock(&Memory_Mutex);
 
     for(uintn i=0; i<Memory_PageCount; i++) {
-        if(Memory_MemMap[i] == ownerid) {
+        if(Memory_MemMap[i] == taskId) {
             Memory_MemMap[i] = Memory_MemType_Available;
         }
     }

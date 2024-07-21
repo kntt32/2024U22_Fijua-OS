@@ -19,6 +19,8 @@ static EFI_SIMPLE_POINTER_PROTOCOL* Efi_SimplePointerProtocol[Mouse_SupportHardw
 
 static sintn Mouse_y = 0;
 static sintn Mouse_x = 0;
+static uintn displayWidth;
+static uintn displayHeight;
 static const sintn Mouse_speed = 30;
 
 void Mouse_Init(void) {
@@ -26,13 +28,10 @@ void Mouse_Init(void) {
 
     //Get Efi Protocol Interface
     EFI_GUID guid = EFI_SIMPLE_POINTER_PROTOCOL_GUID;
-#if 0
-    status = Efi_Wrapper(KernelInput->LoadedImage->SystemTable->BootServices->LocateProtocol, &guid, NULL, &Efi_SimplePointerProtocol);
-    if(status) {
-        Console_Print("Err in Mouse_Init\n");
-        Halt();
-    }
-#else
+
+    displayWidth = KernelInput->Graphic.width;
+    displayHeight = KernelInput->Graphic.height;
+
     {
         uintn handleBuffSize = 0;
         status = Efi_Wrapper(KernelInput->LoadedImage->SystemTable->BootServices->LocateHandle, ByProtocol, &guid, NULL, &handleBuffSize, NULL);
@@ -50,23 +49,7 @@ void Mouse_Init(void) {
             status = Efi_Wrapper(KernelInput->LoadedImage->SystemTable->BootServices->HandleProtocol, handleBuff[i], &guid, &(Efi_SimplePointerProtocol[Efi_SimplePointerProtocol_Count]));
             if(status == 0) Efi_SimplePointerProtocol_Count++;
         }
-    }
-#endif
-    
-#if 0
-    Efi_Mouse_Reset = Efi_SimplePointerProtocol->Reset;
-    Efi_Mouse_GetState = Efi_SimplePointerProtocol->GetState;
 
-    status = Efi_Wrapper(Efi_Mouse_Reset, Efi_SimplePointerProtocol, 0);
-    if(status) {
-        Console_Print("Mouse_Init: Cannot reset mouse\n");
-        Halt();
-    }
-#else
-
-    
-
-    {
         for(sintn i=0; i<(sintn)Efi_SimplePointerProtocol_Count; i++) {
             status = Efi_Wrapper(Efi_SimplePointerProtocol[i]->Reset, Efi_SimplePointerProtocol[i], 0);
             if(status) {
@@ -83,33 +66,27 @@ void Mouse_Init(void) {
         }
 #if 1
         ascii strbuff[18];
-        SPrintIntX(Efi_SimplePointerProtocol[0]->Mode->ResolutionX, 17, strbuff);
+        SPrintIntX(Efi_SimplePointerProtocol_Count, 17, strbuff);
         strbuff[16] = '\n';
         strbuff[17] = '\0';
         Console_Print(strbuff);
+        for(uintn i=0; i<Efi_SimplePointerProtocol_Count; i++) {
+            SPrintIntX(Efi_SimplePointerProtocol[i]->Mode->ResolutionX, 17, strbuff);
+            strbuff[16] = '\n';
+            strbuff[17] = '\0';
+            Console_Print(strbuff);
+        }
 
 #endif
     }
-#endif
 
-    Timer_Set(Mouse_Move, 10000);
+    Timer_Set(Mouse_CheckState, 10000);
 
     return;
 }
 
-void Mouse_Move(void) {
-#if 0
-    uintn status;
-    status = Efi_Wrapper(Efi_Mouse_GetState, Efi_SimplePointerProtocol, &Efi_Mouse_State);
-    if(!status) {
-        Mouse_x += Efi_Mouse_State.RelativeMovementX/0x1000;
-        Mouse_y += Efi_Mouse_State.RelativeMovementY/0x1000;
-        if(Mouse_x < 0) Mouse_x = 0;
-        if(Mouse_y < 0) Mouse_y = 0;
-        Layer_Mouse_NotifyUpdate(Mouse_x, Mouse_y);
-    }
-    return;
-#else
+
+void Mouse_CheckState(void) {
     static EFI_SIMPLE_POINTER_STATE Efi_Mouse_State;
     uintn status;
     uintn updateFlag = 0;
@@ -118,13 +95,6 @@ void Mouse_Move(void) {
     for(uintn i=0; i<Efi_SimplePointerProtocol_Count; i++) {
         status = Efi_Wrapper(Efi_SimplePointerProtocol[i]->GetState, Efi_SimplePointerProtocol[i], &Efi_Mouse_State);
         if(status == 0) {
-#if 0
-            ascii strbuff[18];
-            SPrintIntX(i, 17, strbuff);
-            strbuff[16] = '\n';
-            strbuff[17] = '\0';
-            Console_Print(strbuff);
-#endif
             updateFlag = 1;
 
             divNumX = Efi_SimplePointerProtocol[i]->Mode->ResolutionX;
@@ -136,9 +106,11 @@ void Mouse_Move(void) {
     if(updateFlag) {
         if(Mouse_x < 0) Mouse_x = 0;
         if(Mouse_y < 0) Mouse_y = 0;
+        if(displayWidth <= (uintn)Mouse_x) Mouse_x = displayWidth-1;
+        if(displayHeight <= (uintn)Mouse_y) Mouse_y = displayHeight-1;
         Layer_Mouse_NotifyUpdate(Mouse_x, Mouse_y);
     }
 
-#endif
+    return;
 }
 

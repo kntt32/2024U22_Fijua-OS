@@ -2,6 +2,6 @@
 #define INCLUDED_MOUSE_H
 
 void Mouse_Init(void);
-void Mouse_Move(void);
+void Mouse_CheckState(void);
 
 #endif

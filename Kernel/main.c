@@ -28,16 +28,12 @@ int kernel_main(KernelInputStruct* kernelInput) {
     Task_Init();
     Layer_Init();
 
-    Console_Print("hAllo");
-    
-    while(1) {
-        Layer_Update();
-    }
-
     Halt();
 
-    Task_NewTask(Test_Tester1);
-    Task_NewTask(Test_Tester2);
+    Console_Print("hAllo");
+
+    Task_New(Test_Tester1);
+    Task_New(Test_Tester2);
     Task_Yield();
 
     Console_Print("Hello!\n");

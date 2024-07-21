@@ -33,8 +33,8 @@ typedef struct {
     struct {
         uintn x;
         uintn y;
-        uintn visualWidth;
-        uintn visualHeight;
+        uintn visualWidth;//+2
+        uintn visualHeight;//+windowBar+1
 
         uintn oldx;
         uintn oldy;

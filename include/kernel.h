@@ -6,12 +6,12 @@
 #include <efi_loaded_image_protocol.h>
 
 typedef struct {
-        uintn mode;//1:rgb 2:bgr
-        uintn startAddr;
-        uintn scanlineWidth;
-        uintn width;
-        uintn height;
-    } GraphicData;
+    uintn mode;//1:rgb 2:bgr
+    uintn startAddr;
+    uintn scanlineWidth;
+    uintn width;
+    uintn height;
+} GraphicData;
 
 typedef struct {
     EFI_LOADED_IMAGE_PROTOCOL* LoadedImage;

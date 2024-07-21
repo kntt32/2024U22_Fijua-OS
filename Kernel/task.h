@@ -4,13 +4,10 @@
 #define Task_TaskId_NULL (0)
 
 #define Task_Object_Tasklevel_app (0)
-#define Task_Object_Tasklevel_graphic (1)
-#define Task_Object_Tasklevel_driver (2)
 
 
 typedef struct {
     uint16 taskId;//disable 0
-    uint8 taskLevel;//0: app, 1: graphic, 2: driver
     void* stackPtr;
     sintn (*taskEntry)(void);
 } Task_Object;
@@ -20,13 +17,12 @@ typedef struct {
     uint8 haltFlag;
 
     void* kernelStackPtr;
+    sintn layerTrigger;
 
     struct {
         uint16 runningTaskId;
         
         Queue app;
-        Queue graphic;
-        Queue driver;
     } Queue;
 
     struct {
@@ -40,12 +36,14 @@ typedef struct {
 
 void Task_Init(void);
 
-uint16 Task_NewTask(sintn (*taskEntry)(void));
+uint16 Task_New(sintn (*taskEntry)(void));
 void Task_Delete(uint16 taskId);
 uintn Task_EnQueueTask(uint16 taskId);
 
 void Task_Yield(void);
 void Task_Halt(void);
+
+void Task_SetLayerTrigger(void);
 
 void Task_ChangeContext(void);
 

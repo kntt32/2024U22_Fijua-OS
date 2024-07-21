@@ -14,12 +14,6 @@ extern KernelInputStruct* KernelInput;
 
 //Halt (BootServices->Stall)
 void Halt() {
-    static EFI_STALL Stall = NULL;
-
-    if(Stall == NULL) {
-        Stall = KernelInput->LoadedImage->SystemTable->BootServices->Stall;
-    }
-    
     while(1) {
         Task_Yield();
         Halt_Asm_Hlt();

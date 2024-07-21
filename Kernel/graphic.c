@@ -205,13 +205,12 @@ void Graphic_DrawMouse(uintn x, uintn y) {
     uintn targFrameBuff_Index = y*ScanlineWidth+x;
     const uintn width =
                         (Width <= x+mouseCursor_width)
-                            ?((x<mouseCursor_width)?(y-mouseCursor_width):(0))
+                            ?((x<Width)?(Width-x):(0))
                             :(mouseCursor_width);
     const uintn width1 = (width<8)?(width):(8);
     const uintn width2 = (width<8)?(0):(width);
-    const uintn height =
-                        (Height <= y+mouseCursor_height)
-                            ?((y<mouseCursor_height)?(y-mouseCursor_height):(0))
+    const uintn height = (Height <= y+mouseCursor_height)
+                            ?((y<Height)?(Height-y):(0))
                             :(mouseCursor_height);
 
     for(uintn i=0; i<height; i++) {

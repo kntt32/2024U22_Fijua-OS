@@ -1,13 +1,17 @@
 #include <types.h>
 #include "graphic.h"
 #include "layer.h"
+#include "memory.h"
 #include "mouse.h"
 #include "functions.h"
 #include "console.h"
+#include "queue.h"
+#include "task.h"
 
 static Layer layer;
 
 
+//Layerを初期化
 void Layer_Init(void) {
     layer.changedFlag = 0;
 
@@ -47,6 +51,7 @@ void Layer_Init(void) {
 }
 
 
+//Layerを描画
 void Layer_Update(void) {
     if(layer.changedFlag == 0) return;
 
@@ -59,8 +64,8 @@ void Layer_Update(void) {
     //draw Console
     Graphic_DrawFrom(
         layer.Console.Draw.x, layer.Console.Draw.y,
-        layer.Console.Change.x, layer.Console.Change.y,
-        layer.Console.Change.width, layer.Console.Change.height,
+        0, 0,
+        layer.Console.Draw.width, layer.Console.Draw.height,
         layer.Console.FrameBuff.Data
     );
 
@@ -74,11 +79,104 @@ void Layer_Update(void) {
     return;
 }
 
+
+//Layer.Windowのサイズ拡張
+static uintn Layer_Window_Expand(void) {
+    uintn newPages = layer.Window.pages*2 + 1;
+    Layer_Window* newData = Memory_AllocPages(2, newPages);
+    if(newData == NULL) return 1;
+    for(uintn i=0; i<layer.Window.count; i++) {
+        newData[i].taskId = layer.Window.Data[i].taskId;
+        newData[i].hiddenFlag = layer.Window.Data[i].hiddenFlag;
+        newData[i].layerId = layer.Window.Data[i].layerId;
+
+        newData[i].Draw.x = layer.Window.Data[i].Draw.x;
+        newData[i].Draw.y = layer.Window.Data[i].Draw.y;
+        newData[i].Draw.visualWidth = layer.Window.Data[i].Draw.visualWidth;
+        newData[i].Draw.visualHeight = layer.Window.Data[i].Draw.visualHeight;
+        newData[i].Draw.oldx = layer.Window.Data[i].Draw.oldx;
+        newData[i].Draw.oldy = layer.Window.Data[i].Draw.oldy;
+        newData[i].Draw.oldVisualWidth = layer.Window.Data[i].Draw.oldVisualWidth;
+        newData[i].Draw.oldVisualHeight = layer.Window.Data[i].Draw.oldVisualHeight;
+        
+        newData[i].Change.x = layer.Window.Data[i].Change.x;
+        newData[i].Change.y = layer.Window.Data[i].Change.y;
+        newData[i].Change.width = layer.Window.Data[i].Change.width;
+        newData[i].Change.height = layer.Window.Data[i].Change.height;
+
+        newData[i].FrameBuff.pages = layer.Window.Data[i].FrameBuff.pages;
+        newData[i].FrameBuff.Data = layer.Window.Data[i].FrameBuff.Data;
+    }
+    Memory_FreePages(2, layer.Window.pages, layer.Window.Data);
+    layer.Window.pages = newPages;
+    layer.Window.Data = newData;
+
+    return 0;
+}
+
+
+//Layer.Windowを作成してlayerIdを返す
+uintn Layer_NewWindow(uint16 taskId, uintn x, uintn y, uintn width, uintn height, uintn maxWidth, uintn maxHeight) {
+    if(taskId == 0 || taskId == 1) return 0;
+    if(width == 0 || height == 0) return 0;
+    if(maxWidth<=width || maxHeight<=height) return 0;
+
+    //割り当てるlayerIdを取得
+    uintn layerId = 1;
+    for(sintn i=0; i<(sintn)(layer.Window.count); i++) {
+        if(layer.Window.Data[i].layerId == layerId) {
+            layerId++;
+            i = -1;
+            continue;
+        }
+    }
+
+    //Layer.Windowに追加
+    if((layer.Window.pages << 12) <= layer.Window.count*sizeof(Layer_Window)) {
+        if(Layer_Window_Expand()) return 0;
+    }
+
+    Layer_Window* newWindow = layer.Window.Data + layer.Window.count;
+    newWindow->taskId = taskId;
+    newWindow->hiddenFlag = 0;
+    newWindow->layerId = layerId;
+
+    newWindow->Draw.x = x;
+    newWindow->Draw.y = y;
+    newWindow->Draw.visualWidth = width;
+    newWindow->Draw.visualHeight = height;
+    newWindow->Draw.oldx = x;
+    newWindow->Draw.oldy = y;
+    newWindow->Draw.oldVisualWidth = 0;
+    newWindow->Draw.oldVisualHeight = 0;
+
+    newWindow->Change.x = 0;
+    newWindow->Change.y = 0;
+    newWindow->Change.width = width;
+    newWindow->Change.height = height;
+
+    newWindow->FrameBuff.pages = (maxWidth*maxHeight*sizeof(uint32)+0xfff)>>12;
+    newWindow->FrameBuff.Data.width = maxWidth;
+    newWindow->FrameBuff.Data.height = maxHeight;
+    newWindow->FrameBuff.Data.frameBuff = Memory_AllocPages(taskId, newWindow->FrameBuff.pages);
+    if(newWindow->FrameBuff.Data.frameBuff == NULL) return 0;
+
+    layer.Window.count++;
+
+    layer.changedFlag = 1;
+
+    return layerId;
+}
+
+
 //マウス更新をLayerモジュールに通知
 void Layer_Mouse_NotifyUpdate(uintn x, uintn y) {
     layer.Mouse.Draw.x = x;
     layer.Mouse.Draw.y = y;
     layer.changedFlag = 1;
+
+    Task_SetLayerTrigger();
+    
     return;
 }
 

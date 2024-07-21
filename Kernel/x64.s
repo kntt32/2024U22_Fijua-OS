@@ -117,7 +117,7 @@ Task_NewTask_Asm_SetStartContext:
     mov %rsp, %rax
     mov %rdi, %rsp
     
-    leaq Task_NewTask_StartPoint(%rip), %r10
+    leaq Task_New_StartPoint(%rip), %r10
 
     pushq $0x0 #dummy
 

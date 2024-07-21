@@ -5,6 +5,8 @@
 #include "task.h"
 #include "memory.h"
 #include "x64.h"
+#include "graphic.h"
+#include "layer.h"
 
 void* Task_NewTask_Asm_SetStartContext(void* stackptr);
 void Task_ContextSwitch(void);
@@ -18,11 +20,10 @@ void Task_Init(void) {
     //reset
     task.haltFlag = 0;
     task.kernelStackPtr = NULL;
+    task.layerTrigger = 0;
 
     task.Queue.runningTaskId = 0;
     Queue_Init(&(task.Queue.app));
-    Queue_Init(&(task.Queue.graphic));
-    Queue_Init(&(task.Queue.driver));
 
     task.Table.count = 0;
     task.Table.listPages = 0;
@@ -84,7 +85,7 @@ static sintn Task_GetIndexOfTaskList(uint16 taskId) {
 
 
 //Add NewTask and return taskID
-uint16 Task_NewTask(sintn (*taskEntry)(void)) {
+uint16 Task_New(sintn (*taskEntry)(void)) {
     if(taskEntry == NULL) return 0;
 
     uint16 newTaskId = Task_SeekNewTaskID();
@@ -101,7 +102,6 @@ uint16 Task_NewTask(sintn (*taskEntry)(void)) {
     }
 
     task.Table.list[task.Table.count].taskId = newTaskId;
-    task.Table.list[task.Table.count].taskLevel = Task_Object_Tasklevel_app;
     task.Table.list[task.Table.count].stackPtr = Task_NewTask_Asm_SetStartContext((void*)(((uintn)stackPtr)+Task_DefaultStackPageSize-1));
     task.Table.list[task.Table.count].taskEntry = taskEntry;
 
@@ -126,10 +126,10 @@ void Task_Delete(uint16 taskId) {
     task.Table.count--;
 
     Queue_Replace(&(task.Queue.app), taskId, 0);
-    Queue_Replace(&(task.Queue.graphic), taskId, 0);
-    Queue_Replace(&(task.Queue.driver), taskId, 0);
 
     Memory_FreeAll(taskId);
+
+    //Layer_Window_DeleteAll(taskId);
 
     Task_Yield();
 
@@ -138,7 +138,7 @@ void Task_Delete(uint16 taskId) {
 
 
 //NewTask StartPoint
-void Task_NewTask_StartPoint() {
+void Task_New_StartPoint() {
     sintn taskIndex = Task_GetIndexOfTaskList(task.Queue.runningTaskId);
     if(taskIndex != -1) {
         task.Table.list[taskIndex].taskEntry();
@@ -161,25 +161,8 @@ uintn Task_EnQueueTask(uint16 taskId) {
     if(taskIndex == -1) {
         return 2;
     }
-
-    switch(task.Table.list[taskIndex].taskLevel) {
-        case Task_Object_Tasklevel_app:
-            if(!Queue_IsExist(&(task.Queue.app), (uintn)taskId)) {
-                Queue_EnQueue(&(task.Queue.app), (uintn)taskId);
-            }
-            break;
-        case Task_Object_Tasklevel_graphic:
-            if(!Queue_IsExist(&(task.Queue.graphic), (uintn)taskId)) {
-                Queue_EnQueue(&(task.Queue.graphic), (uintn)taskId);
-            }
-            break;
-        case Task_Object_Tasklevel_driver:
-            if(!Queue_IsExist(&(task.Queue.driver), (uintn)taskId)) {
-                Queue_EnQueue(&(task.Queue.driver), (uintn)taskId);
-            }
-            break;
-        default:
-            return 3;
+    if(!Queue_IsExist(&(task.Queue.app), (uintn)taskId)) {
+        Queue_EnQueue(&(task.Queue.app), (uintn)taskId);
     }
 
     return 0;
@@ -188,6 +171,11 @@ uintn Task_EnQueueTask(uint16 taskId) {
 
 //Yield
 void Task_Yield(void) {
+    task.layerTrigger--;
+    if(task.layerTrigger <= 0) {
+        Layer_Update();
+        task.layerTrigger = 5+1;
+    }
     Task_ContextSwitch();
     return;
 }
@@ -196,7 +184,14 @@ void Task_Yield(void) {
 //Halt
 void Task_Halt(void) {
     task.haltFlag = 1;
-    Task_ContextSwitch();
+    Task_Yield();
+    return;
+}
+
+
+//Set Task.layerTrigger
+void Task_SetLayerTrigger(void) {
+    task.layerTrigger = 0;
     return;
 }
 
@@ -221,23 +216,6 @@ void* Task_ContextSwitch_Subroutine(void* currentStackPtr) {
     //seek nextTaskId
     uint16 nextTaskId = 0;
     sintn nextTaskIndex = 0;
-
-    if(task.Queue.driver.count != 0) {
-        while(1) {
-            nextTaskId = Queue_DeQueue(&(task.Queue.driver));
-            nextTaskIndex = Task_GetIndexOfTaskList(nextTaskId);
-            if(nextTaskIndex == -1) nextTaskId = 0;
-            if(nextTaskId != 0 || task.Queue.driver.count == 0) break;
-        }
-    }
-    if(nextTaskId == 0 && task.Queue.graphic.count != 0) {
-        while(1) {
-            nextTaskId = Queue_DeQueue(&(task.Queue.graphic));
-            nextTaskIndex = Task_GetIndexOfTaskList(nextTaskId);
-            if(nextTaskIndex == -1) nextTaskId = 0;
-            if(nextTaskId != 0 || task.Queue.graphic.count == 0) break;
-        }
-    }
     if(nextTaskId == 0 && task.Queue.app.count != 0) {
         while(1) {
             nextTaskId = Queue_DeQueue(&(task.Queue.app));

@@ -35,15 +35,15 @@ keyboard.o: keyboard.c x64.h keyboard.h
 timer.o: timer.c timer.h x64.h console.h
 memory.o: memory.c memory.h functions.h x64.h
 graphic.o: graphic.c graphic.h graphic_mouse_bitmap
-task.o: task.c queue.h task.h memory.h x64.h
-layer.o: layer.c graphic.h layer.h mouse.h
+task.o: task.c queue.h task.h memory.h x64.h graphic.h layer.h
+layer.o: layer.c memory.h graphic.h layer.h mouse.h queue.h task.h
 mouse.o: mouse.c mouse.h graphic.h layer.h timer.h functions.h console.h x64.h
 
 test.o: test.c test.h queue.h task.h graphic.h functions.h console.h
 
 
 %.o: %.c
-	$(CC) -I $(INCLUDE) -Wall -Wextra --target=$(TARGET) -fshort-wchar -ffreestanding -mno-red-zone -c -O0 -fpie $<
+	$(CC) -I $(INCLUDE) -Wall -Wextra --target=$(TARGET) -fshort-wchar -ffreestanding -mno-red-zone -c -Os -fpie $<
 
 %.o: %.s
-	$(CC) -I $(INCLUDE) -Wall -Wextra --target=$(TARGET) -c -O0 -fpie $<
+	$(CC) -I $(INCLUDE) -Wall -Wextra --target=$(TARGET) -c -Os -fpie $<
