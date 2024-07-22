@@ -4,8 +4,8 @@
 
 typedef struct {
     struct {
-        uintn x;
-        uintn y;
+        sintn x;
+        sintn y;
         uintn width;
         uintn height;
     } Draw;
@@ -31,13 +31,13 @@ typedef struct {
     uintn layerId;//!=0
 
     struct {
-        uintn x;
-        uintn y;
+        sintn x;
+        sintn y;
         uintn visualWidth;
         uintn visualHeight;
 
-        uintn oldx;
-        uintn oldy;
+        sintn oldx;
+        sintn oldy;
         uintn oldVisualWidth;
         uintn oldVisualHeight;
     } Draw;
@@ -58,19 +58,25 @@ typedef struct {
 
 typedef struct {
     struct {
-        uintn x;
-        uintn y;
+        sintn x;
+        sintn y;
         uintn width;
         uintn height;
 
-        uintn oldx;
-        uintn oldy;
+        sintn oldx;
+        sintn oldy;
     } Draw;
+
+    struct {
+        sintn x;
+        sintn y;
+    } Drag;
 } Layer_Mouse;
 
 
 typedef struct {
     uintn changedFlag;
+    uintn isDrawingFlag;
 
     Layer_Console Console;//LayerId: 0
 
@@ -88,7 +94,7 @@ void Layer_Init(void);
 
 void Layer_Update(void);
 
-void Layer_Mouse_NotifyUpdate(uintn x, uintn y);
+void Layer_Mouse_NotifyUpdate(uintn x, uintn y, uintn leftButton);
 
 void Layer_Console_NotifyUpdate(uintn x, uintn y, uintn width, uintn height);
 

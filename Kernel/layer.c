@@ -16,15 +16,16 @@ static const Graphic_Color window_titleBar_closeButton_color = {0xf0, 0x56, 0x56
 static const Graphic_Color window_titleBar_hiddenButton_color = {0xc0, 0xc0, 0xc0};
 static const Graphic_Color window_sizeDragger_color = {0xa0, 0xa0, 0xa0};
 static const Graphic_Color window_sizeDragger_line_color = {0x50, 0x50, 0x50};
-static const uintn window_titleBar_height = 32;
-static const uintn window_shadow_overThick = 1;
-static const uintn window_shadow_underThick = 2;
-static const uintn window_sizeDragger_size = 20;
+static const sintn window_titleBar_height = 32;
+static const sintn window_shadow_overThick = 1;
+static const sintn window_shadow_underThick = 2;
+static const sintn window_sizeDragger_size = 20;
 
 
 //Layerを初期化
 void Layer_Init(void) {
     layer.changedFlag = 0;
+    layer.isDrawingFlag = 0;
 
     //init Layer.Console
     layer.Console.Draw.x = 0;
@@ -58,15 +59,56 @@ void Layer_Init(void) {
     layer.Mouse.Draw.oldx = 0;
     layer.Mouse.Draw.oldy = 0;
 
+    layer.Mouse.Drag.x = 0;
+    layer.Mouse.Drag.y = 0;
+
     return;
 }
 
 
 //Layerを描画
 void Layer_Update(void) {
-    if(layer.changedFlag == 0) return;
+    Layer_Window* targetWindow;
 
+    if(layer.changedFlag == 0) return;
+    layer.isDrawingFlag = 1;
     layer.changedFlag = 0;
+
+    
+    if(layer.Mouse.Drag.x != 0 || layer.Mouse.Drag.y != 0) {
+        targetWindow = layer.Window.Data + layer.Window.count - 1;
+
+        for(sintn i=layer.Window.count-1; 0<=i; i--) {
+            //move window
+            if((targetWindow->Draw.x <= layer.Mouse.Draw.oldx && layer.Mouse.Draw.oldx < targetWindow->Draw.x + (sintn)targetWindow->Draw.visualWidth)
+                && (targetWindow->Draw.y <= layer.Mouse.Draw.oldy && layer.Mouse.Draw.oldy < targetWindow->Draw.y + (sintn)window_titleBar_height)) {
+                targetWindow->Draw.x += layer.Mouse.Drag.x;
+                targetWindow->Draw.y += layer.Mouse.Drag.y;
+                break;
+            }
+
+            //resize window
+            if((targetWindow->Draw.x + (sintn)targetWindow->Draw.visualWidth - window_sizeDragger_size <= layer.Mouse.Draw.oldx && layer.Mouse.Draw.oldx < targetWindow->Draw.x + (sintn)targetWindow->Draw.visualWidth)
+                && (targetWindow->Draw.y + (sintn)targetWindow->Draw.visualHeight - window_sizeDragger_size <= layer.Mouse.Draw.oldy && layer.Mouse.Draw.oldy < targetWindow->Draw.y + (sintn)targetWindow->Draw.visualHeight)) {
+                if(2 <= (sintn)targetWindow->Draw.visualWidth + layer.Mouse.Drag.x && (sintn)targetWindow->Draw.visualWidth + layer.Mouse.Drag.x < (sintn)targetWindow->FrameBuff.Data.width) {
+                    targetWindow->Draw.visualWidth = (sintn)(targetWindow->Draw.visualWidth) + layer.Mouse.Drag.x;
+                }else {
+                    if(2 > (sintn)targetWindow->Draw.visualWidth + layer.Mouse.Drag.x) {
+                        targetWindow->Draw.visualWidth = 2;
+                    }else {
+                        targetWindow->Draw.visualWidth = targetWindow->FrameBuff.Data.width;
+                    }
+                }
+                break;
+            }
+            
+            targetWindow--;
+        }
+        
+        layer.Mouse.Drag.x = 0;
+        layer.Mouse.Drag.y = 0;
+    }
+
 
     //hide Mouse
     Graphic_Color backcolor = {0x2d, 0x38, 0x81};
@@ -86,7 +128,7 @@ void Layer_Update(void) {
 
 
     //draw Window
-    Layer_Window* targetWindow = layer.Window.Data;
+    targetWindow = layer.Window.Data;
     for(uintn i=0; i<layer.Window.count; i++) {
         Graphic_DrawFrom(targetWindow->Draw.x, targetWindow->Draw.y, 0, 0, targetWindow->Draw.visualWidth, targetWindow->Draw.visualHeight, targetWindow->FrameBuff.Data);
         //サイズドラッガー描画
@@ -121,6 +163,8 @@ void Layer_Update(void) {
     Graphic_DrawMouse(layer.Mouse.Draw.x, layer.Mouse.Draw.y);
     layer.Mouse.Draw.oldx = layer.Mouse.Draw.x;
     layer.Mouse.Draw.oldy = layer.Mouse.Draw.y;
+
+    layer.isDrawingFlag = 0;
 
     return;
 }
@@ -166,8 +210,6 @@ uintn Layer_Window_New(uint16 taskId, ascii name[], uintn x, uintn y, uintn widt
     if(taskId == 0 || taskId == 1) return 0;
     if(width == 0 || height == 0) return 0;
     if(maxWidth<width || maxHeight<height) return 0;
-
-    Console_Print("11");Task_Yield();
 
     //割り当てるlayerIdを取得
     uintn layerId = 1;
@@ -269,7 +311,12 @@ uintn Layer_Window_New(uint16 taskId, ascii name[], uintn x, uintn y, uintn widt
 
 
 //マウス更新をLayerモジュールに通知
-void Layer_Mouse_NotifyUpdate(uintn x, uintn y) {
+void Layer_Mouse_NotifyUpdate(uintn x, uintn y, uintn leftButton) {
+    if(layer.isDrawingFlag) return;
+    if(leftButton) {
+        layer.Mouse.Drag.x = (sintn)x - (sintn)layer.Mouse.Draw.x;
+        layer.Mouse.Drag.y = (sintn)y - (sintn)layer.Mouse.Draw.y;
+    }
     layer.Mouse.Draw.x = x;
     layer.Mouse.Draw.y = y;
     layer.changedFlag = 1;

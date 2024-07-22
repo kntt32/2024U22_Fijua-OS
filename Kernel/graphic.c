@@ -116,14 +116,19 @@ void Graphic_DrawSquare_RGB(sintn x, sintn y, uintn width, uintn height, Graphic
 void Graphic_DrawFrom_BGR(sintn x, sintn y, uintn xfrom, uintn yfrom, uintn width, uintn height, Graphic_FrameBuff from) {
     if(from.frameBuff == NULL) return;
 
+    sintn movX = 0;
+    sintn movY = 0;
+
     if(x<0) {
         width -= (uintn)(-x);
         xfrom += (uintn)(-x);
+        movX = -xfrom;
         x = 0;
     }
     if(y<0) {
         height -= (uintn)(-y);
         yfrom += (uintn)(-y);
+        movY = -yfrom;
         y = 0;
     }
 
@@ -135,7 +140,7 @@ void Graphic_DrawFrom_BGR(sintn x, sintn y, uintn xfrom, uintn yfrom, uintn widt
     if(from.width <= xfrom+width) width = from.width-xfrom;
     if(from.height <= yfrom+height) height = from.height-yfrom;
 
-    uint64* targetFrameBuff = (uint64*)((uintn)Framebuff + (x+xfrom)*4 + (y+yfrom)*ScanlineWidth*4);
+    uint64* targetFrameBuff = (uint64*)((uintn)Framebuff + (x+xfrom+movX)*4 + (y+yfrom+movY)*ScanlineWidth*4);
     uint64* targetFromFrameBuff = (uint64*)((uintn)from.frameBuff + xfrom*4 + yfrom*from.width*4);
 
     for(uintn i=0; i<height; i++) {
@@ -149,8 +154,8 @@ void Graphic_DrawFrom_BGR(sintn x, sintn y, uintn xfrom, uintn yfrom, uintn widt
             *((uint32*)targetFrameBuff) = *((uint32*)targetFromFrameBuff);
         }
 
-        targetFrameBuff = (uint64*)((uintn)targetFrameBuff + ((ScanlineWidth - width)<<2));
-        targetFromFrameBuff = (uint64*)((uintn)targetFromFrameBuff + ((from.width - width)<<2));
+        targetFrameBuff = (uint64*)((uintn)targetFrameBuff + ((ScanlineWidth - (width&0xfffffffffffffffe))<<2));
+        targetFromFrameBuff = (uint64*)((uintn)targetFromFrameBuff + ((from.width - (width&0xfffffffffffffffe))<<2));
     }
 
     return;
@@ -160,14 +165,19 @@ void Graphic_DrawFrom_BGR(sintn x, sintn y, uintn xfrom, uintn yfrom, uintn widt
 void Graphic_DrawFrom_RGB(sintn x, sintn y, uintn xfrom, uintn yfrom, uintn width, uintn height, Graphic_FrameBuff from) {
     if(from.frameBuff == NULL) return;
 
+    sintn movX = 0;
+    sintn movY = 0;
+
     if(x<0) {
         width -= (uintn)(-x);
         xfrom += (uintn)(-x);
+        movX = -xfrom;
         x = 0;
     }
     if(y<0) {
         height -= (uintn)(-y);
         yfrom += (uintn)(-y);
+        movY = -yfrom;
         y = 0;
     }
 
@@ -179,9 +189,9 @@ void Graphic_DrawFrom_RGB(sintn x, sintn y, uintn xfrom, uintn yfrom, uintn widt
     if(from.width <= xfrom+width) width = from.width-xfrom;
     if(from.height <= yfrom+height) height = from.height-yfrom;
 
-    uint64* targetFrameBuff = (uint64*)((uintn)Framebuff + (x+xfrom)*4 + (y+yfrom)*ScanlineWidth*4);
+    uint64* targetFrameBuff = (uint64*)((uintn)Framebuff + (x+xfrom+movX)*4 + (y+yfrom+movY)*ScanlineWidth*4);
     uint64* targetFromFrameBuff = (uint64*)((uintn)from.frameBuff + xfrom*4 + yfrom*from.width*4);
-
+    
     for(uintn i=0; i<height; i++) {
         for(uintn k=0; k<(width>>1); k++) {
             *targetFrameBuff = Graphic_RGB2BGR_UINT64((*targetFromFrameBuff));
@@ -193,8 +203,8 @@ void Graphic_DrawFrom_RGB(sintn x, sintn y, uintn xfrom, uintn yfrom, uintn widt
             *((uint32*)targetFrameBuff) = Graphic_RGB2BGR_UINT32((*((uint32*)targetFromFrameBuff)));
         }
 
-        targetFrameBuff = (uint64*)((uintn)targetFrameBuff + (ScanlineWidth - width)*4);
-        targetFromFrameBuff = (uint64*)((uintn)targetFromFrameBuff + (from.width - width)*4);
+        targetFrameBuff = (uint64*)((uintn)targetFrameBuff + ((ScanlineWidth - (width&0xfffffffffffffffe))<<2));
+        targetFromFrameBuff = (uint64*)((uintn)targetFromFrameBuff + ((from.width - (width&0xfffffffffffffffe))<<2));
     }
 
     return;
