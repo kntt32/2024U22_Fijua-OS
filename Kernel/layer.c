@@ -314,8 +314,8 @@ uintn Layer_Window_New(uint16 taskId, ascii name[], uintn x, uintn y, uintn widt
 void Layer_Mouse_NotifyUpdate(uintn x, uintn y, uintn leftButton) {
     if(layer.isDrawingFlag) return;
     if(leftButton) {
-        layer.Mouse.Drag.x = (sintn)x - (sintn)layer.Mouse.Draw.x;
-        layer.Mouse.Drag.y = (sintn)y - (sintn)layer.Mouse.Draw.y;
+        layer.Mouse.Drag.x = (sintn)x - (sintn)layer.Mouse.Draw.oldx;
+        layer.Mouse.Drag.y = (sintn)y - (sintn)layer.Mouse.Draw.oldy;
     }
     layer.Mouse.Draw.x = x;
     layer.Mouse.Draw.y = y;
