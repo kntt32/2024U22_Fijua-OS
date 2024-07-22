@@ -28,6 +28,16 @@ int kernel_main(KernelInputStruct* kernelInput) {
     Task_Init();
     Layer_Init();
 
+    Console_Print("A");
+
+    Task_Yield();
+
+    Layer_Window_New(2, "testWindow", 10, 10, 300, 400, 300, 400);
+
+    Console_Print("B");
+
+    Task_Yield();
+
     Halt();
 
     Console_Print("hAllo");

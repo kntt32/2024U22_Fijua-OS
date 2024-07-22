@@ -243,3 +243,36 @@ void Graphic_DrawMouse(uintn x, uintn y) {
     return;
 }
 
+
+void Graphic_FrameBuff_DrawSquare(Graphic_FrameBuff framebuff, sintn x, sintn y, uintn width, uintn height, Graphic_Color color) {
+    if(framebuff.frameBuff == NULL) return;
+    if(x<0) {
+        width += x;
+        x = 0;
+    }
+    if(y<0) {
+        height += y;
+        y = 0;
+    }
+    if(framebuff.width <= (uintn)x) return;
+    if(framebuff.height <= (uintn)y) return;
+    if(framebuff.width <= (uintn)x+width) width = framebuff.width-x;
+    if(framebuff.height <= (uintn)y+height) height = framebuff.height-y;
+
+    uint64* targetFrameBuff = (uint64*)((uintn)framebuff.frameBuff + ((x + y*framebuff.width) << 2));
+    uint64 drawcolor = 0;
+    drawcolor = (color.red<<16) + (color.green << 8) + color.blue;
+    drawcolor += (drawcolor << 32);
+
+    for(uintn i=0; i<height; i++) {
+        for(uintn k=0; k<(width>>1); k++) {
+            *targetFrameBuff = drawcolor;//drawcolor;
+            targetFrameBuff++;
+        }
+        if((width&0x1) == 0x1) *((uint32*)targetFrameBuff) = drawcolor >> 32;
+        targetFrameBuff = (uint64*)(((uintn)targetFrameBuff) + ((framebuff.width - ((width>>1)<<1))<<2));
+    }
+
+    return;
+}
+

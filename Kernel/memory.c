@@ -3,6 +3,7 @@
 #include "memory.h"
 #include "functions.h"
 #include "x64.h"
+#include "console.h"
 
 
 typedef enum {
@@ -23,6 +24,10 @@ static uintn Memory_Mutex = 0;
 void Memory_Init(void) {
     Memory_PageCount = KernelInput->Memory.PageCount;
     Memory_MemMap = (uint16*)(KernelInput->Memory.AvailableMemoryMap);
+    if(Memory_MemMap[0x100000 >> 12] != Memory_MemType_Available) {
+        Console_Print("Memory_Init: SyscallPage is'nt available\n");
+    }
+    Memory_MemMap[0x100000 >> 12] = 2;
 
     return;
 }

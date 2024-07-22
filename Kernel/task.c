@@ -174,7 +174,7 @@ void Task_Yield(void) {
     task.layerTrigger--;
     if(task.layerTrigger <= 0) {
         Layer_Update();
-        task.layerTrigger = 5+1;
+        task.layerTrigger = 10;
     }
     Task_ContextSwitch();
     return;

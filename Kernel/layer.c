@@ -10,6 +10,17 @@
 
 static Layer layer;
 
+static const Graphic_Color window_titleBar_backgroundColor = {0xf1, 0xf1, 0xf1};
+static const Graphic_Color window_shadow_color = {0x00, 0x00, 0x00};
+static const Graphic_Color window_titleBar_closeButton_color = {0xf0, 0x56, 0x56};
+static const Graphic_Color window_titleBar_hiddenButton_color = {0xc0, 0xc0, 0xc0};
+static const Graphic_Color window_sizeDragger_color = {0xa0, 0xa0, 0xa0};
+static const Graphic_Color window_sizeDragger_line_color = {0x50, 0x50, 0x50};
+static const uintn window_titleBar_height = 32;
+static const uintn window_shadow_overThick = 1;
+static const uintn window_shadow_underThick = 2;
+static const uintn window_sizeDragger_size = 20;
+
 
 //Layerを初期化
 void Layer_Init(void) {
@@ -34,7 +45,7 @@ void Layer_Init(void) {
     layer.Console.Draw.width = layer.Console.FrameBuff.Data.width;
     layer.Console.Draw.height = layer.Console.FrameBuff.Data.height;
 
-    //init Layer.Object
+    //init Layer.Window
     layer.Window.count = 0;
     layer.Window.pages = 0;
     layer.Window.Data = NULL;
@@ -60,7 +71,7 @@ void Layer_Update(void) {
     //hide Mouse
     Graphic_Color backcolor = {0x2d, 0x38, 0x81};
     Graphic_DrawSquare(layer.Mouse.Draw.oldx, layer.Mouse.Draw.oldy, layer.Mouse.Draw.width, layer.Mouse.Draw.height, backcolor);
-    
+
     //draw Console
     Graphic_DrawFrom(
         layer.Console.Draw.x, layer.Console.Draw.y,
@@ -68,8 +79,43 @@ void Layer_Update(void) {
         layer.Console.Draw.width, layer.Console.Draw.height,
         layer.Console.FrameBuff.Data
     );
+    layer.Console.Change.x = 0;
+    layer.Console.Change.y = 0;
+    layer.Console.Change.width = 0;
+    layer.Console.Change.height = 0;
+
 
     //draw Window
+    Layer_Window* targetWindow = layer.Window.Data;
+    for(uintn i=0; i<layer.Window.count; i++) {
+        Graphic_DrawFrom(targetWindow->Draw.x, targetWindow->Draw.y, 0, 0, targetWindow->Draw.visualWidth, targetWindow->Draw.visualHeight, targetWindow->FrameBuff.Data);
+        //サイズドラッガー描画
+        Graphic_DrawSquare(
+            targetWindow->Draw.x + targetWindow->Draw.visualWidth - window_shadow_underThick - window_sizeDragger_size, targetWindow->Draw.y + targetWindow->Draw.visualHeight - window_shadow_underThick - window_sizeDragger_size,
+            window_sizeDragger_size, window_sizeDragger_size,
+            window_sizeDragger_color);
+        Graphic_DrawSquare(
+            targetWindow->Draw.x + targetWindow->Draw.visualWidth - window_shadow_underThick - 7, targetWindow->Draw.y + targetWindow->Draw.visualHeight - window_shadow_underThick - window_sizeDragger_size,
+            1, window_sizeDragger_size,
+            window_sizeDragger_line_color);
+        Graphic_DrawSquare(
+            targetWindow->Draw.x + targetWindow->Draw.visualWidth - window_shadow_underThick - window_sizeDragger_size, targetWindow->Draw.y + targetWindow->Draw.visualHeight - window_shadow_underThick - 7,
+            window_sizeDragger_size, 1,
+            window_sizeDragger_line_color);
+        
+        targetWindow->Draw.oldx = targetWindow->Draw.x;
+        targetWindow->Draw.oldy = targetWindow->Draw.y;
+        targetWindow->Draw.oldVisualWidth = targetWindow->Draw.oldVisualWidth;
+        targetWindow->Draw.oldVisualHeight = targetWindow->Draw.oldVisualHeight;
+
+        targetWindow->Change.x = 0;
+        targetWindow->Change.y = 0;
+        targetWindow->Change.width = 0;
+        targetWindow->Change.height = 0;
+
+        targetWindow++;
+    }
+
 
     //draw Mouse
     Graphic_DrawMouse(layer.Mouse.Draw.x, layer.Mouse.Draw.y);
@@ -116,10 +162,12 @@ static uintn Layer_Window_Expand(void) {
 
 
 //Layer.Windowを作成してlayerIdを返す
-uintn Layer_NewWindow(uint16 taskId, uintn x, uintn y, uintn width, uintn height, uintn maxWidth, uintn maxHeight) {
+uintn Layer_Window_New(uint16 taskId, ascii name[], uintn x, uintn y, uintn width, uintn height, uintn maxWidth, uintn maxHeight) {
     if(taskId == 0 || taskId == 1) return 0;
     if(width == 0 || height == 0) return 0;
-    if(maxWidth<=width || maxHeight<=height) return 0;
+    if(maxWidth<width || maxHeight<height) return 0;
+
+    Console_Print("11");Task_Yield();
 
     //割り当てるlayerIdを取得
     uintn layerId = 1;
@@ -164,6 +212,57 @@ uintn Layer_NewWindow(uint16 taskId, uintn x, uintn y, uintn width, uintn height
     layer.Window.count++;
 
     layer.changedFlag = 1;
+
+    //フレームバッファを白く塗りつぶす
+    Graphic_Color defaultColor = {0xff, 0xff, 0xff};
+    Graphic_FrameBuff_DrawSquare(
+        newWindow->FrameBuff.Data,
+        0, 0,
+        width, height,
+        defaultColor);
+
+    //タイトルバー描画
+    Graphic_FrameBuff_DrawSquare(
+        newWindow->FrameBuff.Data,
+        window_shadow_overThick, window_shadow_overThick,
+        width - window_shadow_overThick - window_shadow_underThick, window_titleBar_height,
+        window_titleBar_backgroundColor);
+
+    Graphic_FrameBuff_DrawSquare(
+        newWindow->FrameBuff.Data,
+        width - window_shadow_underThick - 1 - (window_titleBar_height - 2),window_shadow_overThick + 1,
+        window_titleBar_height - 2, window_titleBar_height - 2,
+        window_titleBar_closeButton_color);
+
+    Graphic_FrameBuff_DrawSquare(
+        newWindow->FrameBuff.Data,
+        window_shadow_overThick + 1, window_shadow_overThick + 1,
+        window_titleBar_height - 2, window_titleBar_height - 2,
+        window_titleBar_hiddenButton_color);
+
+    //影描画
+    Graphic_FrameBuff_DrawSquare(
+        newWindow->FrameBuff.Data,
+        width - window_shadow_underThick, 0,
+        window_shadow_underThick, height,
+        window_shadow_color);
+    Graphic_FrameBuff_DrawSquare(
+        newWindow->FrameBuff.Data,
+        0, 0,
+        width, window_shadow_overThick,
+        window_shadow_color);
+    Graphic_FrameBuff_DrawSquare(
+        newWindow->FrameBuff.Data,
+        0, height - window_shadow_underThick,
+        width, window_shadow_underThick,
+        window_shadow_color);
+    Graphic_FrameBuff_DrawSquare(
+        newWindow->FrameBuff.Data,
+        0, 0,
+        window_shadow_overThick, height,
+        window_shadow_color);
+
+
 
     return layerId;
 }

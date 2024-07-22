@@ -33,8 +33,8 @@ typedef struct {
     struct {
         uintn x;
         uintn y;
-        uintn visualWidth;//+2
-        uintn visualHeight;//+windowBar+1
+        uintn visualWidth;
+        uintn visualHeight;
 
         uintn oldx;
         uintn oldy;
@@ -91,5 +91,7 @@ void Layer_Update(void);
 void Layer_Mouse_NotifyUpdate(uintn x, uintn y);
 
 void Layer_Console_NotifyUpdate(uintn x, uintn y, uintn width, uintn height);
+
+uintn Layer_Window_New(uint16 taskId, ascii name[], uintn x, uintn y, uintn width, uintn height, uintn maxWidth, uintn maxHeight);
 
 #endif

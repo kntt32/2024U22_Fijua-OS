@@ -26,6 +26,8 @@ extern void (*Graphic_DrawFrom)(sintn x, sintn y, uintn xfrom, uintn yfrom, uint
 
 void Graphic_DrawMouse(uintn x, uintn y);//draw mouseCursor
 
+void Graphic_FrameBuff_DrawSquare(Graphic_FrameBuff framebuff, sintn x, sintn y, uintn width, uintn height, Graphic_Color color);
+
 #endif
 
 #endif
