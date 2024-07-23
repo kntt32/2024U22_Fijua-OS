@@ -30,6 +30,8 @@ typedef struct {
 
     uintn layerId;//!=0
 
+    ascii name[16];
+
     struct {
         sintn x;
         sintn y;
@@ -71,6 +73,7 @@ typedef struct {
         sintn x;
         sintn y;
     } Drag;
+    uintn leftButton;
 } Layer_Mouse;
 
 
@@ -98,6 +101,10 @@ void Layer_Mouse_NotifyUpdate(uintn x, uintn y, uintn leftButton);
 
 void Layer_Console_NotifyUpdate(uintn x, uintn y, uintn width, uintn height);
 
-uintn Layer_Window_New(uint16 taskId, ascii name[], uintn x, uintn y, uintn width, uintn height, uintn maxWidth, uintn maxHeight);
+uintn Layer_Window_New(uint16 taskId, ascii name[], uintn x, uintn y, uintn width, uintn height);
+
+uintn Layer_Window_Delete(uintn layerId);
+
+void Layer_Window_Focus(uintn layerId);
 
 #endif

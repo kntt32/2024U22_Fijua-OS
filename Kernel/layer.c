@@ -7,6 +7,7 @@
 #include "console.h"
 #include "queue.h"
 #include "task.h"
+#include "font.h"
 
 static Layer layer;
 
@@ -14,13 +15,17 @@ static const Graphic_Color window_titleBar_backgroundColor = {0xf1, 0xf1, 0xf1};
 static const Graphic_Color window_shadow_color = {0x00, 0x00, 0x00};
 static const Graphic_Color window_titleBar_closeButton_color = {0xf0, 0x56, 0x56};
 static const Graphic_Color window_titleBar_hiddenButton_color = {0xc0, 0xc0, 0xc0};
-static const Graphic_Color window_sizeDragger_color = {0xa0, 0xa0, 0xa0};
-static const Graphic_Color window_sizeDragger_line_color = {0x50, 0x50, 0x50};
+static const Graphic_Color window_titleBar_titleText_color = {0x50, 0x50, 0x50};
 static const sintn window_titleBar_height = 32;
 static const sintn window_shadow_overThick = 1;
 static const sintn window_shadow_underThick = 2;
-static const sintn window_sizeDragger_size = 20;
 
+static sintn Layer_Window_GetIndex(uintn layerId) {
+    for(uintn i=0; i<layer.Window.count; i++) {
+        if(layer.Window.Data[i].layerId == layerId) return i;
+    }
+    return -1;
+}
 
 //Layerを初期化
 void Layer_Init(void) {
@@ -61,6 +66,61 @@ void Layer_Init(void) {
 
     layer.Mouse.Drag.x = 0;
     layer.Mouse.Drag.y = 0;
+    layer.Mouse.leftButton = 0;
+
+    return;
+}
+
+
+static void Layer_Update_WindowState(void) {
+    Layer_Window* targetWindow;
+
+    if(layer.Mouse.leftButton) {
+        targetWindow = layer.Window.Data + layer.Window.count - 1;
+
+        for(sintn i=layer.Window.count-1; 0<=i; i--) {
+            if(targetWindow->hiddenFlag) {
+                targetWindow --;
+                continue;
+            }
+
+            //ウィンドウの非表示
+            if((targetWindow->Draw.x+(sintn)window_shadow_overThick+1 <= layer.Mouse.Draw.oldx && layer.Mouse.Draw.oldx < targetWindow->Draw.x+(sintn)window_shadow_overThick+1+(sintn)window_titleBar_height-2)
+                && (targetWindow->Draw.y+(sintn)window_shadow_overThick+1 <= layer.Mouse.Draw.oldy && layer.Mouse.Draw.oldy < targetWindow->Draw.y+(sintn)window_shadow_overThick+1+window_titleBar_height-2)) {
+                targetWindow->hiddenFlag = 1;
+                break;
+            }
+
+            //ウィンドウの消去
+            if((targetWindow->Draw.x+(sintn)targetWindow->Draw.visualWidth-(sintn)window_shadow_underThick-1-((sintn)window_titleBar_height-2) <= layer.Mouse.Draw.oldx && layer.Mouse.Draw.oldx < targetWindow->Draw.x+(sintn)targetWindow->Draw.visualWidth-(sintn)window_shadow_underThick-1)
+                && (targetWindow->Draw.y+window_shadow_overThick+1 <= layer.Mouse.Draw.oldy && layer.Mouse.Draw.oldy < targetWindow->Draw.y+window_shadow_overThick+1+window_titleBar_height-2)) {
+                Layer_Window_Delete(targetWindow->layerId);
+                break;
+            }
+            
+            //ウィンドウの移動
+            if((targetWindow->Draw.x <= layer.Mouse.Draw.oldx && layer.Mouse.Draw.oldx < targetWindow->Draw.x + (sintn)targetWindow->Draw.visualWidth)
+                && (targetWindow->Draw.y <= layer.Mouse.Draw.oldy && layer.Mouse.Draw.oldy < targetWindow->Draw.y + (sintn)window_titleBar_height)) {
+                targetWindow->Draw.x += layer.Mouse.Drag.x;
+                targetWindow->Draw.y += layer.Mouse.Drag.y;
+                Layer_Window_Focus(layer.Window.Data[i].layerId);
+                break;
+            }
+
+            //ウィンドウを最前面に移動
+            if((targetWindow->Draw.x <= layer.Mouse.Draw.oldx && layer.Mouse.Draw.oldx < targetWindow->Draw.x + (sintn)(targetWindow->Draw.visualWidth))
+                && (targetWindow->Draw.y <= layer.Mouse.Draw.oldy && layer.Mouse.Draw.oldy < targetWindow->Draw.y + (sintn)(targetWindow->Draw.visualHeight))) {
+                Layer_Window_Focus(layer.Window.Data[i].layerId);
+                break;
+            }
+            
+            targetWindow--;
+        }
+        
+        layer.Mouse.Drag.x = 0;
+        layer.Mouse.Drag.y = 0;
+        layer.Mouse.leftButton = 0;
+    }
 
     return;
 }
@@ -74,41 +134,9 @@ void Layer_Update(void) {
     layer.isDrawingFlag = 1;
     layer.changedFlag = 0;
 
-    
-    if(layer.Mouse.Drag.x != 0 || layer.Mouse.Drag.y != 0) {
-        targetWindow = layer.Window.Data + layer.Window.count - 1;
+    Layer_Update_WindowState();
 
-        for(sintn i=layer.Window.count-1; 0<=i; i--) {
-            //move window
-            if((targetWindow->Draw.x <= layer.Mouse.Draw.oldx && layer.Mouse.Draw.oldx < targetWindow->Draw.x + (sintn)targetWindow->Draw.visualWidth)
-                && (targetWindow->Draw.y <= layer.Mouse.Draw.oldy && layer.Mouse.Draw.oldy < targetWindow->Draw.y + (sintn)window_titleBar_height)) {
-                targetWindow->Draw.x += layer.Mouse.Drag.x;
-                targetWindow->Draw.y += layer.Mouse.Drag.y;
-                break;
-            }
-
-            //resize window
-            if((targetWindow->Draw.x + (sintn)targetWindow->Draw.visualWidth - window_sizeDragger_size <= layer.Mouse.Draw.oldx && layer.Mouse.Draw.oldx < targetWindow->Draw.x + (sintn)targetWindow->Draw.visualWidth)
-                && (targetWindow->Draw.y + (sintn)targetWindow->Draw.visualHeight - window_sizeDragger_size <= layer.Mouse.Draw.oldy && layer.Mouse.Draw.oldy < targetWindow->Draw.y + (sintn)targetWindow->Draw.visualHeight)) {
-                if(2 <= (sintn)targetWindow->Draw.visualWidth + layer.Mouse.Drag.x && (sintn)targetWindow->Draw.visualWidth + layer.Mouse.Drag.x < (sintn)targetWindow->FrameBuff.Data.width) {
-                    targetWindow->Draw.visualWidth = (sintn)(targetWindow->Draw.visualWidth) + layer.Mouse.Drag.x;
-                }else {
-                    if(2 > (sintn)targetWindow->Draw.visualWidth + layer.Mouse.Drag.x) {
-                        targetWindow->Draw.visualWidth = 2;
-                    }else {
-                        targetWindow->Draw.visualWidth = targetWindow->FrameBuff.Data.width;
-                    }
-                }
-                break;
-            }
-            
-            targetWindow--;
-        }
-        
-        layer.Mouse.Drag.x = 0;
-        layer.Mouse.Drag.y = 0;
-    }
-
+#if 1
 
     //hide Mouse
     Graphic_Color backcolor = {0x2d, 0x38, 0x81};
@@ -130,20 +158,12 @@ void Layer_Update(void) {
     //draw Window
     targetWindow = layer.Window.Data;
     for(uintn i=0; i<layer.Window.count; i++) {
+        if(layer.Window.Data[i].hiddenFlag) {
+            targetWindow++;
+            continue;
+        }
+
         Graphic_DrawFrom(targetWindow->Draw.x, targetWindow->Draw.y, 0, 0, targetWindow->Draw.visualWidth, targetWindow->Draw.visualHeight, targetWindow->FrameBuff.Data);
-        //サイズドラッガー描画
-        Graphic_DrawSquare(
-            targetWindow->Draw.x + targetWindow->Draw.visualWidth - window_shadow_underThick - window_sizeDragger_size, targetWindow->Draw.y + targetWindow->Draw.visualHeight - window_shadow_underThick - window_sizeDragger_size,
-            window_sizeDragger_size, window_sizeDragger_size,
-            window_sizeDragger_color);
-        Graphic_DrawSquare(
-            targetWindow->Draw.x + targetWindow->Draw.visualWidth - window_shadow_underThick - 7, targetWindow->Draw.y + targetWindow->Draw.visualHeight - window_shadow_underThick - window_sizeDragger_size,
-            1, window_sizeDragger_size,
-            window_sizeDragger_line_color);
-        Graphic_DrawSquare(
-            targetWindow->Draw.x + targetWindow->Draw.visualWidth - window_shadow_underThick - window_sizeDragger_size, targetWindow->Draw.y + targetWindow->Draw.visualHeight - window_shadow_underThick - 7,
-            window_sizeDragger_size, 1,
-            window_sizeDragger_line_color);
         
         targetWindow->Draw.oldx = targetWindow->Draw.x;
         targetWindow->Draw.oldy = targetWindow->Draw.y;
@@ -157,7 +177,10 @@ void Layer_Update(void) {
 
         targetWindow++;
     }
+#else
+    //描画の高速化
 
+#endif
 
     //draw Mouse
     Graphic_DrawMouse(layer.Mouse.Draw.x, layer.Mouse.Draw.y);
@@ -175,28 +198,9 @@ static uintn Layer_Window_Expand(void) {
     uintn newPages = layer.Window.pages*2 + 1;
     Layer_Window* newData = Memory_AllocPages(2, newPages);
     if(newData == NULL) return 1;
-    for(uintn i=0; i<layer.Window.count; i++) {
-        newData[i].taskId = layer.Window.Data[i].taskId;
-        newData[i].hiddenFlag = layer.Window.Data[i].hiddenFlag;
-        newData[i].layerId = layer.Window.Data[i].layerId;
 
-        newData[i].Draw.x = layer.Window.Data[i].Draw.x;
-        newData[i].Draw.y = layer.Window.Data[i].Draw.y;
-        newData[i].Draw.visualWidth = layer.Window.Data[i].Draw.visualWidth;
-        newData[i].Draw.visualHeight = layer.Window.Data[i].Draw.visualHeight;
-        newData[i].Draw.oldx = layer.Window.Data[i].Draw.oldx;
-        newData[i].Draw.oldy = layer.Window.Data[i].Draw.oldy;
-        newData[i].Draw.oldVisualWidth = layer.Window.Data[i].Draw.oldVisualWidth;
-        newData[i].Draw.oldVisualHeight = layer.Window.Data[i].Draw.oldVisualHeight;
-        
-        newData[i].Change.x = layer.Window.Data[i].Change.x;
-        newData[i].Change.y = layer.Window.Data[i].Change.y;
-        newData[i].Change.width = layer.Window.Data[i].Change.width;
-        newData[i].Change.height = layer.Window.Data[i].Change.height;
+    Functions_MemCpy(newData, layer.Window.Data, sizeof(Layer_Window)*layer.Window.count);
 
-        newData[i].FrameBuff.pages = layer.Window.Data[i].FrameBuff.pages;
-        newData[i].FrameBuff.Data = layer.Window.Data[i].FrameBuff.Data;
-    }
     Memory_FreePages(2, layer.Window.pages, layer.Window.Data);
     layer.Window.pages = newPages;
     layer.Window.Data = newData;
@@ -206,10 +210,10 @@ static uintn Layer_Window_Expand(void) {
 
 
 //Layer.Windowを作成してlayerIdを返す
-uintn Layer_Window_New(uint16 taskId, ascii name[], uintn x, uintn y, uintn width, uintn height, uintn maxWidth, uintn maxHeight) {
+uintn Layer_Window_New(uint16 taskId, ascii name[], uintn x, uintn y, uintn width, uintn height) {
     if(taskId == 0 || taskId == 1) return 0;
     if(width == 0 || height == 0) return 0;
-    if(maxWidth<width || maxHeight<height) return 0;
+    if(width <= window_titleBar_height*3 || height <= window_titleBar_height) return 0;
 
     //割り当てるlayerIdを取得
     uintn layerId = 1;
@@ -230,6 +234,11 @@ uintn Layer_Window_New(uint16 taskId, ascii name[], uintn x, uintn y, uintn widt
     newWindow->taskId = taskId;
     newWindow->hiddenFlag = 0;
     newWindow->layerId = layerId;
+    for(uintn i=0; i<15; i++) {
+        newWindow->name[i] = name[i];
+        if(name[i] == '\0') break;
+    }
+    newWindow->name[15] = '\0';
 
     newWindow->Draw.x = x;
     newWindow->Draw.y = y;
@@ -245,9 +254,9 @@ uintn Layer_Window_New(uint16 taskId, ascii name[], uintn x, uintn y, uintn widt
     newWindow->Change.width = width;
     newWindow->Change.height = height;
 
-    newWindow->FrameBuff.pages = (maxWidth*maxHeight*sizeof(uint32)+0xfff)>>12;
-    newWindow->FrameBuff.Data.width = maxWidth;
-    newWindow->FrameBuff.Data.height = maxHeight;
+    newWindow->FrameBuff.pages = (width*height*sizeof(uint32)+0xfff)>>12;
+    newWindow->FrameBuff.Data.width = width;
+    newWindow->FrameBuff.Data.height = height;
     newWindow->FrameBuff.Data.frameBuff = Memory_AllocPages(taskId, newWindow->FrameBuff.pages);
     if(newWindow->FrameBuff.Data.frameBuff == NULL) return 0;
 
@@ -270,9 +279,14 @@ uintn Layer_Window_New(uint16 taskId, ascii name[], uintn x, uintn y, uintn widt
         width - window_shadow_overThick - window_shadow_underThick, window_titleBar_height,
         window_titleBar_backgroundColor);
 
+    for(uintn i=0; i<15; i++) {
+        if(name[i] == '\0') break;
+        Font_Draw(newWindow->FrameBuff.Data, window_shadow_overThick + window_titleBar_height +8 + 8*i, window_shadow_overThick + ((window_titleBar_height>>1)-8) + 2, name[i], window_titleBar_titleText_color);
+    }
+
     Graphic_FrameBuff_DrawSquare(
         newWindow->FrameBuff.Data,
-        width - window_shadow_underThick - 1 - (window_titleBar_height - 2),window_shadow_overThick + 1,
+        width - window_shadow_underThick - 1 - (window_titleBar_height - 2), window_shadow_overThick + 1,
         window_titleBar_height - 2, window_titleBar_height - 2,
         window_titleBar_closeButton_color);
 
@@ -281,6 +295,14 @@ uintn Layer_Window_New(uint16 taskId, ascii name[], uintn x, uintn y, uintn widt
         window_shadow_overThick + 1, window_shadow_overThick + 1,
         window_titleBar_height - 2, window_titleBar_height - 2,
         window_titleBar_hiddenButton_color);
+
+    for(uintn i=10; i<window_titleBar_height-12; i++) {
+        ((uint32*)newWindow->FrameBuff.Data.frameBuff)[(width-window_shadow_underThick-1-(window_titleBar_height-2)+i)+(window_shadow_overThick+1+i)*width] = 0x00505050;
+        ((uint32*)newWindow->FrameBuff.Data.frameBuff)[(width-window_shadow_underThick-2-i)+(window_shadow_overThick+1+i)*width] = 0x00505050;
+    }
+    for(uintn i=10; i<window_titleBar_height-12; i++) {
+        ((uint32*)newWindow->FrameBuff.Data.frameBuff)[(window_shadow_overThick+1+i)+(((window_titleBar_height-2)>>1)+window_shadow_overThick+1)*width] = 0x00505050;
+    }
 
     //影描画
     Graphic_FrameBuff_DrawSquare(
@@ -304,9 +326,43 @@ uintn Layer_Window_New(uint16 taskId, ascii name[], uintn x, uintn y, uintn widt
         window_shadow_overThick, height,
         window_shadow_color);
 
-
-
     return layerId;
+}
+
+
+//ウインドウ削除
+uintn Layer_Window_Delete(uintn layerId) {
+    sintn layerIndex = Layer_Window_GetIndex(layerId);
+    if(layerIndex < 0) return 1;
+
+    Layer_Window* targetWindow = layer.Window.Data + layerIndex;
+
+    Memory_FreePages(
+        targetWindow->taskId,
+        (targetWindow->FrameBuff.Data.width*targetWindow->FrameBuff.Data.height + 0xfff)>>12,
+        targetWindow->FrameBuff.Data.frameBuff);
+
+    Functions_MemCpy(layer.Window.Data+layerIndex, layer.Window.Data+layerIndex+1, sizeof(Layer_Window)*(layer.Window.count-layerIndex-1));
+
+    layer.Window.count--;
+
+    return 0;
+}
+
+
+//ウインドウを最前面に移動
+void Layer_Window_Focus(uintn layerId) {
+    sintn layerIndex = Layer_Window_GetIndex(layerId);
+    if(layerIndex < 0) return;
+
+    Layer_Window temp_layerwindow;
+    Functions_MemCpy(&temp_layerwindow, layer.Window.Data+layerIndex, sizeof(Layer_Window));
+
+    Functions_MemCpy(layer.Window.Data+layerIndex, layer.Window.Data+layerIndex+1, sizeof(Layer_Window)*(layer.Window.count - layerIndex - 1));
+
+    Functions_MemCpy(layer.Window.Data+layer.Window.count-1, &temp_layerwindow, sizeof(Layer_Window));
+
+    return;
 }
 
 
@@ -316,7 +372,9 @@ void Layer_Mouse_NotifyUpdate(uintn x, uintn y, uintn leftButton) {
     if(leftButton) {
         layer.Mouse.Drag.x = (sintn)x - (sintn)layer.Mouse.Draw.oldx;
         layer.Mouse.Drag.y = (sintn)y - (sintn)layer.Mouse.Draw.oldy;
+        layer.Mouse.leftButton = 1;
     }
+
     layer.Mouse.Draw.x = x;
     layer.Mouse.Draw.y = y;
     layer.changedFlag = 1;

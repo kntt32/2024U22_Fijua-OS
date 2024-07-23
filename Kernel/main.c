@@ -10,6 +10,9 @@
 #include "task.h"
 #include "layer.h"
 #include "mouse.h"
+#include "syscall.h"
+
+#include "terminal.h"
 
 #include "test.h"
 
@@ -28,15 +31,21 @@ int kernel_main(KernelInputStruct* kernelInput) {
     Task_Init();
     Layer_Init();
 
-    Console_Print("A");
+    Syscall_Init();
+
+
 
     Task_Yield();
 
-    Layer_Window_New(2, "testWindow", 10, 10, 300, 400, 300, 400);
+    Layer_Window_New(2, "testWindow", 10, 10, 300, 400);
+
+    Layer_Window_New(2, "test2", 50, 50, 100, 60);
 
     Console_Print("B");
 
     Task_Yield();
+
+    Task_New(terminal_main);
 
     Halt();
 

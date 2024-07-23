@@ -11,6 +11,7 @@
 .global Mutex_UnLock
 .global Task_ContextSwitch
 .global Task_NewTask_Asm_SetStartContext
+.global Syscall_AppEnter
 
 
 Halt_Asm_Hlt:
@@ -135,4 +136,9 @@ Task_NewTask_Asm_SetStartContext:
     mov %rax, %rsp
 
     mov %rdi, %rax
+    ret
+
+
+# uintn Syscall_AppEnter(...);
+Syscall_AppEnter:
     ret
