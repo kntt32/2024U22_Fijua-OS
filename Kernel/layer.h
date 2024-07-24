@@ -106,4 +106,8 @@ uintn Layer_Window_Delete(uintn layerId);
 
 void Layer_Window_Focus(uintn layerId);
 
+void Layer_Window_Flush(uintn layerId);
+
+void Layer_Window_FlushIndex(uintn layerIndex);
+
 #endif
