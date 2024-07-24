@@ -1,4 +1,5 @@
 #include <types.h>
+#include <kernel.h>
 #include "graphic.h"
 #include "layer.h"
 #include "memory.h"
@@ -9,13 +10,15 @@
 #include "task.h"
 #include "font.h"
 
+extern KernelInputStruct* KernelInput;
+
 static Layer layer;
 
-static const Graphic_Color window_titleBar_backgroundColor = {0xf1, 0xf1, 0xf1};
+static const Graphic_Color window_titleBar_backgroundColor = {0xe0, 0xe0, 0xe0};
 static const Graphic_Color window_shadow_color = {0x00, 0x00, 0x00};
 static const Graphic_Color window_titleBar_closeButton_color = {0xf0, 0x56, 0x56};
 static const Graphic_Color window_titleBar_hiddenButton_color = {0xc0, 0xc0, 0xc0};
-static const Graphic_Color window_titleBar_titleText_color = {0x50, 0x50, 0x50};
+static const Graphic_Color window_titleBar_titleText_color = {0x30, 0x50, 0x50};
 static const sintn window_titleBar_height = 32;
 static const sintn window_shadow_overThick = 1;
 static const sintn window_shadow_underThick = 2;
@@ -67,6 +70,7 @@ void Layer_Init(void) {
     layer.Mouse.Drag.x = 0;
     layer.Mouse.Drag.y = 0;
     layer.Mouse.leftButton = 0;
+    layer.Mouse.oldLeftButton = 0;
 
     return;
 }
@@ -75,7 +79,7 @@ void Layer_Init(void) {
 static void Layer_Update_WindowState(void) {
     Layer_Window* targetWindow;
 
-    if(layer.Mouse.leftButton) {
+    if(layer.Mouse.oldLeftButton == 0 && layer.Mouse.leftButton != 0) {
         targetWindow = layer.Window.Data + layer.Window.count - 1;
 
         for(sintn i=layer.Window.count-1; 0<=i; i--) {
@@ -84,30 +88,7 @@ static void Layer_Update_WindowState(void) {
                 continue;
             }
 
-            //ウィンドウの非表示
-            if((targetWindow->Draw.x+(sintn)window_shadow_overThick+1 <= layer.Mouse.Draw.oldx && layer.Mouse.Draw.oldx < targetWindow->Draw.x+(sintn)window_shadow_overThick+1+(sintn)window_titleBar_height-2)
-                && (targetWindow->Draw.y+(sintn)window_shadow_overThick+1 <= layer.Mouse.Draw.oldy && layer.Mouse.Draw.oldy < targetWindow->Draw.y+(sintn)window_shadow_overThick+1+window_titleBar_height-2)) {
-                targetWindow->hiddenFlag = 1;
-                break;
-            }
-
-            //ウィンドウの消去
-            if((targetWindow->Draw.x+(sintn)targetWindow->Draw.visualWidth-(sintn)window_shadow_underThick-1-((sintn)window_titleBar_height-2) <= layer.Mouse.Draw.oldx && layer.Mouse.Draw.oldx < targetWindow->Draw.x+(sintn)targetWindow->Draw.visualWidth-(sintn)window_shadow_underThick-1)
-                && (targetWindow->Draw.y+window_shadow_overThick+1 <= layer.Mouse.Draw.oldy && layer.Mouse.Draw.oldy < targetWindow->Draw.y+window_shadow_overThick+1+window_titleBar_height-2)) {
-                Layer_Window_Delete(targetWindow->layerId);
-                break;
-            }
-            
-            //ウィンドウの移動
-            if((targetWindow->Draw.x <= layer.Mouse.Draw.oldx && layer.Mouse.Draw.oldx < targetWindow->Draw.x + (sintn)targetWindow->Draw.visualWidth)
-                && (targetWindow->Draw.y <= layer.Mouse.Draw.oldy && layer.Mouse.Draw.oldy < targetWindow->Draw.y + (sintn)window_titleBar_height)) {
-                targetWindow->Draw.x += layer.Mouse.Drag.x;
-                targetWindow->Draw.y += layer.Mouse.Drag.y;
-                Layer_Window_Focus(layer.Window.Data[i].layerId);
-                break;
-            }
-
-            //ウィンドウを最前面に移動
+            //ウインドウを最前面に移動
             if((targetWindow->Draw.x <= layer.Mouse.Draw.oldx && layer.Mouse.Draw.oldx < targetWindow->Draw.x + (sintn)(targetWindow->Draw.visualWidth))
                 && (targetWindow->Draw.y <= layer.Mouse.Draw.oldy && layer.Mouse.Draw.oldy < targetWindow->Draw.y + (sintn)(targetWindow->Draw.visualHeight))) {
                 Layer_Window_Focus(layer.Window.Data[i].layerId);
@@ -116,11 +97,40 @@ static void Layer_Update_WindowState(void) {
             
             targetWindow--;
         }
-        
-        layer.Mouse.Drag.x = 0;
-        layer.Mouse.Drag.y = 0;
-        layer.Mouse.leftButton = 0;
     }
+
+
+    targetWindow = layer.Window.Data + layer.Window.count - 1;
+
+    if(layer.Mouse.oldLeftButton != 0 && layer.Mouse.leftButton == 0) {
+        //ウインドウの非表示
+        if((targetWindow->Draw.x+(sintn)window_shadow_overThick+1 <= layer.Mouse.Draw.oldx && layer.Mouse.Draw.oldx < targetWindow->Draw.x+(sintn)window_shadow_overThick+1+(sintn)window_titleBar_height-2)
+            && (targetWindow->Draw.y+(sintn)window_shadow_overThick+1 <= layer.Mouse.Draw.oldy && layer.Mouse.Draw.oldy < targetWindow->Draw.y+(sintn)window_shadow_overThick+1+window_titleBar_height-2)) {
+            targetWindow->hiddenFlag = 1;
+            Layer_Window_Focus(layer.Window.Data[layer.Window.count-2].layerId);
+        }
+
+        //ウィンドウの消去
+        if((targetWindow->Draw.x+(sintn)targetWindow->Draw.visualWidth-(sintn)window_shadow_underThick-1-((sintn)window_titleBar_height-2) <= layer.Mouse.Draw.oldx && layer.Mouse.Draw.oldx < targetWindow->Draw.x+(sintn)targetWindow->Draw.visualWidth-(sintn)window_shadow_underThick-1)
+            && (targetWindow->Draw.y+window_shadow_overThick+1 <= layer.Mouse.Draw.oldy && layer.Mouse.Draw.oldy < targetWindow->Draw.y+window_shadow_overThick+1+window_titleBar_height-2)) {
+            Layer_Window_Delete(targetWindow->layerId);
+        }
+    }
+
+    //ウインドウの移動
+    if(layer.Mouse.leftButton != 0 && !(layer.Mouse.Drag.x == 0 && layer.Mouse.Drag.y == 0)
+        && (targetWindow->Draw.x + (sintn)window_shadow_overThick + (sintn)window_titleBar_height <= layer.Mouse.Draw.oldx && layer.Mouse.Draw.oldx < targetWindow->Draw.x + (sintn)targetWindow->Draw.visualWidth - (sintn)window_shadow_underThick - (sintn)window_titleBar_height)
+        && (targetWindow->Draw.y + (sintn)window_shadow_overThick <= layer.Mouse.Draw.oldy && layer.Mouse.Draw.oldy < targetWindow->Draw.y + (sintn)window_shadow_overThick + (sintn)window_titleBar_height)) {
+        
+        targetWindow->Draw.x += layer.Mouse.Drag.x;
+        targetWindow->Draw.y += layer.Mouse.Drag.y;
+    }
+
+    layer.Mouse.Drag.x = 0;
+    layer.Mouse.Drag.y = 0;
+    layer.Mouse.oldLeftButton = layer.Mouse.leftButton;
+    layer.Mouse.leftButton = 0;
+
 
     return;
 }
@@ -136,11 +146,7 @@ void Layer_Update(void) {
 
     Layer_Update_WindowState();
 
-#if 1
-
-    //hide Mouse
-    Graphic_Color backcolor = {0x2d, 0x38, 0x81};
-    Graphic_DrawSquare(layer.Mouse.Draw.oldx, layer.Mouse.Draw.oldy, layer.Mouse.Draw.width, layer.Mouse.Draw.height, backcolor);
+#if 0
 
     //draw Console
     Graphic_DrawFrom(
@@ -167,8 +173,6 @@ void Layer_Update(void) {
         
         targetWindow->Draw.oldx = targetWindow->Draw.x;
         targetWindow->Draw.oldy = targetWindow->Draw.y;
-        targetWindow->Draw.oldVisualWidth = targetWindow->Draw.oldVisualWidth;
-        targetWindow->Draw.oldVisualHeight = targetWindow->Draw.oldVisualHeight;
 
         targetWindow->Change.x = 0;
         targetWindow->Change.y = 0;
@@ -178,7 +182,154 @@ void Layer_Update(void) {
         targetWindow++;
     }
 #else
-    //描画の高速化
+    //再描画フラグ計算 64x64//
+    uintn blockXCount = (KernelInput->Graphic.width+63)>>6;
+    uintn blockYCount = (KernelInput->Graphic.height+63)>>6;
+
+    uintn redrawFlag_perLayerSize = ((blockXCount*blockYCount+63)>>6);
+    uint64 window_redrawFlag[redrawFlag_perLayerSize*layer.Window.count];
+    uint64 layer_redrawFlag_Or[redrawFlag_perLayerSize];
+
+    //フラグの初期化
+    for(uintn i=0; i<redrawFlag_perLayerSize; i++) {
+        layer_redrawFlag_Or[i] = 0;
+    }
+    for(uintn i=0; i<redrawFlag_perLayerSize*layer.Window.count; i++) {
+        window_redrawFlag[i] = 0;
+    }
+#if 1
+    targetWindow = layer.Window.Data - 1;
+    for(uintn i=0; i<layer.Window.count; i++) {//ウィンドウレイヤ
+        targetWindow ++;
+        if(targetWindow->Draw.x == targetWindow->Draw.oldx && targetWindow->Draw.y == targetWindow->Draw.oldy) {
+            //対象レイヤ移動なしなら下位レイヤの再描画フラグを対象レイヤの再描画フラグにコピー
+            for(uintn k=0; k<redrawFlag_perLayerSize; k++) {
+                window_redrawFlag[k+i*redrawFlag_perLayerSize] = layer_redrawFlag_Or[k];
+            }
+
+            //対象レイヤ移動なしなら対象レイヤの更新ブロックの再描画フラグを立てる
+            for(uintn y=((targetWindow->Draw.y+targetWindow->Change.y)>>6); y<((targetWindow->Draw.y+targetWindow->Change.y+targetWindow->Change.height+63)>>6); y++) {
+                for(uintn x=((targetWindow->Draw.x+targetWindow->Change.x)>>6); x<((targetWindow->Draw.x+targetWindow->Change.x+targetWindow->Change.width+63)>>6); x++) {
+                    window_redrawFlag[((x+y*blockXCount)>>6)+i*redrawFlag_perLayerSize] |= (0x8000000000000000 >> ((x+y*blockXCount) & 0x3f));
+                }
+            }
+        }else {
+            //対象レイヤ移動なら移動先ブロックに再描画フラグ
+            for(uintn y=(targetWindow->Draw.y>>6); y<((targetWindow->Draw.y+targetWindow->Draw.visualHeight+63)>>6); y++) {
+                for(uintn x=(targetWindow->Draw.x>>6); x<((targetWindow->Draw.x+targetWindow->Draw.visualWidth+63)>>6); x++) {
+                    window_redrawFlag[((x+y*blockXCount)>>6)+i*redrawFlag_perLayerSize] |= (0x8000000000000000 >> ((x+y*blockXCount) & 0x3f));
+                }
+            }
+        }
+
+        //上位レイヤ移動なら移動元ブロックに再描画フラグ
+        for(uintn k=i+1; k<layer.Window.count; k++) {//ウィンドウレイヤ
+            Layer_Window* targetUpperWindow = layer.Window.Data + k;
+            if(!(targetUpperWindow->Draw.x == targetUpperWindow->Draw.oldx && targetUpperWindow->Draw.y == targetUpperWindow->Draw.oldy)) {
+                for(uintn y=(targetUpperWindow->Draw.oldy>>6); y<((targetUpperWindow->Draw.oldy+targetUpperWindow->Draw.visualHeight+63)>>6); y++) {
+                    for(uintn x=(targetUpperWindow->Draw.oldx>>6); x<((targetUpperWindow->Draw.oldx+targetUpperWindow->Draw.visualWidth+63)>>6); x++) {
+                        window_redrawFlag[((x+y*blockXCount)>>6)+i*redrawFlag_perLayerSize] |= (0x8000000000000000 >> ((x+y*blockXCount) & 0x3f));
+                    }
+                }
+            }
+        }
+        {//マウスレイヤ
+            //coding now
+        }
+/*
+        //上位レイヤの非表示ブロックの再描画フラグをマスク
+        for(uintn k=i+1; k<layer.Window.count; k++) {
+            Layer_Window* targetUpperWindow = layer.Window.Data + k;
+            const uintn startX = (targetUpperWindow->Draw.x + 63) >> 6;
+            const uintn startY = (targetUpperWindow->Draw.y + 63) >> 6;
+            const uintn endX = (targetUpperWindow->Draw.x + targetUpperWindow->Draw.visualWidth) >> 6;
+            const uintn endY = (targetUpperWindow->Draw.y + targetUpperWindow->Draw.visualHeight) >> 6;
+
+            for(uintn y=startY; y<endY; y++) {
+                for(uintn x=startX; x<endX; x++) {
+                    window_redrawFlag[x+y*blockXCount+i*redrawFlag_perLayerSize] = 0;
+                }
+            }
+        }
+
+        //対象レイヤのあるブロックと再描画フラグをAND計算
+        for(uintn k=i+1; k<layer.Window.count; k++) {
+            uintn startX = targetWindow->Draw.x >> 6;
+            uintn startY = targetWindow->Draw.y >> 6;
+            uintn endX = (targetWindow->Draw.x + targetWindow->Draw.visualWidth + 63) >> 6;
+            uintn endY = (targetWindow->Draw.y + targetWindow->Draw.visualHeight + 63) >> 6;
+
+            for(uintn y=0; y<startY; y++) {
+                for(uintn x=0; x<blockXCount; x++) {
+                    window_redrawFlag[x+y*blockXCount+i*redrawFlag_perLayerSize] = 0;
+                }
+            }
+            for(uintn y=startY; y<endY; y++) {
+                for(uintn x=0; x<startX; x++) {
+                    window_redrawFlag[x+y*blockXCount+i*redrawFlag_perLayerSize] = 0;
+                }
+                for(uintn x=endX; x<blockXCount; x++) {
+                    window_redrawFlag[x+y*blockXCount+i*redrawFlag_perLayerSize] = 0;
+                }
+            }
+            for(uintn y=endY; y<blockYCount; y++) {
+                for(uintn x=0; x<blockXCount; x++) {
+                    window_redrawFlag[x+y*blockXCount+i*redrawFlag_perLayerSize] = 0;
+                }
+            }
+        }
+*/
+        //layer_redrawFlag_Orに反映
+        for(uintn k=0; k<redrawFlag_perLayerSize; k++) {
+            layer_redrawFlag_Or[k] |= window_redrawFlag[k+i*redrawFlag_perLayerSize];
+        }
+
+        //Console_Window.Draw及びConsole_Window.Changeの更新
+        targetWindow->Draw.oldx = targetWindow->Draw.x;
+        targetWindow->Draw.oldy = targetWindow->Draw.y;
+        targetWindow->Change.width = 0;
+        targetWindow->Change.height = 0;
+    }
+#endif
+
+    //有効なブロックを描画
+    sintn drawX;
+    sintn drawY;
+    sintn xfrom;
+    sintn yfrom;
+    sintn width;
+    sintn height;
+    for(uintn y=0; y<blockYCount; y++) {
+        for(uintn x=0; x<blockXCount; x++) {
+            for(uintn i=0; i<layer.Window.count; i++) {
+                if(window_redrawFlag[((x+y*blockXCount)>>6)+i*redrawFlag_perLayerSize] & (0x8000000000000000 >> (x+y*blockXCount & 0x3f))) {
+                xfrom = (x<<6) - layer.Window.Data[i].Draw.x;
+                yfrom = (y<<6) - layer.Window.Data[i].Draw.y;
+                drawX = x<<6;
+                drawY = y<<6;
+                width = 64;
+                height = 64;
+
+                if(xfrom < 0) {
+                    drawX -= xfrom;
+                    width += xfrom;
+                    if(width < 0) continue;
+                    xfrom = 0;
+                }
+                if(yfrom < 0) {
+                    drawY -= yfrom;
+                    height += yfrom;
+                    if(height < 0) continue;
+                    yfrom = 0;
+                }
+
+                Graphic_DrawFrom(
+                    drawX, drawY,
+                    xfrom, yfrom, width, height, layer.Window.Data[i].FrameBuff.Data);
+                }
+            }
+        }
+    }
 
 #endif
 
@@ -244,10 +395,8 @@ uintn Layer_Window_New(uint16 taskId, ascii name[], uintn x, uintn y, uintn widt
     newWindow->Draw.y = y;
     newWindow->Draw.visualWidth = width;
     newWindow->Draw.visualHeight = height;
-    newWindow->Draw.oldx = x;
-    newWindow->Draw.oldy = y;
-    newWindow->Draw.oldVisualWidth = 0;
-    newWindow->Draw.oldVisualHeight = 0;
+    newWindow->Draw.oldx = 0;
+    newWindow->Draw.oldy = 0;
 
     newWindow->Change.x = 0;
     newWindow->Change.y = 0;

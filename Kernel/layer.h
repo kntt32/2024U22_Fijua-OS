@@ -40,8 +40,6 @@ typedef struct {
 
         sintn oldx;
         sintn oldy;
-        uintn oldVisualWidth;
-        uintn oldVisualHeight;
     } Draw;
 
     struct {
@@ -74,6 +72,7 @@ typedef struct {
         sintn y;
     } Drag;
     uintn leftButton;
+    uintn oldLeftButton;
 } Layer_Mouse;
 
 
