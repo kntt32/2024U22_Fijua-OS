@@ -172,7 +172,7 @@ static void Layer_Update_SetDrawArea_Background(uint64* layer_redrawFlag_Or, uin
 
         for(uintn y=startY; y<endY && y<blockYCount; y++) {
             for(uintn x=startX; x<endX && x<blockXCount; x++) {
-                background_redrawFlag[((x+y*blockXCount)>>6)] |= (0x8000000000000000 >> ((x+y*blockXCount) & 0x3f));
+                background_redrawFlag[((x+y*blockXCount)>>6)] &= ~(0x8000000000000000 >> ((x+y*blockXCount) & 0x3f));
             }
         }
     }
