@@ -129,7 +129,7 @@ void Task_Delete(uint16 taskId) {
 
     Memory_FreeAll(taskId);
 
-    //Layer_Window_DeleteAll(taskId);
+    Layer_Window_DeleteAll(taskId);
 
     Task_Yield();
 

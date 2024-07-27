@@ -106,19 +106,20 @@ unsigned int ElfLoader_GetLoadArea(in void* file, in out uintn* loadAddr, out ui
         case Elf_Header_ET_DYN:
             for(uintn i=0; i<programHeader_number; i++) {
                 if(programHeader->p_type == Elf_ProgramHeader_PT_LOAD) {
-                    if(*size < programHeader->p_offset+programHeader->p_memsz) *size = programHeader->p_offset+programHeader->p_memsz;
+                    if(*size < programHeader->p_vaddr + programHeader->p_memsz) *size = programHeader->p_vaddr + programHeader->p_memsz;
                 }
                 programHeader = (Elf_ProgramHeader*)((uintn)(programHeader) + programHeader_entrySize);
             }
             break;
         case Elf_Header_ET_EXEC:
-            *loadAddr = 0;
             for(uintn i=0; i<programHeader_number; i++) {
                 if(programHeader->p_type == Elf_ProgramHeader_PT_LOAD) {
-                    if(*size < programHeader->p_offset+programHeader->p_memsz) *size = programHeader->p_offset+programHeader->p_memsz;
+                    if(programHeader->p_vaddr < *loadAddr) *loadAddr = programHeader->p_vaddr;
+                    if(*size < programHeader->p_vaddr + programHeader->p_memsz) *size = programHeader->p_vaddr + programHeader->p_memsz;
                 }
                 programHeader = (Elf_ProgramHeader*)((uintn)(programHeader) + programHeader_entrySize);
             }
+            *size -= *loadAddr;
             break;
         default:
             return 3;
@@ -169,10 +170,3 @@ static void ElfLoader_MemCopy(in const void* from, in const unsigned int size, o
 
     return;
 }
-
-
-
-
-
-
-

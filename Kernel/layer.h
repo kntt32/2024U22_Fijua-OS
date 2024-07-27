@@ -1,28 +1,6 @@
 #ifndef INCLUDED_LAYER_H
 #define INCLUDED_LAYER_H
 
-
-typedef struct {
-    struct {
-        sintn x;
-        sintn y;
-        uintn width;
-        uintn height;
-    } Draw;
-
-    struct {
-        uintn x;
-        uintn y;
-        uintn width;
-        uintn height;
-    } Change;
-
-    struct {
-        Graphic_FrameBuff Data;
-    } FrameBuff;
-} Layer_Console;
-
-
 typedef struct {
     uint16 taskId;
 
@@ -35,8 +13,8 @@ typedef struct {
     struct {
         sintn x;
         sintn y;
-        uintn visualWidth;
-        uintn visualHeight;
+        uintn width;
+        uintn height;
 
         sintn oldx;
         sintn oldy;
@@ -79,8 +57,7 @@ typedef struct {
 typedef struct {
     uintn changedFlag;
     uintn isDrawingFlag;
-
-    Layer_Console Console;//LayerId: 0
+    uintn drawBackgroundFlag;
 
     struct {
         uintn count;
@@ -98,11 +75,11 @@ void Layer_Update(void);
 
 void Layer_Mouse_NotifyUpdate(uintn x, uintn y, uintn leftButton);
 
-void Layer_Console_NotifyUpdate(uintn x, uintn y, uintn width, uintn height);
-
 uintn Layer_Window_New(uint16 taskId, ascii name[], uintn x, uintn y, uintn width, uintn height);
 
 uintn Layer_Window_Delete(uintn layerId);
+
+void Layer_Window_DeleteAll(uint16 taskId);
 
 void Layer_Window_Focus(uintn layerId);
 
