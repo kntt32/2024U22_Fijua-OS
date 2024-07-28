@@ -276,3 +276,46 @@ void Graphic_FrameBuff_DrawSquare(Graphic_FrameBuff framebuff, sintn x, sintn y,
     return;
 }
 
+
+void Graphic_FrameBuff_DrawFrom(Graphic_FrameBuff framebuff, sintn x, sintn y, uintn xfrom, uintn yfrom, uintn width, uintn height, Graphic_FrameBuff from) {
+    if(from.frameBuff == NULL) return;
+
+    if(x<0) {
+        width -= (uintn)(-x);
+        xfrom += (uintn)(-x);
+        x = 0;
+    }
+    if(y<0) {
+        height -= (uintn)(-y);
+        yfrom += (uintn)(-y);
+        y = 0;
+    }
+
+    if(framebuff.width <= (uintn)x || framebuff.height <= (uintn)y) return;
+    if(framebuff.width <= (uintn)x+width) width = framebuff.width-(uintn)x;
+    if(framebuff.height <= (uintn)y+height) height = framebuff.height-(uintn)y;
+
+    if(from.width <= xfrom || from.height <= yfrom) return;
+    if(from.width <= xfrom+width) width = from.width-xfrom;
+    if(from.height <= yfrom+height) height = from.height-yfrom;
+
+    uint64* targetFrameBuff = (uint64*)((uintn)framebuff.frameBuff + x*4 + y*framebuff.width*4);
+    uint64* targetFromFrameBuff = (uint64*)((uintn)from.frameBuff + xfrom*4 + yfrom*from.width*4);
+
+    for(uintn i=0; i<height; i++) {
+        for(uintn k=0; k<(width>>1); k++) {
+            *targetFrameBuff = *targetFromFrameBuff & 0x00ffffff00ffffff;
+
+            targetFrameBuff++;
+            targetFromFrameBuff++;
+        }
+        if(width & 0x1) {
+            *((uint32*)targetFrameBuff) = *((uint32*)targetFromFrameBuff);
+        }
+
+        targetFrameBuff = (uint64*)((uintn)targetFrameBuff + ((framebuff.width - (width&0xfffffffffffffffe))<<2));
+        targetFromFrameBuff = (uint64*)((uintn)targetFromFrameBuff + ((from.width - (width&0xfffffffffffffffe))<<2));
+    }
+
+    return;
+}

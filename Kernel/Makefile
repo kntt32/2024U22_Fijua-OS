@@ -45,7 +45,7 @@ test.o: test.c test.h queue.h task.h graphic.h functions.h console.h
 
 
 %.o: %.c
-	$(CC) -I $(INCLUDE) -Wall -Wextra --target=$(TARGET) -fshort-wchar -ffreestanding -mno-red-zone -c -Os -fpie $<
+	$(CC) -I $(INCLUDE) -Wall -Wextra --target=$(TARGET) -fshort-wchar -ffreestanding -mno-red-zone -c -Ofast -fpie $<
 
 %.o: %.s
-	$(CC) -I $(INCLUDE) -Wall -Wextra --target=$(TARGET) -c -Os -fpie $<
+	$(CC) -I $(INCLUDE) -Wall -Wextra --target=$(TARGET) -c -Ofast -fpie $<

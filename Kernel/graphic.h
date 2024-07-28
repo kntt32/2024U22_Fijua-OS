@@ -24,10 +24,12 @@ typedef struct {
 extern void (*Graphic_DrawSquare)(sintn x, sintn y, uintn width, uintn height, Graphic_Color color);//draw square
 extern void (*Graphic_DrawFrom)(sintn x, sintn y, uintn xfrom, uintn yfrom, uintn width, uintn height, Graphic_FrameBuff from);//draw memmapped bgr frame
 
+#endif
+
 void Graphic_DrawMouse(uintn x, uintn y);//draw mouseCursor
 
 void Graphic_FrameBuff_DrawSquare(Graphic_FrameBuff framebuff, sintn x, sintn y, uintn width, uintn height, Graphic_Color color);
 
-#endif
+void Graphic_FrameBuff_DrawFrom(Graphic_FrameBuff framebuff, sintn x, sintn y, uintn xfrom, uintn yfrom, uintn width, uintn height, Graphic_FrameBuff from);
 
 #endif
