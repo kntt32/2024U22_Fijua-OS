@@ -4,7 +4,7 @@
 
 .text
 
-.global Halt_Asm_Hlt
+.global Hlt
 .global Efi_Wrapper
 .global Timer_Wrapper
 .global Mutex_Lock
@@ -14,7 +14,7 @@
 .global Syscall_AppEnter
 
 
-Halt_Asm_Hlt:
+Hlt:
     hlt
     ret
 
@@ -140,5 +140,33 @@ Task_NewTask_Asm_SetStartContext:
 
 
 # uintn Syscall_AppEnter(...);
-Syscall_AppEnter:
+Syscall_AppEnter:#16バイトアライメントの必要なし
+    mov %rsp, %r10
+    and $0xfffffffffffffff0, %rsp
+    push %r10
+    push %r10
+
+    #システムコール番号で分岐
+    cmp $0, %rax
+    je Syscall_AppEnter_Syscall_NewWindow
+
+    cmp $1, %rax
+    je Syscall_AppEnter_Syscall_YieldCpu
+
+    #無効なシステムコール番号
+    mov $-1, %rax
+    jmp Syscall_AppEnter_End
+
+Syscall_AppEnter_Syscall_NewWindow:
+    call Syscall_NewWindow
+    jmp Syscall_AppEnter_End
+
+Syscall_AppEnter_Syscall_YieldCpu:
+    call Syscall_YieldCpu
+    jmp Syscall_AppEnter_End
+
+Syscall_AppEnter_End:
+    pop %r10
+    pop %r10
+    mov %r10, %rsp
     ret

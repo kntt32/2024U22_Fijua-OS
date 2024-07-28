@@ -1,7 +1,7 @@
 #ifndef INCLUDED_X64_H
 #define INCLUDED_X64_H
 
-void Halt_Asm_Hlt(void);
+void Hlt(void);
 
 uintn Efi_Wrapper(void* callback, ...);
 

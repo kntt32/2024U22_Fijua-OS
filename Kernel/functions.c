@@ -12,11 +12,11 @@ extern KernelInputStruct* KernelInput;
 
 /* Miscellaneous Functions */
 
-//Halt (BootServices->Stall)
-void Halt() {
+//Halt loop
+void HltLoop(void) {
     while(1) {
         Task_Yield();
-        Halt_Asm_Hlt();
+        Hlt();
     }
 }
 

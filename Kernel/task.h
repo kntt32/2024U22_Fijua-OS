@@ -47,4 +47,6 @@ void Task_SetLayerTrigger(void);
 
 void Task_ChangeContext(void);
 
+uint16 Task_GetRunningTaskId(void);
+
 #endif

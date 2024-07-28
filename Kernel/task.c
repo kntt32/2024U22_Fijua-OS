@@ -235,3 +235,9 @@ void* Task_ContextSwitch_Subroutine(void* currentStackPtr) {
     task.Queue.runningTaskId = nextTaskId;
     return task.Table.list[nextTaskIndex].stackPtr;
 }
+
+
+//実行中のtaskIdを返す
+uint16 Task_GetRunningTaskId(void) {
+    return task.Queue.runningTaskId;
+}

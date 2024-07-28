@@ -41,7 +41,7 @@ void Mouse_Init(void) {
         status = Efi_Wrapper(KernelInput->LoadedImage->SystemTable->BootServices->LocateHandle, ByProtocol, &guid, NULL, &handleBuffSize, handleBuff);
         if(status || handleBuffSize == 0) {
             Console_Print("Mouse_Init: Mouse handle not found\n");
-            Halt();
+            HltLoop();
         }
 
         Efi_SimplePointerProtocol_Count = 0;
@@ -63,7 +63,7 @@ void Mouse_Init(void) {
         }
         if(Efi_SimplePointerProtocol_Count == 0) {
             Console_Print("Mouse_Init: Mouse interface not found\n");
-            Halt();
+            HltLoop();
         }
 #if 1
         ascii strbuff[18];

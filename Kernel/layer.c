@@ -33,6 +33,8 @@ static sintn Layer_Window_GetIndex(uintn layerId) {
 
 //Layerを初期化
 void Layer_Init(void) {
+    Console_Print("Layer_Init: Initializing...\n");
+
     layer.changedFlag = 0;
     layer.isDrawingFlag = 0;
 
@@ -55,6 +57,8 @@ void Layer_Init(void) {
     layer.Mouse.Drag.y = 0;
     layer.Mouse.leftButton = 0;
     layer.Mouse.oldLeftButton = 0;
+
+    Task_SetLayerTrigger();
 
     return;
 }
@@ -83,36 +87,37 @@ static void Layer_Update_WindowState(void) {
         }
     }
 
+    if(0 < layer.Window.count) {
+        targetWindow = layer.Window.Data + layer.Window.count - 1;
 
-    targetWindow = layer.Window.Data + layer.Window.count - 1;
+        if(layer.Mouse.oldLeftButton != 0 && layer.Mouse.leftButton == 0) {
+            //ウインドウの非表示
+            if((targetWindow->Draw.x+(sintn)window_shadow_overThick+1 <= layer.Mouse.Draw.oldx && layer.Mouse.Draw.oldx < targetWindow->Draw.x+(sintn)window_shadow_overThick+1+(sintn)window_titleBar_height-2)
+                && (targetWindow->Draw.y+(sintn)window_shadow_overThick+1 <= layer.Mouse.Draw.oldy && layer.Mouse.Draw.oldy < targetWindow->Draw.y+(sintn)window_shadow_overThick+1+window_titleBar_height-2)) {
+                targetWindow->hiddenFlag = 1;
+                layer.drawBackgroundFlag = 1;
+                if(1 < layer.Window.count) {
+                    Layer_Window_Focus(layer.Window.Data[layer.Window.count-2].layerId);
+                }
+            }
 
-    if(layer.Mouse.oldLeftButton != 0 && layer.Mouse.leftButton == 0) {
-        //ウインドウの非表示
-        if((targetWindow->Draw.x+(sintn)window_shadow_overThick+1 <= layer.Mouse.Draw.oldx && layer.Mouse.Draw.oldx < targetWindow->Draw.x+(sintn)window_shadow_overThick+1+(sintn)window_titleBar_height-2)
-            && (targetWindow->Draw.y+(sintn)window_shadow_overThick+1 <= layer.Mouse.Draw.oldy && layer.Mouse.Draw.oldy < targetWindow->Draw.y+(sintn)window_shadow_overThick+1+window_titleBar_height-2)) {
-            targetWindow->hiddenFlag = 1;
-            layer.drawBackgroundFlag = 1;
-            if(1 < layer.Window.count) {
-                Layer_Window_Focus(layer.Window.Data[layer.Window.count-2].layerId);
+            //ウィンドウの消去
+            if((targetWindow->Draw.x+(sintn)targetWindow->Draw.width-(sintn)window_shadow_underThick-1-((sintn)window_titleBar_height-2) <= layer.Mouse.Draw.oldx && layer.Mouse.Draw.oldx < targetWindow->Draw.x+(sintn)targetWindow->Draw.width-(sintn)window_shadow_underThick-1)
+                && (targetWindow->Draw.y+window_shadow_overThick+1 <= layer.Mouse.Draw.oldy && layer.Mouse.Draw.oldy < targetWindow->Draw.y+window_shadow_overThick+1+window_titleBar_height-2)) {
+                layer.drawBackgroundFlag = 1;
+                Layer_Window_Delete(targetWindow->layerId);
             }
         }
 
-        //ウィンドウの消去
-        if((targetWindow->Draw.x+(sintn)targetWindow->Draw.width-(sintn)window_shadow_underThick-1-((sintn)window_titleBar_height-2) <= layer.Mouse.Draw.oldx && layer.Mouse.Draw.oldx < targetWindow->Draw.x+(sintn)targetWindow->Draw.width-(sintn)window_shadow_underThick-1)
-            && (targetWindow->Draw.y+window_shadow_overThick+1 <= layer.Mouse.Draw.oldy && layer.Mouse.Draw.oldy < targetWindow->Draw.y+window_shadow_overThick+1+window_titleBar_height-2)) {
-            layer.drawBackgroundFlag = 1;
-            Layer_Window_Delete(targetWindow->layerId);
+        //ウインドウの移動
+        if(!targetWindow->hiddenFlag
+            && layer.Mouse.leftButton != 0 && !(layer.Mouse.Drag.x == 0 && layer.Mouse.Drag.y == 0)
+            && (targetWindow->Draw.x + (sintn)window_shadow_overThick + (sintn)window_titleBar_height <= layer.Mouse.Draw.oldx && layer.Mouse.Draw.oldx < targetWindow->Draw.x + (sintn)targetWindow->Draw.width - (sintn)window_shadow_underThick - (sintn)window_titleBar_height)
+            && (targetWindow->Draw.y + (sintn)window_shadow_overThick <= layer.Mouse.Draw.oldy && layer.Mouse.Draw.oldy < targetWindow->Draw.y + (sintn)window_shadow_overThick + (sintn)window_titleBar_height)) {
+            
+            targetWindow->Draw.x += layer.Mouse.Drag.x;
+            targetWindow->Draw.y += layer.Mouse.Drag.y;
         }
-    }
-
-    //ウインドウの移動
-    if(!targetWindow->hiddenFlag
-        && layer.Mouse.leftButton != 0 && !(layer.Mouse.Drag.x == 0 && layer.Mouse.Drag.y == 0)
-        && (targetWindow->Draw.x + (sintn)window_shadow_overThick + (sintn)window_titleBar_height <= layer.Mouse.Draw.oldx && layer.Mouse.Draw.oldx < targetWindow->Draw.x + (sintn)targetWindow->Draw.width - (sintn)window_shadow_underThick - (sintn)window_titleBar_height)
-        && (targetWindow->Draw.y + (sintn)window_shadow_overThick <= layer.Mouse.Draw.oldy && layer.Mouse.Draw.oldy < targetWindow->Draw.y + (sintn)window_shadow_overThick + (sintn)window_titleBar_height)) {
-        
-        targetWindow->Draw.x += layer.Mouse.Drag.x;
-        targetWindow->Draw.y += layer.Mouse.Drag.y;
     }
 
     layer.Mouse.Drag.x = 0;
@@ -414,7 +419,6 @@ void Layer_Update(void) {
     for(uintn i=0; i<blockXCount*blockYCount; i++) {
         layer_redrawFlag_Or[i] = 0;
     }
-
     Layer_Update_SetDrawArea(layer_redrawFlag_Or, blockXCount, blockYCount);
 
     //有効なブロックを描画
@@ -562,6 +566,8 @@ uintn Layer_Window_New(uint16 taskId, ascii name[], uintn x, uintn y, uintn widt
         window_shadow_overThick, height,
         window_shadow_color);
 
+    Task_SetLayerTrigger();
+
     return layerId;
 }
 
@@ -587,6 +593,8 @@ uintn Layer_Window_Delete(uintn layerId) {
     }
 
     layer.drawBackgroundFlag = 1;
+
+    Task_SetLayerTrigger();
 
     return 0;
 }
@@ -619,6 +627,8 @@ void Layer_Window_Focus(uintn layerId) {
 
     Layer_Window_FlushIndex(layer.Window.count-1);
 
+    Task_SetLayerTrigger();
+
     return;
 }
 
@@ -634,6 +644,8 @@ void Layer_Window_Flush(uintn layerId) {
     targetWindow->Change.width = targetWindow->Draw.width;
     targetWindow->Change.height = targetWindow->Draw.height;
 
+    Task_SetLayerTrigger();
+
     return;
 }
 
@@ -647,6 +659,8 @@ void Layer_Window_FlushIndex(uintn layerIndex) {
     targetWindow->Change.y = 0;
     targetWindow->Change.width = targetWindow->Draw.width;
     targetWindow->Change.height = targetWindow->Draw.height;
+
+    Task_SetLayerTrigger();
 
     return;
 }
@@ -666,6 +680,7 @@ void Layer_Mouse_NotifyUpdate(uintn x, uintn y, uintn leftButton) {
     layer.changedFlag = 1;
 
     Task_SetLayerTrigger();
+
     
     return;
 }
