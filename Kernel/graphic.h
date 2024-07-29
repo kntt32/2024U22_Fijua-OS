@@ -14,9 +14,10 @@ typedef struct {
 } Graphic_Color;
 
 typedef struct {
-    void* frameBuff;
+    uint32* frameBuff;
     uintn width;
     uintn height;
+    uintn scanlineWidth;
 } Graphic_FrameBuff;
 
 #ifndef FILE_GRAPHIC_C

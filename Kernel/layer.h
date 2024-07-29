@@ -87,4 +87,8 @@ void Layer_Window_Flush(uintn layerId);
 
 void Layer_Window_FlushIndex(uintn layerIndex);
 
+uintn Layer_Window_GetFrameBuff(uintn layerId, Graphic_FrameBuff* framebuff);
+
+void Layer_Window_NotifyUpdate(uintn layerId, uintn x, uintn y, uintn width, uintn height);
+
 #endif

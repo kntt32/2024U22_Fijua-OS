@@ -153,19 +153,33 @@ Syscall_AppEnter:#16バイトアライメントの必要なし
     cmp $1, %rax
     je Syscall_AppEnter_Syscall_YieldCpu
 
+    cmp $2, %rax
+    je Syscall_AppEnter_Syscall_DrawSquare
+
+    cmp $3, %rax
+    je Syscall_AppEnter_Syscall_DrawChar
+
     #無効なシステムコール番号
     mov $-1, %rax
-    jmp Syscall_AppEnter_End
+    jmp Syscall_AppEnter_Exit
 
 Syscall_AppEnter_Syscall_NewWindow:
     call Syscall_NewWindow
-    jmp Syscall_AppEnter_End
+    jmp Syscall_AppEnter_Exit
 
 Syscall_AppEnter_Syscall_YieldCpu:
     call Syscall_YieldCpu
-    jmp Syscall_AppEnter_End
+    jmp Syscall_AppEnter_Exit
 
-Syscall_AppEnter_End:
+Syscall_AppEnter_Syscall_DrawSquare:
+    call Syscall_DrawSquare
+    jmp Syscall_AppEnter_Exit
+
+Syscall_AppEnter_Syscall_DrawChar:
+    call Syscall_DrawChar
+    jmp Syscall_AppEnter_Exit
+
+Syscall_AppEnter_Exit:
     pop %r10
     pop %r10
     mov %r10, %rsp

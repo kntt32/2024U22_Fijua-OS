@@ -38,7 +38,7 @@ graphic.o: graphic.c graphic.h graphic_mouse_bitmap
 task.o: task.c queue.h task.h memory.h x64.h graphic.h layer.h
 layer.o: layer.c memory.h graphic.h layer.h mouse.h queue.h task.h font.h
 mouse.o: mouse.c mouse.h graphic.h layer.h timer.h functions.h console.h x64.h
-syscall.o: syscall.c syscall.h queue.h task.h x64.h console.h layer.h graphic.h
+syscall.o: syscall.c syscall.h queue.h task.h x64.h console.h layer.h graphic.h font.h
 terminal.o: terminal.c terminal.h x64.h
 terminal_x64.o: terminal_x64.s
 

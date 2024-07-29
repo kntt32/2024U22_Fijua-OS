@@ -7,6 +7,7 @@
 #include "console.h"
 #include "graphic.h"
 #include "layer.h"
+#include "font.h"
 
 #define Syscall_SyscallAddr ((void**)0x100000)
 
@@ -19,19 +20,52 @@ void Syscall_Init(void) {
 }
 
 //新規ウインドウ作成してレイヤIDを返す
-sintn Syscall_NewWindow(in uintn x, in uintn y, in uintn width, in uintn height, in ascii title[]) {
+sintn Syscall_NewWindow(out uintn* layerId, in uintn x, in uintn y, in uintn width, in uintn height, in ascii title[]) {
+    if(layerId == NULL) return 1;
+
     Task_Yield();
 
     uint16 taskId = Task_GetRunningTaskId();
 
-    uintn layerId = Layer_Window_New(taskId, title, x, y, width, height);
+    *layerId = Layer_Window_New(taskId, title, x, y, width, height);
+    if(*layerId == 0) return -1;
 
-    return layerId;
+    return 0;
 }
 
 
 //CPUを解放
 sintn Syscall_YieldCpu(void) {
     Task_Yield();
+
+    return 0;
+}
+
+
+//ウインドウに四角形を描画
+sintn Syscall_DrawSquare(in uintn layerId, in uintn x, in uintn y, in uintn width, in uintn height, Graphic_Color color) {
+    Graphic_FrameBuff framebuff;
+    if(Layer_Window_GetFrameBuff(layerId, &framebuff)) return -1;
+
+    Task_Yield();
+
+    Graphic_FrameBuff_DrawSquare(framebuff, x, y, width, height, color);
+
+    Layer_Window_NotifyUpdate(layerId, x, y, width, height);
+    
+    return 0;
+}
+
+//ウインドウに文字描画
+sintn Syscall_DrawChar(in uintn layerId, in uintn x, in uintn y, ascii asciicode, Graphic_Color color) {
+    Graphic_FrameBuff framebuff;
+    if(Layer_Window_GetFrameBuff(layerId, &framebuff)) return -1;
+
+    Task_Yield();
+
+    Font_Draw(framebuff, x, y, asciicode, color);
+
+    Layer_Window_NotifyUpdate(layerId, x, y, 8, 16);
+    
     return 0;
 }

@@ -38,7 +38,7 @@ void Layer_Init(void) {
     layer.changedFlag = 0;
     layer.isDrawingFlag = 0;
 
-    layer.drawBackgroundFlag = 0;
+    layer.drawBackgroundFlag = 1;
 
     //init Layer.Window
     layer.Window.count = 0;
@@ -218,6 +218,11 @@ static void Layer_Update_SetDrawArea_Window(uint8* layer_redrawFlag_Or, uintn bl
 
         uintn startX, startY, endX, endY;
 
+        //フラグのリセット
+        for(uintn i=0; i<blockXCount*blockYCount; i++) {
+            window_redrawFlag[i] = 0;
+        }
+
         if(targetWindow->Draw.x == targetWindow->Draw.oldx && targetWindow->Draw.y == targetWindow->Draw.oldy) {
             //対象レイヤ移動なしなら対象レイヤの更新ブロックの再描画フラグを立てる
             startY = (targetWindow->Draw.y+(sintn)targetWindow->Change.y < 0)?(0):(((uintn)(targetWindow->Draw.y+targetWindow->Change.y))>>6);
@@ -293,7 +298,7 @@ static void Layer_Update_SetDrawArea_Window(uint8* layer_redrawFlag_Or, uintn bl
         }
 
         //対象レイヤのないブロックの再描画フラグをおろす
-        for(uintn k=i+1; k<layer.Window.count; k++) {
+        {
             startX = (targetWindow->Draw.x < 0)?(0):((uintn)targetWindow->Draw.x >> 6);
             startY = (targetWindow->Draw.y < 0)?(0):((uintn)targetWindow->Draw.y >> 6);
             endX = (targetWindow->Draw.x + (sintn)targetWindow->Draw.width + 63 < 0)?(0):((uintn)(targetWindow->Draw.x + (sintn)targetWindow->Draw.width + 63) >> 6);
@@ -350,6 +355,7 @@ static void Layer_Update_DrawWindow(uint8* layer_redrawFlag_Or, uintn blockXCoun
     Graphic_FrameBuff backBuff;
     backBuff.width = 64;
     backBuff.height = 64;
+    backBuff.scanlineWidth = 64;
     backBuff.frameBuff = buff;
 
     sintn drawX;
@@ -457,6 +463,9 @@ uintn Layer_Window_New(uint16 taskId, ascii name[], uintn x, uintn y, uintn widt
     if(width == 0 || height == 0) return 0;
     if(width <= window_titleBar_height*3 || height <= window_titleBar_height) return 0;
 
+    width += window_shadow_overThick + window_shadow_underThick;
+    height += window_shadow_overThick + window_shadow_underThick + window_titleBar_height;
+
     //割り当てるlayerIdを取得
     uintn layerId = 1;
     for(sintn i=0; i<(sintn)(layer.Window.count); i++) {
@@ -486,8 +495,8 @@ uintn Layer_Window_New(uint16 taskId, ascii name[], uintn x, uintn y, uintn widt
     newWindow->Draw.y = y;
     newWindow->Draw.width = width;
     newWindow->Draw.height = height;
-    newWindow->Draw.oldx = 0;
-    newWindow->Draw.oldy = 0;
+    newWindow->Draw.oldx = x;
+    newWindow->Draw.oldy = y;
 
     newWindow->Change.x = 0;
     newWindow->Change.y = 0;
@@ -497,6 +506,7 @@ uintn Layer_Window_New(uint16 taskId, ascii name[], uintn x, uintn y, uintn widt
     newWindow->FrameBuff.pages = (width*height*sizeof(uint32)+0xfff)>>12;
     newWindow->FrameBuff.Data.width = width;
     newWindow->FrameBuff.Data.height = height;
+    newWindow->FrameBuff.Data.scanlineWidth = newWindow->FrameBuff.Data.width;
     newWindow->FrameBuff.Data.frameBuff = Memory_AllocPages(taskId, newWindow->FrameBuff.pages);
     if(newWindow->FrameBuff.Data.frameBuff == NULL) return 0;
 
@@ -581,7 +591,7 @@ uintn Layer_Window_Delete(uintn layerId) {
 
     Memory_FreePages(
         targetWindow->taskId,
-        (targetWindow->FrameBuff.Data.width*targetWindow->FrameBuff.Data.height + 0xfff)>>12,
+        (targetWindow->FrameBuff.Data.scanlineWidth*targetWindow->FrameBuff.Data.height + 0xfff)>>12,
         targetWindow->FrameBuff.Data.frameBuff);
 
     Functions_MemCpy(layer.Window.Data+layerIndex, layer.Window.Data+layerIndex+1, sizeof(Layer_Window)*(layer.Window.count-layerIndex-1));
@@ -666,6 +676,60 @@ void Layer_Window_FlushIndex(uintn layerIndex) {
 }
 
 
+//レイヤーのフレームバッファを取得する
+uintn Layer_Window_GetFrameBuff(uintn layerId, Graphic_FrameBuff* framebuff) {
+    if(framebuff == NULL) return 1;
+    sintn layerIndex = Layer_Window_GetIndex(layerId);
+    if(layerIndex < 0) return 2;
+
+    Graphic_FrameBuff* targetWindow_FrameBuff = &(layer.Window.Data[layerIndex].FrameBuff.Data);
+    framebuff->width = targetWindow_FrameBuff->width - window_shadow_overThick - window_shadow_underThick;
+    framebuff->scanlineWidth = targetWindow_FrameBuff->width;
+    framebuff->height = targetWindow_FrameBuff->height - window_shadow_overThick - window_shadow_underThick - window_titleBar_height;
+    framebuff->frameBuff = targetWindow_FrameBuff->frameBuff + targetWindow_FrameBuff->scanlineWidth*(window_shadow_overThick+window_titleBar_height) + window_shadow_overThick;
+
+    return 0;
+}
+
+//レイヤーのフレームバッファ更新を通知
+void Layer_Window_NotifyUpdate(uintn layerId, uintn x, uintn y, uintn width, uintn height) {
+    sintn layerIndex = Layer_Window_GetIndex(layerId);
+    if(layerIndex < 0) return;
+
+    Layer_Window* targetWindow = layer.Window.Data + layerIndex;
+
+    x += window_shadow_overThick;
+    y += window_shadow_overThick + window_titleBar_height;
+
+    if(targetWindow->Change.width == 0 && targetWindow->Change.height == 0) {
+        targetWindow->Change.x = x;
+        targetWindow->Change.y = y;
+        targetWindow->Change.width = width;
+        targetWindow->Change.height = height;
+    }else {
+        const uintn startX = (targetWindow->Change.x < x)?(targetWindow->Change.x):(x);
+        const uintn endX = (targetWindow->Change.x+targetWindow->Change.width < x+width)?(x+width):(targetWindow->Change.x+targetWindow->Change.width);
+        const uintn startY = (targetWindow->Change.y < y)?(targetWindow->Change.y):(y);
+        const uintn endY = (targetWindow->Change.y+targetWindow->Change.height < y+height)?(y+height):(targetWindow->Change.y+targetWindow->Change.height);
+        targetWindow->Change.x = startX;
+        targetWindow->Change.y = startY;
+        targetWindow->Change.width = endX - startX;
+        targetWindow->Change.height = endY - startY;
+    }
+#if 0
+    targetWindow->Change.x = 0;
+    targetWindow->Change.y = 0;
+    targetWindow->Change.width = targetWindow->Draw.width;
+    targetWindow->Change.height = targetWindow->Draw.height;
+#endif
+    layer.changedFlag = 1;
+
+    Task_SetLayerTrigger();
+
+    return;
+}
+
+
 //マウス更新をLayerモジュールに通知
 void Layer_Mouse_NotifyUpdate(uintn x, uintn y, uintn leftButton) {
     if(layer.isDrawingFlag) return;
@@ -680,7 +744,6 @@ void Layer_Mouse_NotifyUpdate(uintn x, uintn y, uintn leftButton) {
     layer.changedFlag = 1;
 
     Task_SetLayerTrigger();
-
     
     return;
 }

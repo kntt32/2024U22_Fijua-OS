@@ -30,7 +30,7 @@ void Font_Draw(Graphic_FrameBuff drawto, uintn x, uintn y, ascii asciicode, Grap
             fromFrameBuffTarg++;
             targfontline <<= 1;
         }
-        fromFrameBuffTarg += drawto.width - 8;
+        fromFrameBuffTarg += drawto.scanlineWidth - 8;
     }
 
     return;
