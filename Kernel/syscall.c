@@ -57,7 +57,7 @@ sintn Syscall_DrawSquare(in uintn layerId, in uintn x, in uintn y, in uintn widt
 }
 
 //ウインドウに文字描画
-sintn Syscall_DrawChar(in uintn layerId, in uintn x, in uintn y, ascii asciicode, Graphic_Color color) {
+sintn Syscall_DrawFont(in uintn layerId, in uintn x, in uintn y, ascii asciicode, Graphic_Color color) {
     Graphic_FrameBuff framebuff;
     if(Layer_Window_GetFrameBuff(layerId, &framebuff)) return -1;
 

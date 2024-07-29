@@ -225,9 +225,9 @@ static void Layer_Update_SetDrawArea_Window(uint8* layer_redrawFlag_Or, uintn bl
 
         if(targetWindow->Draw.x == targetWindow->Draw.oldx && targetWindow->Draw.y == targetWindow->Draw.oldy) {
             //対象レイヤ移動なしなら対象レイヤの更新ブロックの再描画フラグを立てる
-            startY = (targetWindow->Draw.y+(sintn)targetWindow->Change.y < 0)?(0):(((uintn)(targetWindow->Draw.y+targetWindow->Change.y))>>6);
+            startY = (targetWindow->Draw.y+(sintn)targetWindow->Change.y < 0)?(0):(((uintn)(targetWindow->Draw.y+(sintn)targetWindow->Change.y))>>6);
             endY = (targetWindow->Draw.y+(sintn)targetWindow->Change.y+(sintn)targetWindow->Change.height+63 < 0)?(0):(((uintn)(targetWindow->Draw.y+(sintn)targetWindow->Change.y+(sintn)targetWindow->Change.height+63))>>6);
-            startX = (targetWindow->Draw.x+(sintn)targetWindow->Change.x < 0)?(0):(((uintn)(targetWindow->Draw.x+targetWindow->Change.x))>>6);
+            startX = (targetWindow->Draw.x+(sintn)targetWindow->Change.x < 0)?(0):(((uintn)(targetWindow->Draw.x+(sintn)targetWindow->Change.x))>>6);
             endX = (targetWindow->Draw.x+(sintn)targetWindow->Change.x+(sintn)targetWindow->Change.width+63 < 0)?(0):(((uintn)(targetWindow->Draw.x+(sintn)targetWindow->Change.x+(sintn)targetWindow->Change.width+63))>>6);
             
             for(uintn y=startY; y<endY && y<blockYCount; y++) {
@@ -716,12 +716,7 @@ void Layer_Window_NotifyUpdate(uintn layerId, uintn x, uintn y, uintn width, uin
         targetWindow->Change.width = endX - startX;
         targetWindow->Change.height = endY - startY;
     }
-#if 0
-    targetWindow->Change.x = 0;
-    targetWindow->Change.y = 0;
-    targetWindow->Change.width = targetWindow->Draw.width;
-    targetWindow->Change.height = targetWindow->Draw.height;
-#endif
+    
     layer.changedFlag = 1;
 
     Task_SetLayerTrigger();

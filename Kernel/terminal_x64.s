@@ -1,7 +1,7 @@
 .global Terminal_Syscall_NewWindow
 .global Terminal_Syscall_YieldCpu
 .global Terminal_Syscall_DrawSquare
-.global Terminal_Syscall_DrawChar
+.global Terminal_Syscall_DrawFont
 
 .text
 
@@ -20,7 +20,7 @@ Terminal_Syscall_DrawSquare:
     callq *(0x100000)
     ret
 
-Terminal_Syscall_DrawChar:
+Terminal_Syscall_DrawFont:
     mov $3, %rax
     callq *(0x100000)
     ret

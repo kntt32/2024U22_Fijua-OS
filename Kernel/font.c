@@ -12,7 +12,7 @@ static uint8 fontdata_monospace[] = {
 void Font_Draw(Graphic_FrameBuff drawto, uintn x, uintn y, ascii asciicode, Graphic_Color color) {
     if(drawto.frameBuff == NULL || drawto.width < 8) return;
 
-    uint32* fromFrameBuffTarg = (uint32*)drawto.frameBuff + x + y*drawto.width;
+    uint32* fromFrameBuffTarg = (uint32*)drawto.frameBuff + x + y*drawto.scanlineWidth;
     uint32 bgrcolor = Graphic_Color2BGR(color);
     uint8 targfontline;
 

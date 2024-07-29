@@ -157,7 +157,7 @@ Syscall_AppEnter:#16バイトアライメントの必要なし
     je Syscall_AppEnter_Syscall_DrawSquare
 
     cmp $3, %rax
-    je Syscall_AppEnter_Syscall_DrawChar
+    je Syscall_AppEnter_Syscall_DrawFont
 
     #無効なシステムコール番号
     mov $-1, %rax
@@ -175,8 +175,8 @@ Syscall_AppEnter_Syscall_DrawSquare:
     call Syscall_DrawSquare
     jmp Syscall_AppEnter_Exit
 
-Syscall_AppEnter_Syscall_DrawChar:
-    call Syscall_DrawChar
+Syscall_AppEnter_Syscall_DrawFont:
+    call Syscall_DrawFont
     jmp Syscall_AppEnter_Exit
 
 Syscall_AppEnter_Exit:
