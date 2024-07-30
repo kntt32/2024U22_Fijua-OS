@@ -56,6 +56,7 @@ sintn Syscall_DrawSquare(in uintn layerId, in uintn x, in uintn y, in uintn widt
     return 0;
 }
 
+
 //ウインドウに文字描画
 sintn Syscall_DrawFont(in uintn layerId, in uintn x, in uintn y, ascii asciicode, Graphic_Color color) {
     Graphic_FrameBuff framebuff;
@@ -67,5 +68,19 @@ sintn Syscall_DrawFont(in uintn layerId, in uintn x, in uintn y, ascii asciicode
 
     Layer_Window_NotifyUpdate(layerId, x, y, 8, 16);
     
+    return 0;
+}
+
+
+//メッセージを取得する　なければ処理停止
+sintn Syscall_ReadMessage(Task_Message* message) {
+    if(message == NULL) return 1;
+    
+    while(1) {
+        Task_Messages_DeQueue(Task_GetRunningTaskId(), message);
+        if(message->type != Task_Message_Nothing) break;
+        Task_Halt();
+    }
+
     return 0;
 }

@@ -7,6 +7,12 @@ typedef struct {
     uint8 blue;
 } Graphic_Color;
 
+typedef struct {
+    enum {
+        Task_Message_Nothing
+    } type;
+} Task_Message;
+
 sintn Terminal_Syscall_NewWindow(out uintn* layerId, in uintn x, in uintn y, in uintn width, in uintn height, in ascii title[]);
 
 sintn Terminal_Syscall_YieldCpu(void);
@@ -15,8 +21,12 @@ sintn Terminal_Syscall_DrawSquare(in uintn layerId, in uintn x, in uintn y, in u
 
 sintn Terminal_Syscall_DrawFont(in uintn layerId, in uintn x, in uintn y, ascii asciicode, Graphic_Color color);
 
+sintn Terminal_Syscall_ReadMessage(Task_Message* message);
+
+
 void Console_Print(ascii*);
 void HltLoop();
+
 sintn terminal_main(void) {
     uintn newWindowId;
     Terminal_Syscall_NewWindow(&newWindowId, 100, 100, 400, 300, "Terminal");
@@ -25,8 +35,10 @@ sintn terminal_main(void) {
     Terminal_Syscall_DrawSquare(newWindowId, 0, 0, 10, 350, color);
     Terminal_Syscall_DrawFont(newWindowId, 10, 10, 'A', color);
 
+    Task_Message message;
+
     while(1) {
-        Terminal_Syscall_YieldCpu();
+        Terminal_Syscall_ReadMessage(&message);
     }
 
     return 0;

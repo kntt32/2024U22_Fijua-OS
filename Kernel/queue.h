@@ -15,7 +15,7 @@ void Queue_DeInit(Queue* this);
 void Queue_Print(Queue* this);
 Queue* Queue_EnQueue(Queue* this, const void* object);
 Queue* Queue_Replace(Queue* this, const void* from, const void* to);
-Queue* Queue_CheckQueue(Queue* this, void* object);
+Queue* Queue_Check(Queue* this, void* object);
 Queue* Queue_DeQueue(Queue* this, void* object);
 uintn Queue_IsExist(Queue* this, void* object);
 

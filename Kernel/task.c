@@ -104,7 +104,7 @@ uint16 Task_New(sintn (*taskEntry)(void)) {
     task.Table.list[task.Table.count].taskId = newTaskId;
     task.Table.list[task.Table.count].stackPtr = Task_NewTask_Asm_SetStartContext((void*)(((uintn)stackPtr)+Task_DefaultStackPageSize-1));
     task.Table.list[task.Table.count].taskEntry = taskEntry;
-    Queue_Init(&(task.Table.list[task.Table.count].messageQueue), sizeof(Task_Event));
+    Queue_Init(&(task.Table.list[task.Table.count].messages), sizeof(Task_Message));
 
     task.Table.count++;
 
@@ -122,7 +122,7 @@ void Task_Delete(uint16 taskId) {
     if(taskIndex == -1) return;
 
     uint16 taskId_Null = 0;
-    Queue_DeInit(&(task.Table.list[taskIndex].messageQueue));
+    Queue_DeInit(&(task.Table.list[taskIndex].messages));
     Queue_Replace(&(task.Queue.app), &taskId, &taskId_Null);
 
     for(uintn i=taskIndex; i<task.Table.count; i++) {
@@ -242,4 +242,49 @@ void* Task_ContextSwitch_Subroutine(void* currentStackPtr) {
 //実行中のtaskIdを返す
 uint16 Task_GetRunningTaskId(void) {
     return task.Queue.runningTaskId;
+}
+
+
+//taskIdのメッセージキューにメッセージを追加
+uintn Task_Messages_EnQueue(uint16 taskId, const Task_Message* message) {
+    if(taskId == 0 || message == NULL) return 1;
+
+    sintn taskIndex = Task_GetIndexOfTaskList(taskId);
+    if(taskIndex < 0) return 2;
+
+    Queue_EnQueue(&(task.Table.list[taskIndex].messages), message);
+
+    return 0;
+}
+
+
+//taskIdのメッセージキューのメッセージを取得して*messageに書き込み
+uintn Task_Messages_Check(uint16 taskId, Task_Message* message) {
+    if(taskId == 0 || message == NULL) return 1;
+
+    sintn taskIndex = Task_GetIndexOfTaskList(taskId);
+    if(taskId < 0) return 2;
+
+    if(Queue_Check(&(task.Table.list[taskIndex].messages), message) == NULL) {
+        message->type = Task_Message_Nothing;
+        return 0;
+    }
+
+    return 0;
+}
+
+
+//taskIdのメッセージキューからメッセージをを取り出して*messageに書き込み
+uintn Task_Messages_DeQueue(uint16 taskId, Task_Message* message) {
+    if(taskId == 0 || message == NULL) return 1;
+
+    sintn taskIndex = Task_GetIndexOfTaskList(taskId);
+    if(taskId < 0) return 2;
+
+    if(Queue_DeQueue(&(task.Table.list[taskIndex].messages), message) == NULL) {
+        message->type = Task_Message_Nothing;
+        return 0;
+    }
+
+    return 0;
 }

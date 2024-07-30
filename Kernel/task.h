@@ -8,16 +8,16 @@
 
 typedef struct {
     enum {
-        Task_Event_UnKnown
+        Task_Message_Nothing
     } type;
-} Task_Event;
+} Task_Message;
 
 
 typedef struct {
     uint16 taskId;//disable 0
     void* stackPtr;
     sintn (*taskEntry)(void);
-    Queue messageQueue;
+    Queue messages;
 } Task_Object;
 
 
@@ -56,5 +56,7 @@ void Task_SetLayerTrigger(void);
 void Task_ChangeContext(void);
 
 uint16 Task_GetRunningTaskId(void);
+
+uintn Task_Messages_DeQueue(uint16 taskId, Task_Message* message);
 
 #endif

@@ -6,6 +6,7 @@
 
 #define Queue_TaskId (2)
 
+
 //Queueを初期化
 Queue* Queue_Init(Queue* this, uintn perSize) {
     if(this == NULL || perSize == 0) return NULL;
@@ -18,7 +19,6 @@ Queue* Queue_Init(Queue* this, uintn perSize) {
 
     return this;
 }
-
 
 
 //Queueを解放
@@ -153,7 +153,7 @@ Queue* Queue_Replace(Queue* this, const void* from, const void* to) {
 
 
 //Queueをチェック
-Queue* Queue_CheckQueue(Queue* this, void* object) {
+Queue* Queue_Check(Queue* this, void* object) {
     if(this == NULL || object == NULL) return NULL;
 
     uint8* object_uint8Ptr = (uint8*)object;
@@ -175,7 +175,7 @@ Queue* Queue_CheckQueue(Queue* this, void* object) {
 Queue* Queue_DeQueue(Queue* this, void* object) {
     if(this == NULL || this->count == 0) return NULL;
 
-    if(Queue_CheckQueue(this, object) == NULL) return NULL;
+    if(Queue_Check(this, object) == NULL) return NULL;
 
     uintn maxIndex = this->poolPages << 12;
 
