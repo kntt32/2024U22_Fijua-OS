@@ -23,7 +23,7 @@ void Task_Init(void) {
     task.layerTrigger = 0;
 
     task.Queue.runningTaskId = 0;
-    Queue_Init(&(task.Queue.app));
+    Queue_Init(&(task.Queue.app), sizeof(uint16));
 
     task.Table.count = 0;
     task.Table.listPages = 0;
@@ -104,6 +104,7 @@ uint16 Task_New(sintn (*taskEntry)(void)) {
     task.Table.list[task.Table.count].taskId = newTaskId;
     task.Table.list[task.Table.count].stackPtr = Task_NewTask_Asm_SetStartContext((void*)(((uintn)stackPtr)+Task_DefaultStackPageSize-1));
     task.Table.list[task.Table.count].taskEntry = taskEntry;
+    Queue_Init(&(task.Table.list[task.Table.count].messageQueue), sizeof(Task_Event));
 
     task.Table.count++;
 
@@ -120,15 +121,16 @@ void Task_Delete(uint16 taskId) {
     sintn taskIndex = Task_GetIndexOfTaskList(taskId);
     if(taskIndex == -1) return;
 
+    uint16 taskId_Null = 0;
+    Queue_DeInit(&(task.Table.list[taskIndex].messageQueue));
+    Queue_Replace(&(task.Queue.app), &taskId, &taskId_Null);
+
     for(uintn i=taskIndex; i<task.Table.count; i++) {
         task.Table.list[i] = task.Table.list[i+1];
     }
     task.Table.count--;
 
-    Queue_Replace(&(task.Queue.app), taskId, 0);
-
     Memory_FreeAll(taskId);
-
     Layer_Window_DeleteAll(taskId);
 
     Task_Yield();
@@ -161,8 +163,8 @@ uintn Task_EnQueueTask(uint16 taskId) {
     if(taskIndex == -1) {
         return 2;
     }
-    if(!Queue_IsExist(&(task.Queue.app), (uintn)taskId)) {
-        Queue_EnQueue(&(task.Queue.app), (uintn)taskId);
+    if(!Queue_IsExist(&(task.Queue.app), &taskId)) {
+        Queue_EnQueue(&(task.Queue.app), &taskId);
     }
 
     return 0;
@@ -218,7 +220,7 @@ void* Task_ContextSwitch_Subroutine(void* currentStackPtr) {
     sintn nextTaskIndex = 0;
     if(nextTaskId == 0 && task.Queue.app.count != 0) {
         while(1) {
-            nextTaskId = Queue_DeQueue(&(task.Queue.app));
+            if(Queue_DeQueue(&(task.Queue.app), &nextTaskId) == NULL) break;
             nextTaskIndex = Task_GetIndexOfTaskList(nextTaskId);
             if(nextTaskIndex == -1) nextTaskId = 0;
             if(nextTaskId != 0 || task.Queue.app.count == 0) break;

@@ -10,6 +10,8 @@
 #include "task.h"
 #include "font.h"
 
+#define Layer_TaskId (2)
+
 extern KernelInputStruct* KernelInput;
 
 static Layer layer;
@@ -444,12 +446,12 @@ void Layer_Update(void) {
 //Layer.Windowのサイズ拡張
 static uintn Layer_Window_Expand(void) {
     uintn newPages = layer.Window.pages*2 + 1;
-    Layer_Window* newData = Memory_AllocPages(2, newPages);
+    Layer_Window* newData = Memory_AllocPages(Layer_TaskId, newPages);
     if(newData == NULL) return 1;
 
     Functions_MemCpy(newData, layer.Window.Data, sizeof(Layer_Window)*layer.Window.count);
 
-    Memory_FreePages(2, layer.Window.pages, layer.Window.Data);
+    Memory_FreePages(Layer_TaskId, layer.Window.pages, layer.Window.Data);
     layer.Window.pages = newPages;
     layer.Window.Data = newData;
 
@@ -507,7 +509,7 @@ uintn Layer_Window_New(uint16 taskId, ascii name[], uintn x, uintn y, uintn widt
     newWindow->FrameBuff.Data.width = width;
     newWindow->FrameBuff.Data.height = height;
     newWindow->FrameBuff.Data.scanlineWidth = newWindow->FrameBuff.Data.width;
-    newWindow->FrameBuff.Data.frameBuff = Memory_AllocPages(taskId, newWindow->FrameBuff.pages);
+    newWindow->FrameBuff.Data.frameBuff = Memory_AllocPages(Layer_TaskId, newWindow->FrameBuff.pages);
     if(newWindow->FrameBuff.Data.frameBuff == NULL) return 0;
 
     layer.Window.count++;
@@ -590,7 +592,7 @@ uintn Layer_Window_Delete(uintn layerId) {
     Layer_Window* targetWindow = layer.Window.Data + layerIndex;
 
     Memory_FreePages(
-        targetWindow->taskId,
+        Layer_TaskId,
         (targetWindow->FrameBuff.Data.scanlineWidth*targetWindow->FrameBuff.Data.height + 0xfff)>>12,
         targetWindow->FrameBuff.Data.frameBuff);
 

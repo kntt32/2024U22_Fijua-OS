@@ -4,135 +4,219 @@
 #include "console.h"
 #include "functions.h"
 
+#define Queue_TaskId (2)
 
-#define Queue_OwnerID (2)
-
-
-Queue* Queue_Init(Queue* this) {
-    if(this == NULL) return NULL;
+//Queueを初期化
+Queue* Queue_Init(Queue* this, uintn perSize) {
+    if(this == NULL || perSize == 0) return NULL;
 
     this->start = 0;
     this->count = 0;
-    this->size = 0;
-    this->queue = NULL;
+    this->perSize = perSize;
+    this->poolPages = 0;
+    this->objectPool = NULL;
 
     return this;
 }
 
 
+
+//Queueを解放
 void Queue_DeInit(Queue* this) {
     if(this == NULL) return;
 
-    Memory_FreePages(Queue_OwnerID, (this->size*sizeof(uintn)) >> 12, (void*)(this->queue));
+    Memory_FreePages(Queue_TaskId, this->poolPages, this->objectPool);
 
     this->start = 0;
     this->count = 0;
-    this->size = 0;
+    this->perSize = 1;
+    this->poolPages = 0;
+    this->objectPool = NULL;
 
     return;
 }
 
 
+//QueueのobjectPoolを拡張
 static Queue* Queue_Expand(Queue* this) {
     if(this == NULL) return NULL;
+    
+    uintn newPoolPages = this->poolPages*2 + 1;
+    uint8* newObjectPool = Memory_AllocPages(Queue_TaskId, newPoolPages);
+    if(newObjectPool == NULL) return NULL;
 
-    uintn newSize = ((((this->size*sizeof(uintn)+0xfff) >> 12)*2 + 1)<<12)/sizeof(uintn);
-    uintn* newQueue = Memory_AllocPages(Queue_OwnerID, (newSize*sizeof(uintn)+0xfff)>>12);
-    if(newQueue == NULL) return NULL;
-
-    uintn indexOfOldQueue = this->start;
-    for(uintn i=0; i<this->count; i++) {
-        newQueue[i] = this->queue[indexOfOldQueue];
-
-        indexOfOldQueue ++;
-        if(this->size <= indexOfOldQueue) indexOfOldQueue = 0;
+    uint64* newObjectPool_uint64Ptr = (uint64*)newObjectPool;
+    uint64* oldObjectPool_uint64Ptr = (uint64*)this->objectPool;
+    uintn oldObjectPool_Index = this->start;
+    uintn oldObjectPool_MaxIndex = this->poolPages << 12;
+    for(uintn i=0; i<this->perSize*this->count; i++) {
+        newObjectPool_uint64Ptr[i] = oldObjectPool_uint64Ptr[oldObjectPool_Index];
+        oldObjectPool_Index ++;
+        if(oldObjectPool_MaxIndex <= oldObjectPool_Index) oldObjectPool_Index = 0;
     }
 
-    Memory_FreePages(Queue_OwnerID, ((this->size*sizeof(uintn)) >> 12), (void*)(this->queue));
 
-    this->queue = newQueue;
+    Memory_FreePages(Queue_TaskId, this->poolPages, this->objectPool);
+
     this->start = 0;
-    this->size = newSize;
+    this->poolPages = newPoolPages;
+    this->objectPool = newObjectPool;
 
     return this;
 }
 
 
+//Queueを表示
 void Queue_Print(Queue* this) {
     if(this == NULL) return;
-
-    Console_Print("[");
-
-    uintn indexOfQueue = this->start;
-    ascii tempStrBuff[17];
+/*
+    uintn index = this->start;
+    uintn maxIndex = this->poolPages << 12;
     for(uintn i=0; i<this->count; i++) {
-        if(i != 0) Console_Print(", ");
-
-        SPrintIntX(this->queue[indexOfQueue], 17, tempStrBuff);
-        Console_Print(tempStrBuff);
-        indexOfQueue++;
-        if(indexOfQueue == this->size) indexOfQueue = 0;
+        for(uintn k=0; k<this->perSize; k++) {
+            printf(" ");
+            printf("%x", this->objectPool[index+k] & 0x0f);
+            printf("%x", (this->objectPool[index+k] & 0xf0) >> 4);
+        }
+        printf(",");
+        index += this->perSize;
+        if(maxIndex <= index) index = 0;
     }
-
-    Console_Print("]\n");
-
+*/
     return;
 }
 
 
-Queue* Queue_EnQueue(Queue* this, uintn object) {
-    if(this == NULL) return NULL;
+//Queueに追加
+Queue* Queue_EnQueue(Queue* this, const void* object) {
+    if(this == NULL || object == NULL) return NULL;
 
-    if(this->size < this->count+1) {
-        if(Queue_Expand(this) == NULL) return NULL;
+    while((this->poolPages<<12) <= (this->count+1)*this->perSize) {
+        Queue_Expand(this);
     }
 
-    uintn indexOfQueue = (this->start + this->count)%(this->size);
+    uintn index = this->start + this->count*this->perSize;
+    uintn maxIndex = this->poolPages << 12;
+    if((this->poolPages<<12) <= index) index -= this->poolPages;
 
-    this->queue[indexOfQueue] = object;
+    const uint8* object_uint8Ptr = (uint8*)object;
+    for(uintn i=0; i<this->perSize; i++) {
+        this->objectPool[index] = object_uint8Ptr[i];
+        index++;
+        if(maxIndex <= index) index = 0;
+    }
 
-    this->count++;
+    this->count ++;
 
     return this;
 }
 
 
-Queue* Queue_Replace(Queue* this, uintn from, uintn to) {
-    if(this == NULL) return NULL;
+//Queueの*fromを*toに置き換え
+Queue* Queue_Replace(Queue* this, const void* from, const void* to) {
+    if(this == NULL || from == NULL || to == NULL) return NULL;
 
-    uintn indexOfQueue = this->start;
+    uintn index = this->start;
+    uintn maxIndex = this->poolPages << 12;
+
+    const uint8* from_uint8Ptr = (const uint8*)from;
+    const uint8* to_uint8Ptr = (const uint8*)to;
+
     for(uintn i=0; i<this->count; i++) {
-        if(this->queue[indexOfQueue] == from) {
-            this->queue[indexOfQueue] = to;
+        //対象の要素がfromと等しいか判定
+        uintn index_copy = index;
+        uintn isEqualFlag = 1;
+        for(uintn k=0; k<this->perSize; k++) {
+            if(this->objectPool[index_copy] != from_uint8Ptr[k]) {
+                isEqualFlag = 0;
+                break;
+            }
+            index_copy ++;
+            if(maxIndex <= index_copy) index_copy = 0;
         }
 
-        indexOfQueue++;
-        if(indexOfQueue == this->size) indexOfQueue = 0;
+        //等しいなら置き換える
+        if(isEqualFlag) {
+            for(uintn k=0; k<this->perSize; k++) {
+                this->objectPool[index] = to_uint8Ptr[k];
+                index ++;
+                if(maxIndex <= index) index = 0;
+            }
+        }else {
+            index += this->perSize;
+            if(maxIndex <= index) index -= maxIndex;
+        }
     }
 
     return this;
 }
 
 
-uintn Queue_DeQueue(Queue* this) {
-    if(this == NULL || this->count == 0) return 0;
+//Queueをチェック
+Queue* Queue_CheckQueue(Queue* this, void* object) {
+    if(this == NULL || object == NULL) return NULL;
 
-    uintn result = this->queue[this->start];
-    this->start ++;
-    this->count --;
-    if(this->start == this->size) this->start = 0;
+    uint8* object_uint8Ptr = (uint8*)object;
 
-    return result;
+    uintn maxIndex = this->poolPages << 12;
+    uintn index = this->start;
+    for(uintn i=0; i<this->perSize; i++) {
+        object_uint8Ptr[i] = this->objectPool[index];
+
+        index ++;
+        if(maxIndex <= index) index = 0;
+    }
+
+    return this;
 }
 
 
-uintn Queue_IsExist(Queue* this, uintn object) {
-    if(this == NULL) return 0;
-    uintn indexOfQueue = this->start;
+//Queueから取り出す
+Queue* Queue_DeQueue(Queue* this, void* object) {
+    if(this == NULL || this->count == 0) return NULL;
+
+    if(Queue_CheckQueue(this, object) == NULL) return NULL;
+
+    uintn maxIndex = this->poolPages << 12;
+
+    this->start += this->perSize;
+    if(maxIndex <= this->start) this->start -= maxIndex;
+    this->count --;
+
+    return this;
+}
+
+
+//Queueに存在しているか判定
+uintn Queue_IsExist(Queue* this, void* object) {
+    if(this == NULL || object == NULL) return 0;
+
+    uintn index = this->start;
+    uintn maxIndex = this->poolPages << 12;
+
+    const uint8* object_uint8Ptr = (const uint8*)object;
+
     for(uintn i=0; i<this->count; i++) {
-        if(this->queue[indexOfQueue] == object) return 1;
-        indexOfQueue++;
-        if(indexOfQueue == this->count) indexOfQueue = 0;
+        //対象の要素がfromと等しいか判定
+        uintn index_copy = index;
+        uintn isEqualFlag = 1;
+        for(uintn k=0; k<this->perSize; k++) {
+            if(this->objectPool[index_copy] != object_uint8Ptr[k]) {
+                isEqualFlag = 0;
+                break;
+            }
+            index_copy ++;
+            if(maxIndex <= index_copy) index_copy = 0;
+        }
+
+        //等しいなら置き換える
+        if(isEqualFlag) {
+            return 1;
+        }
+
+        index += this->perSize;
+        if(maxIndex <= index) index -= maxIndex;
     }
+
     return 0;
 }

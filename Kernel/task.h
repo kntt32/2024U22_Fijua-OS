@@ -7,9 +7,17 @@
 
 
 typedef struct {
+    enum {
+        Task_Event_UnKnown
+    } type;
+} Task_Event;
+
+
+typedef struct {
     uint16 taskId;//disable 0
     void* stackPtr;
     sintn (*taskEntry)(void);
+    Queue messageQueue;
 } Task_Object;
 
 
