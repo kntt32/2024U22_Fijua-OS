@@ -12,9 +12,11 @@
 
 #define Syscall_SyscallAddr ((void**)0x100000)
 
-uintn Syscall_AppEnter();
+sintn Syscall_AppEnter();
 
 void Syscall_Init(void) {
+    Console_Print("Syscall_Init: Initializing Syscall...\n");
+
     *Syscall_SyscallAddr = (void*)Syscall_AppEnter;
 
     return;
@@ -44,7 +46,7 @@ sintn Syscall_YieldCpu(void) {
 
 
 //ウインドウに四角形を描画
-sintn Syscall_DrawSquare(in uintn layerId, in uintn x, in uintn y, in uintn width, in uintn height, Graphic_Color color) {
+sintn Syscall_DrawSquare(in uintn layerId, in uintn x, in uintn y, in uintn width, in uintn height, in Graphic_Color color) {
     Task_Yield();
 
     Graphic_FrameBuff framebuff;
@@ -59,7 +61,7 @@ sintn Syscall_DrawSquare(in uintn layerId, in uintn x, in uintn y, in uintn widt
 
 
 //ウインドウに文字描画
-sintn Syscall_DrawFont(in uintn layerId, in uintn x, in uintn y, ascii asciicode, Graphic_Color color) {
+sintn Syscall_DrawFont(in uintn layerId, in uintn x, in uintn y, in ascii asciicode, in Graphic_Color color) {
     Task_Yield();
 
     Graphic_FrameBuff framebuff;
@@ -74,7 +76,7 @@ sintn Syscall_DrawFont(in uintn layerId, in uintn x, in uintn y, ascii asciicode
 
 
 //メッセージを取得する　なければ処理停止
-sintn Syscall_ReadMessage(Task_Message* message) {
+sintn Syscall_ReadMessage(out Task_Message* message) {
     Task_Yield();
 
     if(message == NULL) return 1;
@@ -90,7 +92,7 @@ sintn Syscall_ReadMessage(Task_Message* message) {
 
 
 //メッセージを取得する　なければTask_Message_Nothingを返す
-sintn Syscall_CheckMessage(Task_Message* message) {
+sintn Syscall_CheckMessage(out Task_Message* message) {
     Task_Yield();
 
     if(message == NULL) return 1;
@@ -102,7 +104,7 @@ sintn Syscall_CheckMessage(Task_Message* message) {
 
 
 //タスク間通信 8バイト送る
-sintn Syscall_SendITCMessage(uint16 taskId, uint64 message) {
+sintn Syscall_SendITCMessage(in uint16 taskId, in uint64 message) {
     Task_Yield();
     
     if(taskId == 0) return 1;

@@ -8,6 +8,7 @@
 #include "graphic.h"
 #include "layer.h"
 #include "message.h"
+#include "console.h"
 
 void* Task_NewTask_Asm_SetStartContext(void* stackptr);
 void Task_ContextSwitch(void);
@@ -18,6 +19,8 @@ static Task task;
 
 //Initialize TaskScheduler
 void Task_Init(void) {
+    Console_Print("Task_Init: Initializing Task...\n");
+
     //reset
     task.haltFlag = 0;
     task.kernelStackPtr = NULL;
@@ -124,6 +127,7 @@ void Task_Delete(uint16 taskId) {
 
     uint16 taskId_Null = 0;
     Queue_DeInit(&(task.Table.list[taskIndex].messages));
+    Message_RemoveByTaskId(taskId);
     Queue_Replace(&(task.Queue.app), &taskId, &taskId_Null);
 
     for(uintn i=taskIndex; i<task.Table.count; i++) {

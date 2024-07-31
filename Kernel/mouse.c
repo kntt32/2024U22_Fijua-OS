@@ -27,6 +27,8 @@ static const sintn Mouse_speed = 30;
 void Mouse_Init(void) {
     uintn status;
 
+    Console_Print("Mouse_Init: Initializing Mouse...\n");
+
     //Get Efi Protocol Interface
     EFI_GUID guid = EFI_SIMPLE_POINTER_PROTOCOL_GUID;
 
@@ -41,7 +43,7 @@ void Mouse_Init(void) {
         status = Efi_Wrapper(KernelInput->LoadedImage->SystemTable->BootServices->LocateHandle, ByProtocol, &guid, NULL, &handleBuffSize, handleBuff);
         if(status || handleBuffSize == 0) {
             Console_Print("Mouse_Init: Mouse handle not found\n");
-            HltLoop();
+            while(1) Hlt();
         }
 
         Efi_SimplePointerProtocol_Count = 0;
@@ -63,22 +65,8 @@ void Mouse_Init(void) {
         }
         if(Efi_SimplePointerProtocol_Count == 0) {
             Console_Print("Mouse_Init: Mouse interface not found\n");
-            HltLoop();
+            while(1) Hlt();
         }
-#if 1
-        ascii strbuff[18];
-        SPrintIntX(Efi_SimplePointerProtocol_Count, 17, strbuff);
-        strbuff[16] = '\n';
-        strbuff[17] = '\0';
-        Console_Print(strbuff);
-        for(uintn i=0; i<Efi_SimplePointerProtocol_Count; i++) {
-            SPrintIntX(Efi_SimplePointerProtocol[i]->Mode->ResolutionX, 17, strbuff);
-            strbuff[16] = '\n';
-            strbuff[17] = '\0';
-            Console_Print(strbuff);
-        }
-
-#endif
     }
 
     Timer_Set(Mouse_CheckState, 10000);

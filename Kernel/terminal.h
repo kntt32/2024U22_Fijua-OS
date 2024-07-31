@@ -1,6 +1,6 @@
 #ifndef INCLUDED_TERMINAL_H
 #define INCLUDED_TERMINAL_H
 
-sintn terminal_main(void);
+sintn Terminal_Main(void);
 
 #endif

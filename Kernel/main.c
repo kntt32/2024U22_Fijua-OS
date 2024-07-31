@@ -19,7 +19,7 @@
 
 KernelInputStruct* KernelInput = NULL;
 
-int kernel_main(KernelInputStruct* kernelInput) {
+int Main(KernelInputStruct* kernelInput) {
     KernelInput = kernelInput;
 
     Graphic_Init();
@@ -35,7 +35,7 @@ int kernel_main(KernelInputStruct* kernelInput) {
     Syscall_Init();
     Message_Init();
 
-    Task_New(terminal_main);
+    Task_New(Terminal_Main);
 /*
     Layer_Window_New(2, "testWindow", 10, 10, 300, 400);
 

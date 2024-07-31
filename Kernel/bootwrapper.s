@@ -7,7 +7,7 @@ entrypoint:
     push %rdi
 
     mov %rcx, %rdi
-    call kernel_main
+    call Main
 
     pop %rdi
     pop %rsi

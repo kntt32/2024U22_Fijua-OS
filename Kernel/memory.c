@@ -26,6 +26,7 @@ void Memory_Init(void) {
     Memory_MemMap = (uint16*)(KernelInput->Memory.AvailableMemoryMap);
     if(Memory_MemMap[0x100000 >> 12] != Memory_MemType_Available) {
         Console_Print("Memory_Init: SyscallPage is'nt available\n");
+        while(1) Hlt();
     }
     Memory_MemMap[0x100000 >> 12] = 2;
 

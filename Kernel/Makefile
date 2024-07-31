@@ -35,13 +35,13 @@ keyboard.o: keyboard.c x64.h keyboard.h
 timer.o: timer.c timer.h x64.h console.h
 memory.o: memory.c memory.h functions.h x64.h console.h
 graphic.o: graphic.c graphic.h graphic_mouse_bitmap
-task.o: task.c queue.h task.h memory.h x64.h graphic.h layer.h message.h
+task.o: task.c queue.h task.h memory.h x64.h graphic.h layer.h message.h console.h
 layer.o: layer.c memory.h graphic.h layer.h mouse.h queue.h task.h font.h
 mouse.o: mouse.c mouse.h graphic.h layer.h timer.h functions.h console.h x64.h
 syscall.o: syscall.c syscall.h queue.h task.h x64.h console.h layer.h graphic.h font.h message.h
 message.o: message.c queue.h message.h task.h functions.h
 
-terminal.o: terminal.c terminal.h x64.h
+terminal.o: terminal.c graphic.h queue.h task.h terminal.h terminal_x64.h
 terminal_x64.o: terminal_x64.s
 
 test.o: test.c test.h queue.h task.h graphic.h functions.h console.h

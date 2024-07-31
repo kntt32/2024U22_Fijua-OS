@@ -27,6 +27,7 @@ EFI_EVENT eventId;
 
 
 void Timer_Init(void) {
+    Console_Print("Timer_Init: Initializing Timer...\n");
     EFI_BOOT_SERVICES* bootServices = KernelInput->LoadedImage->SystemTable->BootServices;
 
     Efi_CreateEvent = bootServices->CreateEvent;
