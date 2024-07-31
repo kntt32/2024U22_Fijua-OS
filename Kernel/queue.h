@@ -12,9 +12,10 @@ typedef struct {
 
 Queue* Queue_Init(Queue* this, uintn perSize);
 void Queue_DeInit(Queue* this);
-void Queue_Print(Queue* this);
+Queue* Queue_GetElementByIndex(Queue* this, uintn index, void* element);
+Queue* Queue_GetElementPtrByIndex(Queue* this, uintn index, void** element);
 Queue* Queue_EnQueue(Queue* this, const void* object);
-Queue* Queue_Replace(Queue* this, const void* from, const void* to);
+Queue* Queue_Replace(Queue* this, const void* from, const void* to);//構造体を管理するQueueの場合、この関数は使用すべきでない
 Queue* Queue_Check(Queue* this, void* object);
 Queue* Queue_DeQueue(Queue* this, void* object);
 uintn Queue_IsExist(Queue* this, void* object);

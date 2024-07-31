@@ -9,9 +9,14 @@ typedef struct {
 
 typedef struct {
     enum {
-        Task_Message_Nothing
+        Task_Message_Nothing,
+        Task_Message_ITCMessage
     } type;
-} Task_Message;
+
+    union {
+        uint64 ITCMessage;
+    } data;
+} Task_Message;;
 
 sintn Terminal_Syscall_NewWindow(out uintn* layerId, in uintn x, in uintn y, in uintn width, in uintn height, in ascii title[]);
 
@@ -22,6 +27,8 @@ sintn Terminal_Syscall_DrawSquare(in uintn layerId, in uintn x, in uintn y, in u
 sintn Terminal_Syscall_DrawFont(in uintn layerId, in uintn x, in uintn y, ascii asciicode, Graphic_Color color);
 
 sintn Terminal_Syscall_ReadMessage(Task_Message* message);
+
+sintn Terminal_Syscall_SendITCMessage(uint16 taskId, uint64 message);
 
 
 void Console_Print(ascii*);
@@ -37,8 +44,12 @@ sintn terminal_main(void) {
 
     Task_Message message;
 
+
+    Terminal_Syscall_SendITCMessage(3, 5);
+
     while(1) {
         Terminal_Syscall_ReadMessage(&message);
+        Console_Print("Message Recieved\n");
     }
 
     return 0;

@@ -60,8 +60,6 @@ void Layer_Init(void) {
     layer.Mouse.leftButton = 0;
     layer.Mouse.oldLeftButton = 0;
 
-    Task_SetLayerTrigger();
-
     return;
 }
 
@@ -578,8 +576,6 @@ uintn Layer_Window_New(uint16 taskId, ascii name[], uintn x, uintn y, uintn widt
         window_shadow_overThick, height,
         window_shadow_color);
 
-    Task_SetLayerTrigger();
-
     return layerId;
 }
 
@@ -605,8 +601,6 @@ uintn Layer_Window_Delete(uintn layerId) {
     }
 
     layer.drawBackgroundFlag = 1;
-
-    Task_SetLayerTrigger();
 
     return 0;
 }
@@ -639,8 +633,6 @@ void Layer_Window_Focus(uintn layerId) {
 
     Layer_Window_FlushIndex(layer.Window.count-1);
 
-    Task_SetLayerTrigger();
-
     return;
 }
 
@@ -656,8 +648,6 @@ void Layer_Window_Flush(uintn layerId) {
     targetWindow->Change.width = targetWindow->Draw.width;
     targetWindow->Change.height = targetWindow->Draw.height;
 
-    Task_SetLayerTrigger();
-
     return;
 }
 
@@ -671,8 +661,6 @@ void Layer_Window_FlushIndex(uintn layerIndex) {
     targetWindow->Change.y = 0;
     targetWindow->Change.width = targetWindow->Draw.width;
     targetWindow->Change.height = targetWindow->Draw.height;
-
-    Task_SetLayerTrigger();
 
     return;
 }
@@ -721,8 +709,6 @@ void Layer_Window_NotifyUpdate(uintn layerId, uintn x, uintn y, uintn width, uin
     
     layer.changedFlag = 1;
 
-    Task_SetLayerTrigger();
-
     return;
 }
 
@@ -739,8 +725,6 @@ void Layer_Mouse_NotifyUpdate(uintn x, uintn y, uintn leftButton) {
     layer.Mouse.Draw.x = x;
     layer.Mouse.Draw.y = y;
     layer.changedFlag = 1;
-
-    Task_SetLayerTrigger();
     
     return;
 }

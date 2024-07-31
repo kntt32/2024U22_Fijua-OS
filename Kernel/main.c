@@ -11,6 +11,7 @@
 #include "layer.h"
 #include "mouse.h"
 #include "syscall.h"
+#include "message.h"
 
 #include "terminal.h"
 
@@ -32,6 +33,7 @@ int kernel_main(KernelInputStruct* kernelInput) {
     Layer_Init();
 
     Syscall_Init();
+    Message_Init();
 
     Task_New(terminal_main);
 /*

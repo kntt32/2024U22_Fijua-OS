@@ -7,6 +7,7 @@
 #include "x64.h"
 #include "graphic.h"
 #include "layer.h"
+#include "message.h"
 
 void* Task_NewTask_Asm_SetStartContext(void* stackptr);
 void Task_ContextSwitch(void);
@@ -20,7 +21,6 @@ void Task_Init(void) {
     //reset
     task.haltFlag = 0;
     task.kernelStackPtr = NULL;
-    task.layerTrigger = 0;
 
     task.Queue.runningTaskId = 0;
     Queue_Init(&(task.Queue.app), sizeof(uint16));
@@ -102,6 +102,7 @@ uint16 Task_New(sintn (*taskEntry)(void)) {
     }
 
     task.Table.list[task.Table.count].taskId = newTaskId;
+    task.Table.list[task.Table.count].stdio_taskId = 0;
     task.Table.list[task.Table.count].stackPtr = Task_NewTask_Asm_SetStartContext((void*)(((uintn)stackPtr)+Task_DefaultStackPageSize-1));
     task.Table.list[task.Table.count].taskEntry = taskEntry;
     Queue_Init(&(task.Table.list[task.Table.count].messages), sizeof(Task_Message));
@@ -173,12 +174,11 @@ uintn Task_EnQueueTask(uint16 taskId) {
 
 //Yield
 void Task_Yield(void) {
-    task.layerTrigger--;
-    if(task.layerTrigger <= 0) {
-        Layer_Update();
-        task.layerTrigger = 10;
-    }
+    Layer_Update();
+    Message_Update();
+
     Task_ContextSwitch();
+    
     return;
 }
 
@@ -187,13 +187,6 @@ void Task_Yield(void) {
 void Task_Halt(void) {
     task.haltFlag = 1;
     Task_Yield();
-    return;
-}
-
-
-//Set Task.layerTrigger
-void Task_SetLayerTrigger(void) {
-    task.layerTrigger = 0;
     return;
 }
 
@@ -288,3 +281,4 @@ uintn Task_Messages_DeQueue(uint16 taskId, Task_Message* message) {
 
     return 0;
 }
+
