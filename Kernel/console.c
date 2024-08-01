@@ -68,7 +68,7 @@ void Console_Print(ascii str[]) {
                 for(uintn i=0; i<buffheight; i++) {
                     if(lineChangedFlag[i]) {
                         lineChangedFlag[i] = 0;
-                        Graphic_DrawFrom(0, 0, 0, i*16, buffwidth*8, 16, console_framebuffData);
+                        Graphic_DrawFrom(0, i*16, 0, i*16, buffwidth*8, 16, console_framebuffData);
                     }
                 }
                 return;
@@ -127,7 +127,7 @@ static void Console_FlushLine(uintn line) {
         }
     }
 
-    for(uintn i=0; i<buffwidth*buffheight; i++) {
+    for(uintn i=0; i<buffwidth; i++) {
         Font_Draw(console_framebuffData, i*8, line*16, buff[buffwidth*line+i], fontColor);
     }
 

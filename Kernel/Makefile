@@ -16,7 +16,7 @@ else
 	rm *.o *.elf
 endif
 
-a.elf: main.o font.o bootwrapper.o x64.o console.o timer.o functions.o queue.o memory.o graphic.o task.o  test.o layer.o mouse.o syscall.o message.o terminal.o terminal_x64.o
+a.elf: main.o font.o bootwrapper.o x64.o console.o timer.o functions.o queue.o memory.o graphic.o task.o  test.o layer.o mouse.o keyboard.o syscall.o message.o terminal.o terminal_x64.o
 	ld.lld --entry entrypoint -z norelro --static -pie -o a.elf $^
 ifeq ($(OS), Windows_NT)
 	copy a.elf ..\disk\kernel.elf
@@ -31,14 +31,14 @@ font.o: font.c graphic.h font.h font_bitmap
 console.o: console.c graphic.h console.h font.h layer.h
 bootwrapper.o: bootwrapper.s
 x64.o: x64.s
-keyboard.o: keyboard.c x64.h keyboard.h
+keyboard.o: keyboard.c keyboard.h x64.h queue.h task.h message.h
 timer.o: timer.c timer.h x64.h console.h
 memory.o: memory.c memory.h functions.h x64.h console.h
 graphic.o: graphic.c graphic.h graphic_mouse_bitmap
 task.o: task.c queue.h task.h memory.h x64.h graphic.h layer.h message.h console.h
-layer.o: layer.c memory.h graphic.h layer.h mouse.h queue.h task.h font.h
+layer.o: layer.c memory.h graphic.h layer.h mouse.h queue.h task.h font.h message.h
 mouse.o: mouse.c mouse.h graphic.h layer.h timer.h functions.h console.h x64.h
-syscall.o: syscall.c syscall.h queue.h task.h x64.h console.h layer.h graphic.h font.h message.h
+syscall.o: syscall.c syscall.h queue.h task.h x64.h console.h layer.h graphic.h font.h message.h functions.h
 message.o: message.c queue.h message.h task.h functions.h
 
 terminal.o: terminal.c graphic.h queue.h task.h terminal.h terminal_x64.h
