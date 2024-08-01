@@ -9,6 +9,7 @@
 #include "queue.h"
 #include "task.h"
 #include "font.h"
+#include "message.h"
 
 #define Layer_TaskId (2)
 
@@ -104,8 +105,10 @@ static void Layer_Update_WindowState(void) {
             //ウィンドウの消去
             if((targetWindow->Draw.x+(sintn)targetWindow->Draw.width-(sintn)window_shadow_underThick-1-((sintn)window_titleBar_height-2) <= layer.Mouse.Draw.oldx && layer.Mouse.Draw.oldx < targetWindow->Draw.x+(sintn)targetWindow->Draw.width-(sintn)window_shadow_underThick-1)
                 && (targetWindow->Draw.y+window_shadow_overThick+1 <= layer.Mouse.Draw.oldy && layer.Mouse.Draw.oldy < targetWindow->Draw.y+window_shadow_overThick+1+window_titleBar_height-2)) {
-                layer.drawBackgroundFlag = 1;
-                Layer_Window_Delete(targetWindow->layerId);
+                Task_Message message;
+                message.type = Task_Message_CloseWindow;
+                message.data.CloseWindow.layerId = targetWindow->layerId;
+                Message_EnQueue(targetWindow->taskId, &message);
             }
         }
 
@@ -616,6 +619,15 @@ void Layer_Window_DeleteAll(uint16 taskId) {
         }
     }
     return;
+}
+
+
+//LayerIdのウインドウのタスクIDを返す
+uint16 Layer_Window_GettaskId(uintn layerId) {
+    sintn layerIndex = Layer_Window_GetIndex(layerId);
+    if(layerIndex < 0) return 0;
+
+    return layer.Window.Data[layerIndex].taskId;
 }
 
 

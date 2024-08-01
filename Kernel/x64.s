@@ -151,22 +151,28 @@ Syscall_AppEnter:#16バイトアライメントの必要なし
     je Syscall_AppEnter_Syscall_NewWindow
 
     cmp $1, %rax
-    je Syscall_AppEnter_Syscall_YieldCpu
+    je Syscall_AppEnter_Syscall_CloseWindow
 
     cmp $2, %rax
-    je Syscall_AppEnter_Syscall_DrawSquare
+    je Syscall_AppEnter_Syscall_YieldCpu
 
     cmp $3, %rax
-    je Syscall_AppEnter_Syscall_DrawFont
+    je Syscall_AppEnter_Syscall_DrawSquare
 
     cmp $4, %rax
-    je Syscall_AppEnter_Syscall_ReadMessage
+    je Syscall_AppEnter_Syscall_DrawFont
 
     cmp $5, %rax
-    je Syscall_AppEnter_Syscall_CheckMessage
+    je Syscall_AppEnter_Syscall_ReadMessage
 
     cmp $6, %rax
+    je Syscall_AppEnter_Syscall_CheckMessage
+
+    cmp $7, %rax
     je Syscall_AppEnter_Syscall_SendITCMessage
+
+    cmp $8, %rax
+    je Syscall_AppEnter_Syscall_Exit
 
     #無効なシステムコール番号
     mov $-1, %rax
@@ -174,6 +180,10 @@ Syscall_AppEnter:#16バイトアライメントの必要なし
 
 Syscall_AppEnter_Syscall_NewWindow:
     call Syscall_NewWindow
+    jmp Syscall_AppEnter_Exit
+
+Syscall_AppEnter_Syscall_CloseWindow:
+    call Syscall_CloseWindow
     jmp Syscall_AppEnter_Exit
 
 Syscall_AppEnter_Syscall_YieldCpu:
@@ -198,6 +208,10 @@ Syscall_AppEnter_Syscall_CheckMessage:
 
 Syscall_AppEnter_Syscall_SendITCMessage:
     call Syscall_SendITCMessage
+    jmp Syscall_AppEnter_Exit
+
+Syscall_AppEnter_Syscall_Exit:
+    call Syscall_Exit
     jmp Syscall_AppEnter_Exit
 
 Syscall_AppEnter_Exit:

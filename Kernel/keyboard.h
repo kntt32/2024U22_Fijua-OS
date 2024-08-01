@@ -1,0 +1,6 @@
+#ifndef INCLUDED_KEYBOARD_H
+#define INCLUDED_KEYBOARD_H
+
+void Keyboard_Init(void);
+
+#endif

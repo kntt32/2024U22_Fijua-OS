@@ -17,6 +17,8 @@ typedef struct {
 
     ascii strBuff[Terminal_StrWidth*Terminal_StrHeight];
     uint8 updateFlag[Terminal_StrHeight];
+
+    uint8 waitingKeyFlag;
 } Terminal;
 
 
@@ -35,17 +37,16 @@ sintn Terminal_Main(void) {
     if(Terminal_Syscall_NewWindow(&(terminal.layerId), 100, 100, Terminal_StrWidth*8, Terminal_StrHeight*16, "Terminal")) return -1;
     Terminal_Syscall_DrawSquare(terminal.layerId, 0, 0, Terminal_StrWidth*8, Terminal_StrHeight*16, Terminal_BackgroundColor);
 
-    Terminal_Flush(&terminal);
-
-    Terminal_Print(&terminal, "Hello, Terminal!");
-    Terminal_Print(&terminal, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-    Terminal_Print(&terminal, "123456789");
-
-    Terminal_Flush(&terminal);
+    uintn closeSignalCount = 0;
 
     Task_Message message;
     while(1) {
         Terminal_Syscall_ReadMessage(&message);
+        if(message.type == Task_Message_CloseWindow) {
+            Terminal_Print(&terminal, "Message: close window\n");
+            closeSignalCount++;
+            if(closeSignalCount == 5) Terminal_Syscall_Exit();
+        }
     }
 
     return 0;
@@ -64,6 +65,8 @@ void Terminal_Init(Terminal* this) {
         this->strBuff[i] = ' ';
     }
     for(uintn i=0; i<Terminal_StrHeight; i++) this->updateFlag[i] = 1;
+
+    this->waitingKeyFlag = 0;
 
     return;
 }
@@ -84,6 +87,7 @@ void Terminal_Scroll(Terminal* this) {
     for(uintn i=0; i<Terminal_StrWidth; i++) {
         this->strBuff[i+(Terminal_StrHeight-1)*Terminal_StrWidth] = ' ';
     }
+    this->cursorX = 0;
     this->cursorY--;
 
     return;
@@ -114,29 +118,26 @@ void Terminal_Print(Terminal* this, ascii str[]) {
     sintn index = -1;
     while(1) {
         index ++;
-        switch(str[index]) {
-            case '\0':
-                return;
-            case '\n':
-                this->cursorX = 0;
-                this->cursorY ++;
-                //if(Terminal_StrHeight <= this->cursorY) Terminal_Scroll(this);
-                break;
-            default:
-                this->strBuff[this->cursorX + this->cursorY*Terminal_StrWidth] = str[index];
-                this->updateFlag[this->cursorY] = 1;
-                
-                this->cursorX ++;/*
-                if(Terminal_StrWidth <= this->cursorX) {
-                    this->cursorX = 0;
-                    this->cursorY ++;
-                    if(Terminal_StrHeight <= this->cursorY) Terminal_Scroll(this);
-                }*/
-                break;
+        if(str[index] == '\0') {
+            Terminal_Flush(this);
+            return;
+        }
+        if(str[index] == '\n') {
+            this->cursorX = 0;
+            this->cursorY ++;
+            if(Terminal_StrHeight <= this->cursorY) Terminal_Scroll(this);
+            continue;
+        }
+
+        this->strBuff[this->cursorX + this->cursorY*Terminal_StrWidth] = str[index];
+        this->updateFlag[this->cursorY] = 1;
+        this->cursorX ++;
+        if(Terminal_StrWidth <= this->cursorX) {
+            this->cursorX = 0;
+            this->cursorY ++;
+            if(Terminal_StrHeight <= this->cursorY) Terminal_Scroll(this);
         }
     }
 
     return;
 }
-
-

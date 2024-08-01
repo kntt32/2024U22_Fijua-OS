@@ -9,11 +9,18 @@
 typedef struct {
     enum {
         Task_Message_Nothing,
-        Task_Message_ITCMessage
+        Task_Message_ITCMessage,
+        Task_Message_CloseWindow
     } type;
 
     union {
-        uint64 ITCMessage;
+        struct {
+            ascii str[32];
+        } ITCMessage;
+
+        struct {
+            uintn layerId;
+        } CloseWindow;
     } data;
 } Task_Message;
 

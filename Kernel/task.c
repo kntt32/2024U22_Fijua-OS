@@ -251,6 +251,8 @@ uintn Task_Messages_EnQueue(uint16 taskId, const Task_Message* message) {
 
     Queue_EnQueue(&(task.Table.list[taskIndex].messages), message);
 
+    Task_EnQueueTask(taskId);
+
     return 0;
 }
 

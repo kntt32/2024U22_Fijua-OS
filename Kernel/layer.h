@@ -81,6 +81,8 @@ uintn Layer_Window_Delete(uintn layerId);
 
 void Layer_Window_DeleteAll(uint16 taskId);
 
+uint16 Layer_Window_GettaskId(uintn layerId);
+
 void Layer_Window_Focus(uintn layerId);
 
 void Layer_Window_Flush(uintn layerId);

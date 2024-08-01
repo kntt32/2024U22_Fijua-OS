@@ -36,6 +36,7 @@ int Main(KernelInputStruct* kernelInput) {
     Message_Init();
 
     Task_New(Terminal_Main);
+
 /*
     Layer_Window_New(2, "testWindow", 10, 10, 300, 400);
 
