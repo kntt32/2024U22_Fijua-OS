@@ -9,10 +9,7 @@
 
 extern KernelInputStruct* KernelInput;
 
-
-/* Miscellaneous Functions */
-
-//Halt loop
+//HaltLoop
 void HltLoop(void) {
     while(1) {
         Task_Yield();
@@ -21,7 +18,7 @@ void HltLoop(void) {
 }
 
 
-//convert number to string
+//数字を16進数に変換する
 void SPrintIntX(uintn number, uintn buffsize, ascii buff[]) {
     uintn n;
     for(sintn i=buffsize-2; 0<=i; i--) {
@@ -45,7 +42,7 @@ sintn Log2(uintn number) {
 }
 
 
-//MemCpy
+//fromからtoへsizeバイトだけメモリコピー
 void Functions_MemCpy(void* to, void* from, uintn size) {
     uint64* targTo64 = (uint64*)to;
     uint64* targFrom64 = (uint64*)from;
@@ -62,4 +59,15 @@ void Functions_MemCpy(void* to, void* from, uintn size) {
         targFrom8++;
     }
     return;
+}
+
+
+//UTF-16の文字コードをasciiに変換 x64のみ対応
+uintn Functions_UTF16LE2ASCII(uint16 input, ascii* output) {
+    uint8* in_uint8 = (uint8*)&input;
+    if(in_uint8[1] != 0 || 0x80 <= in_uint8[0]) return 1;
+
+    *output = in_uint8[0];
+
+    return 0;
 }

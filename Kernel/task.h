@@ -10,10 +10,15 @@ typedef struct {
     enum {
         Task_Message_Nothing,
         Task_Message_ITCMessage,
-        Task_Message_CloseWindow
+        Task_Message_CloseWindow,
+        Task_Message_KeyPushed
     } type;
 
     union {
+        struct {
+
+        } Nothing;
+
         struct {
             ascii str[32];
         } ITCMessage;
@@ -21,6 +26,11 @@ typedef struct {
         struct {
             uintn layerId;
         } CloseWindow;
+
+        struct {
+            ascii asciiCode;
+            uint16 scanCode;
+        } KeyPushed;
     } data;
 } Task_Message;
 

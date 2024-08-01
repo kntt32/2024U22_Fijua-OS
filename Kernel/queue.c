@@ -77,7 +77,6 @@ static Queue* Queue_Expand(Queue* this) {
     uint8* newObjectPool = Memory_AllocPages(Queue_TaskId, newPoolPages);
     if(newObjectPool == NULL) return NULL;
 
-    uint64* newObjectPool_uint64Ptr = (uint64*)newObjectPool;
     for(uintn i=0; i<this->count; i++) {
         Queue_GetElementByIndex(this, i, newObjectPool + this->perSize*i);
     }
@@ -181,7 +180,6 @@ uintn Queue_IsExist(Queue* this, void* object) {
 
     for(uintn i=0; i<this->count; i++) {
         //対象の要素がfromと等しいか判定
-        uintn isEqualFlag = 1;
         uint8* objectPool_target_uint8Ptr = NULL;
         if(Queue_GetElementPtrByIndex(this, i, (void**)&objectPool_target_uint8Ptr) == NULL) return 0;
         for(uintn k=0; k<this->perSize; k++) {

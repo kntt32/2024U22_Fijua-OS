@@ -246,12 +246,18 @@ uint16 Task_GetRunningTaskId(void) {
 uintn Task_Messages_EnQueue(uint16 taskId, const Task_Message* message) {
     if(taskId == 0 || message == NULL) return 1;
 
-    sintn taskIndex = Task_GetIndexOfTaskList(taskId);
-    if(taskIndex < 0) return 2;
+    if(taskId == 1) {
+        for(uintn i=0; i<task.Table.count; i++) {
+            Queue_EnQueue(&(task.Table.list[i].messages), message);
+        }
+    }else {
+        sintn taskIndex = Task_GetIndexOfTaskList(taskId);
+        if(taskIndex < 0) return 2;
 
-    Queue_EnQueue(&(task.Table.list[taskIndex].messages), message);
+        Queue_EnQueue(&(task.Table.list[taskIndex].messages), message);
 
-    Task_EnQueueTask(taskId);
+        Task_EnQueueTask(taskId);
+    }
 
     return 0;
 }

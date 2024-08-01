@@ -24,14 +24,14 @@ else
 	cp a.elf ../disk/kernel.elf
 endif
 
-main.o: main.c functions.h graphic.h console.h timer.h memory.h queue.h task.h test.h layer.h mouse.h syscall.h terminal.h message.h
+main.o: main.c functions.h graphic.h console.h timer.h memory.h queue.h task.h test.h layer.h mouse.h keyboard.h syscall.h terminal.h message.h
 functions.o: functions.c functions.h x64.h queue.h task.h console.h
 queue.o: queue.c queue.h memory.h console.h functions.h
 font.o: font.c graphic.h font.h font_bitmap
 console.o: console.c graphic.h console.h font.h layer.h
 bootwrapper.o: bootwrapper.s
 x64.o: x64.s
-keyboard.o: keyboard.c keyboard.h x64.h queue.h task.h message.h
+keyboard.o: keyboard.c keyboard.h functions.h x64.h queue.h task.h message.h console.h
 timer.o: timer.c timer.h x64.h console.h
 memory.o: memory.c memory.h functions.h x64.h console.h
 graphic.o: graphic.c graphic.h graphic_mouse_bitmap

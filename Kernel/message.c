@@ -15,7 +15,7 @@ void Message_Init(void) {
 }
 
 
-//システム全体のメッセージキューにメッセージを追加
+//システム全体のメッセージキューにメッセージを追加 taskId:1で全タスクに通知
 uintn Message_EnQueue(uint16 taskId, Task_Message* task_message) {
     if(taskId == 0) return 1;
 

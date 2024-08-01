@@ -10,6 +10,7 @@
 #include "task.h"
 #include "layer.h"
 #include "mouse.h"
+#include "keyboard.h"
 #include "syscall.h"
 #include "message.h"
 
@@ -28,6 +29,7 @@ int Main(KernelInputStruct* kernelInput) {
     Memory_Init();
     Timer_Init();
     Mouse_Init();
+    Keyboard_Init();
 
     Task_Init();
     Layer_Init();
