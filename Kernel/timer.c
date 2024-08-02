@@ -4,6 +4,8 @@
 #include "timer.h"
 #include "x64.h"
 #include "console.h"
+#include "mouse.h"
+#include "keyboard.h"
 
 #define TIMER_MAX_NUMBER (10)
 
@@ -26,6 +28,15 @@ EFI_SIGNAL_EVENT Efi_SignalEvent = NULL;
 EFI_EVENT eventId;
 
 
+
+static void Timer_CallBack(void) {
+    Mouse_CheckState();
+    Keyboard_CheckState();
+
+    return;
+}
+
+
 void Timer_Init(void) {
     Console_Print("Timer_Init: Initializing Timer...\n");
     EFI_BOOT_SERVICES* bootServices = KernelInput->LoadedImage->SystemTable->BootServices;
@@ -37,27 +48,18 @@ void Timer_Init(void) {
     Efi_CloseEvent  = bootServices->CloseEvent;
     Efi_SignalEvent = bootServices->SignalEvent;
 
+    uintn status;
+    status = Efi_Wrapper(Efi_CreateEvent, EVT_TIMER | EVT_NOTIFY_SIGNAL, TPL_CALLBACK, (uintn)Timer_Wrapper, (uintn)Timer_CallBack, (uintn)&eventId);
+    if(status) {
+        Console_Print("Timer_Init: Couldn't create event\n");
+        while(1) Hlt();
+    }
+
+    status = Efi_Wrapper(Efi_SetTimer, (uintn)eventId, (uintn)TimerPeriodic, 10000);
+    if(status) {
+        Console_Print("Timer_Init: Couldn't set timer\n");
+        while(1) Hlt();
+    }
+
     return;
 }
-
-
-sintn Timer_Set(void (*callback)(void), uintn sec100ns) {
-    uintn status;
-    status = Efi_Wrapper(Efi_CreateEvent, EVT_TIMER | EVT_NOTIFY_SIGNAL, TPL_CALLBACK, (uintn)Timer_Wrapper, (uintn)callback, (uintn)&eventId);
-    if(status) return -1;
-    status = Efi_Wrapper(Efi_SetTimer, (uintn)eventId, (uintn)TimerPeriodic, sec100ns);
-    if(status) return -2;
-
-    return 0;
-}
-
-
-sintn Timer_Stop() {
-    uintn status;
-    status = Efi_Wrapper(Efi_CloseEvent, (uintn)eventId);
-    return status;
-}
-
-
-
-

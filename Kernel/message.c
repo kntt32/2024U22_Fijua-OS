@@ -4,6 +4,8 @@
 #include "message.h"
 #include "functions.h"
 
+#include "console.h"
+
 Message message;
 
 
@@ -51,7 +53,6 @@ void Message_Update(void) {
     message.changedFlag = 0;
 
     Message_Object tempObject;
-
     for(uintn i=message.queue.count-1; 0<=i; i++) {
         if(Queue_DeQueue(&(message.queue), (void*)&tempObject) == NULL) break;
         Task_Messages_EnQueue(tempObject.taskId, &(tempObject.message));

@@ -68,6 +68,7 @@ uintn Functions_UTF16LE2ASCII(uint16 input, ascii* output) {
     if(in_uint8[1] != 0 || 0x80 <= in_uint8[0]) return 1;
 
     *output = in_uint8[0];
+    if(*output == '\r') *output = '\n';
 
     return 0;
 }

@@ -3,7 +3,7 @@
 #include "queue.h"
 #include "task.h"
 #include "terminal.h"
-#include "terminal_x64.h"
+#include "app_x64.h"
 
 #define Terminal_StrWidth (50)
 #define Terminal_StrHeight (20)
@@ -19,11 +19,16 @@ typedef struct {
     uint8 updateFlag[Terminal_StrHeight];
 
     uint8 waitingKeyFlag;
+    ascii keyStrBuff[1000];
+    uintn keyStrBuffIndex;
+    uintn keyStrBuffStartCursorX;
+    uintn keyStrBuffStartCursorY;
 } Terminal;
 
 
 void Terminal_Init(Terminal* this);
 void Terminal_Flush(Terminal* this);
+void Terminal_GetKeyInput(Terminal* this);
 void Terminal_Print(Terminal* this, ascii str[]);
 
 static const Graphic_Color Terminal_BackgroundColor = {0x1b, 0x1d, 0x29};
@@ -34,18 +39,66 @@ sintn Terminal_Main(void) {
     Terminal terminal;
 
     Terminal_Init(&terminal);
-    if(Terminal_Syscall_NewWindow(&(terminal.layerId), 100, 100, Terminal_StrWidth*8, Terminal_StrHeight*16, "Terminal")) return -1;
-    Terminal_Syscall_DrawSquare(terminal.layerId, 0, 0, Terminal_StrWidth*8, Terminal_StrHeight*16, Terminal_BackgroundColor);
-
-    uintn closeSignalCount = 0;
+    if(App_Syscall_NewWindow(&(terminal.layerId), 100, 100, Terminal_StrWidth*8, Terminal_StrHeight*16, "Terminal")) return -1;
+    App_Syscall_DrawSquare(terminal.layerId, 0, 0, Terminal_StrWidth*8, Terminal_StrHeight*16, Terminal_BackgroundColor);
 
     Task_Message message;
+
     while(1) {
-        Terminal_Syscall_ReadMessage(&message);
-        if(message.type == Task_Message_CloseWindow) {
-            Terminal_Print(&terminal, "Message: close window\n");
-            closeSignalCount++;
-            if(closeSignalCount == 5) Terminal_Syscall_Exit();
+        App_Syscall_ReadMessage(&message);
+        Terminal_Print(&terminal, "!");
+        switch(message.type) {
+            case Task_Message_KeyPushed:
+                if(terminal.waitingKeyFlag) {
+                    if(message.data.KeyPushed.asciiCode != 0) {
+                        switch(message.data.KeyPushed.asciiCode) {
+                            case '\n':
+                                terminal.waitingKeyFlag = 0;
+                                Terminal_Print(&terminal, "\n");
+                                Terminal_Print(&terminal, "Hello\n");
+                                //coding now...
+                                break;
+                            case 0x08:
+                                if(0 < terminal.keyStrBuffIndex) {
+                                    terminal.keyStrBuffIndex--;
+                                    terminal.keyStrBuff[terminal.keyStrBuffIndex] = '\0';
+                                    terminal.cursorX = terminal.keyStrBuffStartCursorX;
+                                    terminal.cursorY = terminal.keyStrBuffStartCursorY;
+                                    Terminal_Print(&terminal, terminal.keyStrBuff);
+                                }
+                                break;
+                            default:
+                                if(!(sizeof(terminal.keyStrBuff) <= (terminal.keyStrBuffIndex+1)*sizeof(ascii))) {
+                                    terminal.keyStrBuff[terminal.keyStrBuffIndex] = message.data.KeyPushed.asciiCode;
+                                    terminal.keyStrBuff[terminal.keyStrBuffIndex+1] = '\0';
+                                    terminal.keyStrBuffIndex++;
+                                    terminal.cursorX = terminal.keyStrBuffStartCursorX;
+                                    terminal.cursorY = terminal.keyStrBuffStartCursorY;
+                                    Terminal_Print(&terminal, terminal.keyStrBuff);
+                                    break;
+                                }
+                        }
+                    }else {
+                        Terminal_Print(&terminal, "]");
+                        switch(message.data.KeyPushed.scanCode) {
+                            default:
+                                break;
+                        }
+                    }
+                }
+                break;
+            case Task_Message_IPCMessage:
+                {
+                ascii strBuff[33];
+                for(uintn i=0; i<32; i++) strBuff[i] = message.data.IPCMessage.str[i];
+                strBuff[32] = '\0';
+                Terminal_Print(&terminal, strBuff);
+                }
+                break;
+            case Task_Message_CloseWindow:
+                App_Syscall_Exit(0);
+            default:
+                break;
         }
     }
 
@@ -67,6 +120,9 @@ void Terminal_Init(Terminal* this) {
     for(uintn i=0; i<Terminal_StrHeight; i++) this->updateFlag[i] = 1;
 
     this->waitingKeyFlag = 0;
+    this->keyStrBuffIndex = 0;
+    this->keyStrBuffStartCursorX = 0;
+    this->keyStrBuffStartCursorY = 0;
 
     return;
 }
@@ -102,8 +158,8 @@ void Terminal_Flush(Terminal* this) {
         if(this->updateFlag[i]) {
             this->updateFlag[i] = 0;
             for(uintn k=0; k<Terminal_StrWidth; k++) {
-                Terminal_Syscall_DrawSquare(this->layerId, k*8, i*16, 8, 16, Terminal_BackgroundColor);
-                Terminal_Syscall_DrawFont(this->layerId, k*8, i*16, this->strBuff[k+i*Terminal_StrWidth], Terminal_FontColor);
+                App_Syscall_DrawSquare(this->layerId, k*8, i*16, 8, 16, Terminal_BackgroundColor);
+                App_Syscall_DrawFont(this->layerId, k*8, i*16, this->strBuff[k+i*Terminal_StrWidth], Terminal_FontColor);
             }
         }
     }
@@ -112,13 +168,28 @@ void Terminal_Flush(Terminal* this) {
 }
 
 
+//キー入力モードへ
+void Terminal_GetKeyInput(Terminal* this) {
+    this->waitingKeyFlag = 1;
+    this->keyStrBuff[0] = '\0';
+    this->keyStrBuffIndex = 0;
+    this->keyStrBuffStartCursorX = this->cursorX;
+    this->keyStrBuffStartCursorY = this->cursorY;
+    return;
+}
+
+
+//strの文字表示
 void Terminal_Print(Terminal* this, ascii str[]) {
-    if(this == NULL) return;
+    if(this == NULL || str == NULL) return;
 
     sintn index = -1;
     while(1) {
         index ++;
         if(str[index] == '\0') {
+            for(uintn i=this->cursorX; i<Terminal_StrWidth; i++) this->strBuff[i + this->cursorY*Terminal_StrWidth] = ' ';
+            this->updateFlag[this->cursorY] = 1;
+
             Terminal_Flush(this);
             return;
         }

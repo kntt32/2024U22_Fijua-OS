@@ -9,6 +9,8 @@
 #include "task.h"
 #include "message.h"
 #include "console.h"
+#include "graphic.h"
+#include "layer.h"
 
 extern KernelInputStruct* KernelInput;
 
@@ -48,7 +50,7 @@ void Keyboard_CheckState(void) {
     if(status) message.data.KeyPushed.asciiCode = 0;
     message.data.KeyPushed.scanCode = Efi_KeyboardState.ScanCode;
 
-    Message_EnQueue(1, &message);
+    Message_EnQueue(Layer_Window_GetFocusedTaskId(), &message);
 
     return;
 }

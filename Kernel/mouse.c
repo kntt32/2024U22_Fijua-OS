@@ -5,7 +5,6 @@
 #include "mouse.h"
 #include "graphic.h"
 #include "layer.h"
-#include "timer.h"
 #include "functions.h"
 #include "console.h"
 #include "x64.h"
@@ -68,8 +67,6 @@ void Mouse_Init(void) {
             while(1) Hlt();
         }
     }
-
-    Timer_Set(Mouse_CheckState, 10000);
 
     return;
 }

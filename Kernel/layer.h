@@ -91,6 +91,8 @@ void Layer_Window_FlushIndex(uintn layerIndex);
 
 uintn Layer_Window_GetFrameBuff(uintn layerId, Graphic_FrameBuff* framebuff);
 
+uint16 Layer_Window_GetFocusedTaskId(void);
+
 void Layer_Window_NotifyUpdate(uintn layerId, uintn x, uintn y, uintn width, uintn height);
 
 #endif

@@ -15,6 +15,7 @@
 #include "message.h"
 
 #include "terminal.h"
+#include "shell.h"
 
 #include "test.h"
 
@@ -27,7 +28,6 @@ int Main(KernelInputStruct* kernelInput) {
     Console_Init();
     
     Memory_Init();
-    Timer_Init();
     Mouse_Init();
     Keyboard_Init();
 
@@ -36,9 +36,11 @@ int Main(KernelInputStruct* kernelInput) {
 
     Syscall_Init();
     Message_Init();
+    
+    Timer_Init();
 
-    Task_New(Terminal_Main);
-
+    Task_New(Terminal_Main, 0);
+    Task_New(Shell_Main, 0);
 /*
     Layer_Window_New(2, "testWindow", 10, 10, 300, 400);
 

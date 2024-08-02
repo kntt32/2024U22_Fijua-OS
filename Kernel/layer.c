@@ -693,6 +693,15 @@ uintn Layer_Window_GetFrameBuff(uintn layerId, Graphic_FrameBuff* framebuff) {
     return 0;
 }
 
+
+//最上位のレイヤのTaskIdを取得
+uint16 Layer_Window_GetFocusedTaskId(void) {
+    if(layer.Window.count == 0) return 0;
+
+    return layer.Window.Data[layer.Window.count-1].taskId;
+}
+
+
 //レイヤーのフレームバッファ更新を通知
 void Layer_Window_NotifyUpdate(uintn layerId, uintn x, uintn y, uintn width, uintn height) {
     sintn layerIndex = Layer_Window_GetIndex(layerId);

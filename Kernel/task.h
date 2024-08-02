@@ -9,7 +9,7 @@
 typedef struct {
     enum {
         Task_Message_Nothing,
-        Task_Message_ITCMessage,
+        Task_Message_IPCMessage,
         Task_Message_CloseWindow,
         Task_Message_KeyPushed
     } type;
@@ -21,7 +21,7 @@ typedef struct {
 
         struct {
             ascii str[32];
-        } ITCMessage;
+        } IPCMessage;
 
         struct {
             uintn layerId;
@@ -66,7 +66,7 @@ typedef struct {
 
 void Task_Init(void);
 
-uint16 Task_New(sintn (*taskEntry)(void));
+uint16 Task_New(sintn (*taskEntry)(void), uint16 stdio_taskId);
 void Task_Delete(uint16 taskId);
 uintn Task_EnQueueTask(uint16 taskId);
 
@@ -76,6 +76,7 @@ void Task_Halt(void);
 void Task_ChangeContext(void);
 
 uint16 Task_GetRunningTaskId(void);
+uint16 Task_GetStdIo(uint16 taskId);
 
 uintn Task_Messages_EnQueue(uint16 taskId, const Task_Message* message);
 uintn Task_Messages_Check(uint16 taskId, Task_Message* message);

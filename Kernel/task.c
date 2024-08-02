@@ -88,7 +88,7 @@ static sintn Task_GetIndexOfTaskList(uint16 taskId) {
 
 
 //Add NewTask and return taskID
-uint16 Task_New(sintn (*taskEntry)(void)) {
+uint16 Task_New(sintn (*taskEntry)(void), uint16 stdio_taskId) {
     if(taskEntry == NULL) return 0;
 
     uint16 newTaskId = Task_SeekNewTaskID();
@@ -105,7 +105,7 @@ uint16 Task_New(sintn (*taskEntry)(void)) {
     }
 
     task.Table.list[task.Table.count].taskId = newTaskId;
-    task.Table.list[task.Table.count].stdio_taskId = 0;
+    task.Table.list[task.Table.count].stdio_taskId = stdio_taskId;
     task.Table.list[task.Table.count].stackPtr = Task_NewTask_Asm_SetStartContext((void*)(((uintn)stackPtr)+Task_DefaultStackPageSize-1));
     task.Table.list[task.Table.count].taskEntry = taskEntry;
     Queue_Init(&(task.Table.list[task.Table.count].messages), sizeof(Task_Message));
@@ -227,10 +227,12 @@ void* Task_ContextSwitch_Subroutine(void* currentStackPtr) {
 
     //switch to KernelStackPtr
     if(nextTaskId == 0) {
+
+        Console_Print("[");
         task.Queue.runningTaskId = 0;
         return task.kernelStackPtr;
     }
-
+    Console_Print("]");
     task.Queue.runningTaskId = nextTaskId;
     return task.Table.list[nextTaskIndex].stackPtr;
 }
@@ -242,6 +244,15 @@ uint16 Task_GetRunningTaskId(void) {
 }
 
 
+//taskIdのstdioを取得
+uint16 Task_GetStdIo(uint16 taskId) {
+    sintn taskIndex = Task_GetIndexOfTaskList(taskId);
+    if(taskIndex < 0) return 0;
+
+    return task.Table.list[taskIndex].stdio_taskId;
+}
+
+
 //taskIdのメッセージキューにメッセージを追加
 uintn Task_Messages_EnQueue(uint16 taskId, const Task_Message* message) {
     if(taskId == 0 || message == NULL) return 1;
@@ -249,6 +260,8 @@ uintn Task_Messages_EnQueue(uint16 taskId, const Task_Message* message) {
     if(taskId == 1) {
         for(uintn i=0; i<task.Table.count; i++) {
             Queue_EnQueue(&(task.Table.list[i].messages), message);
+
+            Task_EnQueueTask(task.Table.list[i].taskId);
         }
     }else {
         sintn taskIndex = Task_GetIndexOfTaskList(taskId);

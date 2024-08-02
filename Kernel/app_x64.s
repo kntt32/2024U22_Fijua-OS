@@ -1,0 +1,62 @@
+.global App_Syscall_NewWindow
+.global App_Syscall_CloseWindow
+.global App_Syscall_YieldCpu
+.global App_Syscall_DrawSquare
+.global App_Syscall_DrawFont
+.global App_Syscall_ReadMessage
+.global App_Syscall_CheckMessage
+.global App_Syscall_SendIPCMessage
+.global App_Syscall_Exit
+.global App_Syscall_GetStdIoTaskId
+
+.text
+
+App_Syscall_NewWindow:
+    mov $0, %rax
+    callq *(0x100000)
+    ret
+
+App_Syscall_CloseWindow:
+    mov $1, %rax
+    callq *(0x100000)
+    ret
+
+App_Syscall_YieldCpu:
+    mov $2, %rax
+    callq *(0x100000)
+    ret
+
+App_Syscall_DrawSquare:
+    mov $3, %rax
+    callq *(0x100000)
+    ret
+
+App_Syscall_DrawFont:
+    mov $4, %rax
+    callq *(0x100000)
+    ret
+
+App_Syscall_ReadMessage:
+    mov $5, %rax
+    callq *(0x100000)
+    ret
+
+App_Syscall_CheckMessage:
+    mov $6, %rax
+    callq *(0x100000)
+    ret
+
+App_Syscall_SendIPCMessage:
+    mov $7, %rax
+    callq *(0x100000)
+    ret
+
+App_Syscall_Exit:
+    mov $8, %rax
+    callq *(0x100000)
+    ret
+
+App_Syscall_GetStdIoTaskId:
+    mov $9, %rax
+    callq *(0x100000)
+    ret

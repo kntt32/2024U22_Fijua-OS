@@ -112,12 +112,12 @@ sintn Syscall_CheckMessage(out Task_Message* message) {
 
 
 //タスク間通信 32バイト送る
-sintn Syscall_SendITCMessage(in uint16 taskId, in ascii str[32]) {
+sintn Syscall_SendIPCMessage(in uint16 taskId, in ascii str[32]) {
     if(taskId == 0) return 1;
 
     Task_Message taskMessage;
-    taskMessage.type = Task_Message_ITCMessage;
-    Functions_MemCpy(taskMessage.data.ITCMessage.str, str, sizeof(ascii)*32);
+    taskMessage.type = Task_Message_IPCMessage;
+    Functions_MemCpy(taskMessage.data.IPCMessage.str, str, sizeof(ascii)*32);
 
     Message_EnQueue(taskId, &taskMessage);
 
@@ -128,7 +128,7 @@ sintn Syscall_SendITCMessage(in uint16 taskId, in ascii str[32]) {
 
 
 //タスクの終了
-sintn Syscall_Exit(void) {
+sintn Syscall_Exit(in sintn retcode) {
     Task_Delete(Task_GetRunningTaskId());
 
     while(1) {
@@ -136,4 +136,15 @@ sintn Syscall_Exit(void) {
     }
 
     return -1;
+}
+
+
+//stdioのTaskIdを取得
+sintn Syscall_GetStdIoTaskId(out uint16* taskId) {
+    if(taskId == NULL) return 1;
+
+    *taskId = Task_GetStdIo(Task_GetRunningTaskId());
+    if(taskId == 0) return 1;
+
+    return 0;
 }
