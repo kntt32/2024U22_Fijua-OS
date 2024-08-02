@@ -39,14 +39,13 @@ sintn Terminal_Main(void) {
     Terminal terminal;
 
     Terminal_Init(&terminal);
-    if(App_Syscall_NewWindow(&(terminal.layerId), 100, 100, Terminal_StrWidth*8, Terminal_StrHeight*16, "Terminal")) return -1;
+    if(App_Syscall_NewWindow(&(terminal.layerId), 500, 100, Terminal_StrWidth*8, Terminal_StrHeight*16, "Terminal")) return -1;
     App_Syscall_DrawSquare(terminal.layerId, 0, 0, Terminal_StrWidth*8, Terminal_StrHeight*16, Terminal_BackgroundColor);
 
     Task_Message message;
 
     while(1) {
         App_Syscall_ReadMessage(&message);
-        Terminal_Print(&terminal, "!");
         switch(message.type) {
             case Task_Message_KeyPushed:
                 if(terminal.waitingKeyFlag) {

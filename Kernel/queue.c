@@ -156,6 +156,22 @@ Queue* Queue_Check(Queue* this, void* object) {
 }
 
 
+//Queueを表示
+Queue* Queue_Print(Queue* this) {
+    if(this->count == 0) return NULL;
+    for(uintn i=0; i<this->count; i++) {
+        ascii strBuff[18];
+        uint8* ptr;
+        Queue_GetElementPtrByIndex(this, i, &ptr);
+        SPrintIntX(*ptr, 17, strBuff);
+        strBuff[17] = ':';
+        Console_Print(strBuff);
+    }
+    Console_Print("\n");
+    return this;
+}
+
+
 //Queueから取り出す
 Queue* Queue_DeQueue(Queue* this, void* object) {
     if(this == NULL || this->count == 0) return NULL;
@@ -179,14 +195,19 @@ uintn Queue_IsExist(Queue* this, void* object) {
     const uint8* object_uint8Ptr = (const uint8*)object;
 
     for(uintn i=0; i<this->count; i++) {
+        uintn isEqualFlag = 1;
+
         //対象の要素がfromと等しいか判定
         uint8* objectPool_target_uint8Ptr = NULL;
         if(Queue_GetElementPtrByIndex(this, i, (void**)&objectPool_target_uint8Ptr) == NULL) return 0;
         for(uintn k=0; k<this->perSize; k++) {
             if(objectPool_target_uint8Ptr[k] != object_uint8Ptr[k]) {
-                return 1;
+                isEqualFlag = 0;
+                break;
             }
         }
+
+        if(isEqualFlag) return 1;
     }
 
     return 0;

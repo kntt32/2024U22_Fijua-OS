@@ -10,7 +10,7 @@ void Console_Print(ascii str[]);
 sintn Shell_Main(void) {
     uint16 n;
     App_Syscall_GetStdIoTaskId(&n);
-    App_Syscall_SendIPCMessage(n, "hello");
+    App_Syscall_SendIPCMessage(3, "hello by shell\n");
 
     uintn layerId;
     App_Syscall_NewWindow(&layerId, 0, 0, 200, 200, "Shell");

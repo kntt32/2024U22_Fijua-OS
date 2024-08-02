@@ -168,10 +168,10 @@ uintn Task_EnQueueTask(uint16 taskId) {
     if(taskIndex == -1) {
         return 2;
     }
+
     if(!Queue_IsExist(&(task.Queue.app), &taskId)) {
         Queue_EnQueue(&(task.Queue.app), &taskId);
     }
-
     return 0;
 }
 
@@ -227,12 +227,9 @@ void* Task_ContextSwitch_Subroutine(void* currentStackPtr) {
 
     //switch to KernelStackPtr
     if(nextTaskId == 0) {
-
-        Console_Print("[");
         task.Queue.runningTaskId = 0;
         return task.kernelStackPtr;
     }
-    Console_Print("]");
     task.Queue.runningTaskId = nextTaskId;
     return task.Table.list[nextTaskIndex].stackPtr;
 }

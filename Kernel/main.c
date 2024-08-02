@@ -39,8 +39,7 @@ int Main(KernelInputStruct* kernelInput) {
     
     Timer_Init();
 
-    Task_New(Terminal_Main, 0);
-    Task_New(Shell_Main, 0);
+    Task_New(Shell_Main, Task_New(Terminal_Main, 0));
 /*
     Layer_Window_New(2, "testWindow", 10, 10, 300, 400);
 
