@@ -190,7 +190,7 @@ sintn Syscall_StdIn(out ascii str[], uintn strBuffSize) {
     while(1) {
         Syscall_ReadMessage(&message);
         if(message.type == Task_Message_IPCMessage) {
-            if(strBuffSize <= buffindex + 32) return 2;
+            if(strBuffSize < buffindex + 32) return 2;
             if(message.data.IPCMessage.u64 == 2) {
                 uintn i;
                 for(i=0; i<32; i++) {
