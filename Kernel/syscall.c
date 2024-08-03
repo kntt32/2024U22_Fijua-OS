@@ -112,11 +112,12 @@ sintn Syscall_CheckMessage(out Task_Message* message) {
 
 
 //タスク間通信 32バイト送る
-sintn Syscall_SendIPCMessage(in uint16 taskId, in ascii str[32]) {
+sintn Syscall_SendIPCMessage(in uint16 taskId, in uint64 u64, in ascii str[32]) {
     if(taskId == 0) return 1;
 
     Task_Message taskMessage;
     taskMessage.type = Task_Message_IPCMessage;
+    taskMessage.data.IPCMessage.u64 = u64;
     Functions_MemCpy(taskMessage.data.IPCMessage.str, str, sizeof(ascii)*32);
 
     Message_EnQueue(taskId, &taskMessage);
@@ -140,11 +141,74 @@ sintn Syscall_Exit(in sintn retcode) {
 
 
 //stdioのTaskIdを取得
-sintn Syscall_GetStdIoTaskId(out uint16* taskId) {
+sintn Syscall_GetStdOutTaskId(out uint16* taskId) {
     if(taskId == NULL) return 1;
 
-    *taskId = Task_GetStdIo(Task_GetRunningTaskId());
+    *taskId = Task_GetStdOut(Task_GetRunningTaskId());
     if(taskId == 0) return 1;
+
+    return 0;
+}
+
+
+//stdioに文字列出力 count文字分までの表示を保証する
+sintn Syscall_StdOut(in ascii str[], uintn count) {
+    uint16 sendToTaskId = Task_GetStdOut(Task_GetRunningTaskId());
+    if(sendToTaskId == 0) return -1;
+
+    for(uintn i=0; i<(count+31)/32; i++) {
+        uintn breakFlag = 0;
+        for(uintn k=0; k<32; k++) {
+            if(str[k+i*32] == '\0') {
+                breakFlag = 1;
+                break;
+            }
+        }
+        if(breakFlag) {
+            Syscall_SendIPCMessage(sendToTaskId, 2, str+i*32);
+            break;
+        }else {
+            Syscall_SendIPCMessage(sendToTaskId, 0, str+i*32);
+        }
+    }
+    return 0;
+}
+
+
+//stdinから文字取得
+sintn Syscall_StdIn(out ascii str[], uintn strBuffSize) {
+    if(str == NULL || strBuffSize == 0) return 1;
+
+    uint16 sendToTaskId = Task_GetStdIn(Task_GetRunningTaskId());
+    if(sendToTaskId == 0) return -1;
+
+    Syscall_SendIPCMessage(sendToTaskId, 1, NULL);
+
+    uintn buffindex = 0;
+
+    Task_Message message;
+    while(1) {
+        Syscall_ReadMessage(&message);
+        if(message.type == Task_Message_IPCMessage) {
+            if(strBuffSize <= buffindex + 32) return 2;
+            if(message.data.IPCMessage.u64 == 2) {
+                uintn i;
+                for(i=0; i<32; i++) {
+                    str[i+buffindex] = message.data.IPCMessage.str[i];
+                    if(str[i+buffindex] == '\0') break;
+                }
+                break;
+            }else {
+                uintn i;
+                for(i=0; i<32; i++) {
+                    str[i+buffindex] = message.data.IPCMessage.str[i];
+                    if(str[i+buffindex] == '\0') break;
+                }
+                if(str[i+buffindex] == '\0') break;
+            }
+            buffindex += 32;
+        }
+    }
 
     return 0;
 }

@@ -88,7 +88,7 @@ static sintn Task_GetIndexOfTaskList(uint16 taskId) {
 
 
 //Add NewTask and return taskID
-uint16 Task_New(sintn (*taskEntry)(void), uint16 stdio_taskId) {
+uint16 Task_New(sintn (*taskEntry)(void), uint16 stdin_taskId, uint16 stdout_taskId) {
     if(taskEntry == NULL) return 0;
 
     uint16 newTaskId = Task_SeekNewTaskID();
@@ -105,7 +105,8 @@ uint16 Task_New(sintn (*taskEntry)(void), uint16 stdio_taskId) {
     }
 
     task.Table.list[task.Table.count].taskId = newTaskId;
-    task.Table.list[task.Table.count].stdio_taskId = stdio_taskId;
+    task.Table.list[task.Table.count].stdin_taskId = stdin_taskId;
+    task.Table.list[task.Table.count].stdout_taskId = stdout_taskId;
     task.Table.list[task.Table.count].stackPtr = Task_NewTask_Asm_SetStartContext((void*)(((uintn)stackPtr)+Task_DefaultStackPageSize-1));
     task.Table.list[task.Table.count].taskEntry = taskEntry;
     Queue_Init(&(task.Table.list[task.Table.count].messages), sizeof(Task_Message));
@@ -241,12 +242,47 @@ uint16 Task_GetRunningTaskId(void) {
 }
 
 
-//taskIdのstdioを取得
-uint16 Task_GetStdIo(uint16 taskId) {
+//taskIdのstdinを取得
+uint16 Task_GetStdIn(uint16 taskId) {
     sintn taskIndex = Task_GetIndexOfTaskList(taskId);
     if(taskIndex < 0) return 0;
 
-    return task.Table.list[taskIndex].stdio_taskId;
+    return task.Table.list[taskIndex].stdin_taskId;
+}
+
+
+//taskIdのstdoutを取得
+uint16 Task_GetStdOut(uint16 taskId) {
+    sintn taskIndex = Task_GetIndexOfTaskList(taskId);
+    if(taskIndex < 0) return 0;
+
+    return task.Table.list[taskIndex].stdout_taskId;
+}
+
+
+//taskIdのstdinを変更
+void Task_ChangeStdIn(uint16 taskId, uint16 stdin_taskId) {
+    sintn taskIndex = Task_GetIndexOfTaskList(taskId);
+    if(taskIndex < 0) return;
+    sintn taskIndex_stdin = Task_GetIndexOfTaskList(stdin_taskId);
+    if(taskIndex_stdin < 0) return;
+
+    task.Table.list[taskIndex].stdin_taskId = stdin_taskId;
+
+    return;
+}
+
+
+//taskIdのstdoutを変更
+void Task_ChangeStdOut(uint16 taskId, uint16 stdout_taskId) {
+    sintn taskIndex = Task_GetIndexOfTaskList(taskId);
+    if(taskIndex < 0) return;
+    sintn taskIndex_stdout = Task_GetIndexOfTaskList(stdout_taskId);
+    if(taskIndex_stdout < 0) return;
+
+    task.Table.list[taskIndex].stdout_taskId = stdout_taskId;
+
+    return;
 }
 
 

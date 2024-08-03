@@ -55,7 +55,7 @@ sintn Terminal_Main(void) {
                                 terminal.waitingKeyFlag = 0;
                                 Terminal_Print(&terminal, "\n");
                                 Terminal_Print(&terminal, "Hello\n");
-                                //coding now...
+                                App_Syscall_StdOut(terminal.keyStrBuff, terminal.keyStrBuffIndex);
                                 break;
                             case 0x08:
                                 if(0 < terminal.keyStrBuffIndex) {
@@ -88,10 +88,14 @@ sintn Terminal_Main(void) {
                 break;
             case Task_Message_IPCMessage:
                 {
-                ascii strBuff[33];
-                for(uintn i=0; i<32; i++) strBuff[i] = message.data.IPCMessage.str[i];
-                strBuff[32] = '\0';
-                Terminal_Print(&terminal, strBuff);
+                    if(message.data.IPCMessage.u64 == 0 || message.data.IPCMessage.u64 == 2) {
+                        ascii strBuff[33];
+                        for(uintn i=0; i<32; i++) strBuff[i] = message.data.IPCMessage.str[i];
+                        strBuff[32] = '\0';
+                        Terminal_Print(&terminal, strBuff);
+                    }else if(message.data.IPCMessage.u64 == 1) {
+                        Terminal_GetKeyInput(&terminal);
+                    }
                 }
                 break;
             case Task_Message_CloseWindow:

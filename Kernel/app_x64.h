@@ -32,6 +32,10 @@ sintn App_Syscall_SendIPCMessage(in uint16 taskId, in ascii message[32]);
 
 sintn App_Syscall_Exit(sintn retcode);
 
-sintn App_Syscall_GetStdIoTaskId(out uint16* taskId);
+sintn App_Syscall_GetStdOutTaskId(out uint16* taskId);
+
+sintn App_Syscall_StdOut(in ascii str[], uintn count);
+
+sintn App_Syscall_StdIn(out ascii str[], uintn strBuffSize);
 
 #endif

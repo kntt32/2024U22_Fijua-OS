@@ -8,12 +8,17 @@
 void Console_Print(ascii str[]);
 
 sintn Shell_Main(void) {
-    uint16 n;
-    App_Syscall_GetStdIoTaskId(&n);
-    App_Syscall_SendIPCMessage(3, "hello by shell\n");
 
     uintn layerId;
     App_Syscall_NewWindow(&layerId, 0, 0, 200, 200, "Shell");
+
+    App_Syscall_StdOut("Hello", sizeof("Hello"));
+    App_Syscall_StdOut("ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890abcdefghijklmnopqrstuvwxyz,./?;:]@[^", sizeof("ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890abcdefghijklmnopqrstuvwxyz,./?;:]@[^"));
+
+    ascii strBuff[64];
+    App_Syscall_StdIn(strBuff, sizeof(strBuff));
+
+    App_Syscall_StdOut(strBuff, sizeof(strBuff));
 
     Task_Message message;
     while(1) {

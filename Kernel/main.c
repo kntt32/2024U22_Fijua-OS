@@ -39,7 +39,11 @@ int Main(KernelInputStruct* kernelInput) {
     
     Timer_Init();
 
-    Task_New(Shell_Main, Task_New(Terminal_Main, 0));
+    uint16 terminal = Task_New(Terminal_Main, 0, 0);
+    uint16 shell = Task_New(Shell_Main, terminal, terminal);
+    Task_ChangeStdIn(terminal, shell);
+    Task_ChangeStdOut(terminal, shell);
+
 /*
     Layer_Window_New(2, "testWindow", 10, 10, 300, 400);
 

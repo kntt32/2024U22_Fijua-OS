@@ -17,7 +17,7 @@ else
 endif
 
 a.elf: main.o font.o bootwrapper.o x64.o console.o timer.o functions.o queue.o memory.o graphic.o task.o  test.o layer.o mouse.o keyboard.o syscall.o message.o terminal.o shell.o app_x64.o
-	ld.lld --entry entrypoint -z norelro --static -pie -o a.elf $^
+	ld.lld --entry entrypoint -z norelro --static --image-base 0x200000 -o a.elf $^
 ifeq ($(OS), Windows_NT)
 	copy a.elf ..\disk\kernel.elf
 else

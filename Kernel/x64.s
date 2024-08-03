@@ -175,7 +175,13 @@ Syscall_AppEnter:#16バイトアライメントの必要なし
     je Syscall_AppEnter_Syscall_Exit
 
     cmp $9, %rax
-    je Syscall_AppEnter_Syscall_GetStdIoTaskId
+    je Syscall_AppEnter_Syscall_GetStdOutTaskId
+
+    cmp $10, %rax
+    je Syscall_AppEnter_Syscall_StdOut
+
+    cmp $11, %rax
+    je Syscall_AppEnter_Syscall_StdIn
 
     #無効なシステムコール番号
     mov $-1, %rax
@@ -213,12 +219,20 @@ Syscall_AppEnter_Syscall_SendIPCMessage:
     call Syscall_SendIPCMessage
     jmp Syscall_AppEnter_Exit
 
-Syscall_AppEnter_Syscall_GetStdIoTaskId:
-    call Syscall_GetStdIoTaskId
+Syscall_AppEnter_Syscall_GetStdOutTaskId:
+    call Syscall_GetStdOutTaskId
     jmp Syscall_AppEnter_Exit
 
 Syscall_AppEnter_Syscall_Exit:
     call Syscall_Exit
+    jmp Syscall_AppEnter_Exit
+
+Syscall_AppEnter_Syscall_StdOut:
+    call Syscall_StdOut
+    jmp Syscall_AppEnter_Exit
+
+Syscall_AppEnter_Syscall_StdIn:
+    call Syscall_StdIn
     jmp Syscall_AppEnter_Exit
 
 Syscall_AppEnter_Exit:
