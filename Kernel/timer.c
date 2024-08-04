@@ -29,10 +29,10 @@ EFI_EVENT eventId;
 
 
 
-static void Timer_CallBack(void) {
+static void Timer_CallBack(void) {/*
     Mouse_CheckState();
     Keyboard_CheckState();
-
+*/
     return;
 }
 

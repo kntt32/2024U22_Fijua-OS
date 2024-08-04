@@ -5,6 +5,8 @@
 #include "terminal.h"
 #include "app_x64.h"
 
+#include "functions.h"
+
 #define Terminal_StrWidth (50)
 #define Terminal_StrHeight (20)
 
@@ -52,10 +54,9 @@ sintn Terminal_Main(void) {
                     if(message.data.KeyPushed.asciiCode != 0) {
                         switch(message.data.KeyPushed.asciiCode) {
                             case '\n':
-                                terminal.waitingKeyFlag = 0;
                                 Terminal_Print(&terminal, "\n");
-                                Terminal_Print(&terminal, "Hello\n");
-                                App_Syscall_StdOut(terminal.keyStrBuff, terminal.keyStrBuffIndex);
+                                App_Syscall_StdOut(terminal.keyStrBuff, sizeof(terminal.keyStrBuff));
+                                terminal.waitingKeyFlag = 0;
                                 break;
                             case 0x08:
                                 if(0 < terminal.keyStrBuffIndex) {
@@ -78,12 +79,13 @@ sintn Terminal_Main(void) {
                                 }
                         }
                     }else {
-                        Terminal_Print(&terminal, "]");
                         switch(message.data.KeyPushed.scanCode) {
                             default:
                                 break;
                         }
                     }
+                }else {
+                    App_Syscall_StdOut("", sizeof(""));
                 }
                 break;
             case Task_Message_IPCMessage:
@@ -100,7 +102,13 @@ sintn Terminal_Main(void) {
                 break;
             case Task_Message_CloseWindow:
                 App_Syscall_Exit(0);
+            case Task_Message_Nothing:
+                Terminal_Print(&terminal, "Message Received: Nothing\n");
+                break;
             default:
+                {
+                Terminal_Print(&terminal, "Message Received: UnKnown\n");
+                }
                 break;
         }
     }
@@ -148,7 +156,7 @@ void Terminal_Scroll(Terminal* this) {
     }
     this->cursorX = 0;
     this->cursorY--;
-
+    
     return;
 }
 
@@ -166,6 +174,7 @@ void Terminal_Flush(Terminal* this) {
             }
         }
     }
+    App_Syscall_DrawSquare(this->layerId, this->cursorX*8, this->cursorY*16+14, 8, 2, Terminal_FontColor);
     
     return;
 }
@@ -173,6 +182,7 @@ void Terminal_Flush(Terminal* this) {
 
 //キー入力モードへ
 void Terminal_GetKeyInput(Terminal* this) {
+    Terminal_Print(this, "?");
     this->waitingKeyFlag = 1;
     this->keyStrBuff[0] = '\0';
     this->keyStrBuffIndex = 0;
@@ -192,11 +202,11 @@ void Terminal_Print(Terminal* this, ascii str[]) {
         if(str[index] == '\0') {
             for(uintn i=this->cursorX; i<Terminal_StrWidth; i++) this->strBuff[i + this->cursorY*Terminal_StrWidth] = ' ';
             this->updateFlag[this->cursorY] = 1;
-
             Terminal_Flush(this);
             return;
         }
         if(str[index] == '\n') {
+            this->updateFlag[this->cursorY] = 1;
             this->cursorX = 0;
             this->cursorY ++;
             if(Terminal_StrHeight <= this->cursorY) Terminal_Scroll(this);

@@ -11,7 +11,9 @@ typedef struct {
         Task_Message_Nothing,
         Task_Message_IPCMessage,
         Task_Message_CloseWindow,
-        Task_Message_KeyPushed
+        Task_Message_Padding,
+        Task_Message_KeyPushed,
+        Task_Message_ENUMCOUNT
     } type;
 
     union {

@@ -176,9 +176,13 @@ uintn Task_EnQueueTask(uint16 taskId) {
     return 0;
 }
 
+void Mouse_CheckState();
+void Keyboard_CheckState();
 
 //Yield
 void Task_Yield(void) {
+    Mouse_CheckState();
+    Keyboard_CheckState();
     Layer_Update();
     Message_Update();
 
@@ -290,6 +294,8 @@ void Task_ChangeStdOut(uint16 taskId, uint16 stdout_taskId) {
 uintn Task_Messages_EnQueue(uint16 taskId, const Task_Message* message) {
     if(taskId == 0 || message == NULL) return 1;
 
+    if((uintn)Task_Message_ENUMCOUNT <= (uintn)message->type) return 3;
+
     if(taskId == 1) {
         for(uintn i=0; i<task.Table.count; i++) {
             Queue_EnQueue(&(task.Table.list[i].messages), message);
@@ -299,7 +305,6 @@ uintn Task_Messages_EnQueue(uint16 taskId, const Task_Message* message) {
     }else {
         sintn taskIndex = Task_GetIndexOfTaskList(taskId);
         if(taskIndex < 0) return 2;
-
         Queue_EnQueue(&(task.Table.list[taskIndex].messages), message);
 
         Task_EnQueueTask(taskId);
@@ -336,6 +341,7 @@ uintn Task_Messages_DeQueue(uint16 taskId, Task_Message* message) {
         message->type = Task_Message_Nothing;
         return 0;
     }
+    if((uintn)Task_Message_ENUMCOUNT <= (uintn)message->type) return 3;
 
     return 0;
 }

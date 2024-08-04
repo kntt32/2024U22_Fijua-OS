@@ -90,7 +90,9 @@ sintn Syscall_ReadMessage(out Task_Message* message) {
     if(message == NULL) return 1;
     
     while(1) {
-        Task_Messages_DeQueue(Task_GetRunningTaskId(), message);
+        if(Task_Messages_DeQueue(Task_GetRunningTaskId(), message)) {
+            message->type = Task_Message_Nothing;
+        }
         if(message->type != Task_Message_Nothing) break;
         Task_Halt();
     }
@@ -155,6 +157,10 @@ sintn Syscall_GetStdOutTaskId(out uint16* taskId) {
 sintn Syscall_StdOut(in ascii str[], uintn count) {
     uint16 sendToTaskId = Task_GetStdOut(Task_GetRunningTaskId());
     if(sendToTaskId == 0) return -1;
+    if(count == 0) {
+        Syscall_SendIPCMessage(sendToTaskId, 2, "\0");
+        return 0;
+    }
 
     for(uintn i=0; i<(count+31)/32; i++) {
         uintn breakFlag = 0;
@@ -189,6 +195,7 @@ sintn Syscall_StdIn(out ascii str[], uintn strBuffSize) {
     Task_Message message;
     while(1) {
         Syscall_ReadMessage(&message);
+
         if(message.type == Task_Message_IPCMessage) {
             if(strBuffSize < buffindex + 32) return 2;
             if(message.data.IPCMessage.u64 == 2) {

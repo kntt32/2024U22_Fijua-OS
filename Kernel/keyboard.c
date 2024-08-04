@@ -43,12 +43,13 @@ void Keyboard_CheckState(void) {
     status = Efi_Wrapper(Efi_SimpleTextInputProtocol->ReadKeyStroke, Efi_SimpleTextInputProtocol, &Efi_KeyboardState);
     if(status) return;
 
-    //すべてのタスクにメッセージ送信
+    //タスクにメッセージ送信
     Task_Message message;
-    message.type = Task_Message_KeyPushed;
     status = Functions_UTF16LE2ASCII(Efi_KeyboardState.UnicodeChar, &(message.data.KeyPushed.asciiCode));
     if(status) message.data.KeyPushed.asciiCode = 0;
     message.data.KeyPushed.scanCode = Efi_KeyboardState.ScanCode;
+
+    message.type = Task_Message_KeyPushed;
 
     Message_EnQueue(Layer_Window_GetFocusedTaskId(), &message);
 

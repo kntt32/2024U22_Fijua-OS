@@ -3,11 +3,11 @@
 #include "task.h"
 #include "message.h"
 #include "functions.h"
+#include "x64.h"
 
 #include "console.h"
 
-Message message;
-
+static Message message;
 
 void Message_Init(void) {
     message.changedFlag = 0;
@@ -20,6 +20,7 @@ void Message_Init(void) {
 //システム全体のメッセージキューにメッセージを追加 taskId:1で全タスクに通知
 uintn Message_EnQueue(uint16 taskId, Task_Message* task_message) {
     if(taskId == 0) return 1;
+    if(((uintn)Task_Message_ENUMCOUNT) <= (uintn)(task_message->type)) return 3;
 
     Message_Object messageObject;
     messageObject.taskId = taskId;
@@ -50,11 +51,13 @@ void Message_RemoveByTaskId(uint16 taskId) {
 //システム全体のMessageQueueのメッセージを各タスクに送信
 void Message_Update(void) {
     if(!message.changedFlag) return;
+
     message.changedFlag = 0;
 
     Message_Object tempObject;
     for(uintn i=message.queue.count-1; 0<=i; i++) {
         if(Queue_DeQueue(&(message.queue), (void*)&tempObject) == NULL) break;
+        if((uintn)Task_Message_ENUMCOUNT <= (uintn)tempObject.message.type) continue;
         Task_Messages_EnQueue(tempObject.taskId, &(tempObject.message));
     }
 
