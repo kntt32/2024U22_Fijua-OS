@@ -20,7 +20,14 @@ void Message_Init(void) {
 //システム全体のメッセージキューにメッセージを追加 taskId:1で全タスクに通知
 uintn Message_EnQueue(uint16 taskId, Task_Message* task_message) {
     if(taskId == 0) return 1;
-    if(((uintn)Task_Message_ENUMCOUNT) <= (uintn)(task_message->type)) return 3;
+    if(((uintn)Task_Message_ENUMCOUNT) <= (uintn)(task_message->type)) {
+        Console_Print("Message_EnQueue: unknown messega type\n");
+        return 3;
+    }
+    ascii buff[17];
+    SPrintIntX(task_message->type, 17, buff);
+    Console_Print(buff);
+    Console_Print("[[\n");
 
     Message_Object messageObject;
     messageObject.taskId = taskId;
