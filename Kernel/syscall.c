@@ -195,25 +195,30 @@ sintn Syscall_StdIn(out ascii str[], uintn strBuffSize) {
     Task_Message message;
     while(1) {
         Syscall_ReadMessage(&message);
-
-        if(message.type == Task_Message_IPCMessage) {
-            if(strBuffSize < buffindex + 32) return 2;
-            if(message.data.IPCMessage.u64 == 2) {
-                uintn i;
-                for(i=0; i<32; i++) {
-                    str[i+buffindex] = message.data.IPCMessage.str[i];
+        switch(message.type) {
+            case Task_Message_IPCMessage:
+                if(strBuffSize < buffindex + 32) return 2;
+                if(message.data.IPCMessage.u64 == 2) {
+                    uintn i;
+                    for(i=0; i<32; i++) {
+                        str[i+buffindex] = message.data.IPCMessage.str[i];
+                        if(str[i+buffindex] == '\0') break;
+                    }
+                    break;
+                }else {
+                    uintn i;
+                    for(i=0; i<32; i++) {
+                        str[i+buffindex] = message.data.IPCMessage.str[i];
+                        if(str[i+buffindex] == '\0') break;
+                    }
                     if(str[i+buffindex] == '\0') break;
                 }
+                buffindex += 32;
                 break;
-            }else {
-                uintn i;
-                for(i=0; i<32; i++) {
-                    str[i+buffindex] = message.data.IPCMessage.str[i];
-                    if(str[i+buffindex] == '\0') break;
-                }
-                if(str[i+buffindex] == '\0') break;
-            }
-            buffindex += 32;
+            case Task_Message_CloseWindow:
+                Syscall_Exit(1);
+            case Task_Message_Quit:
+                Syscall_Exit(1);
         }
     }
 

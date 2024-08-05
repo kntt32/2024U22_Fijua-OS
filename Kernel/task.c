@@ -128,7 +128,22 @@ void Task_Delete(uint16 taskId) {
     sintn taskIndex = Task_GetIndexOfTaskList(taskId);
     if(taskIndex == -1) return;
 
-    uint16 taskId_Null = 0;
+    //stdin_taskId, stdout_taskIdにTask_Message_Quitを送信
+    Task_Message message;
+    message.type = Task_Message_Quit;
+    Task_Messages_EnQueue(task.Table.list[taskIndex].stdin_taskId, &message);
+    Task_Messages_EnQueue(task.Table.list[taskIndex].stdout_taskId, &message);
+    for(uintn i=0; i<task.Table.count; i++) {
+        if(task.Table.list[i].stdin_taskId == taskId) {
+            Task_Messages_EnQueue(task.Table.list[i].taskId, &message);
+        }
+        if(task.Table.list[i].stdout_taskId == taskId) {
+            Task_Messages_EnQueue(task.Table.list[i].taskId, &message);
+        }
+    }
+
+    //メッセージキュー/タスクキューから削除するタスクを消去
+    const uint16 taskId_Null = 0;
     Queue_DeInit(&(task.Table.list[taskIndex].messages));
     Message_RemoveByTaskId(taskId);
     Queue_Replace(&(task.Queue.app), &taskId, &taskId_Null);

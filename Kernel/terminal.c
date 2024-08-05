@@ -105,6 +105,8 @@ sintn Terminal_Main(void) {
             case Task_Message_Nothing:
                 Terminal_Print(&terminal, "Message Received: Nothing\n");
                 break;
+            case Task_Message_Quit:
+                App_Syscall_Exit(0);
             default:
                 {
                 Terminal_Print(&terminal, "Message Received: UnKnown\n");
