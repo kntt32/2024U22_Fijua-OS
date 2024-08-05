@@ -154,7 +154,7 @@ sintn Syscall_GetStdOutTaskId(out uint16* taskId) {
 
 
 //stdioに文字列出力 count文字分までの表示を保証する
-sintn Syscall_StdOut(in ascii str[], uintn count) {
+sintn Syscall_StdOut(in const ascii str[], uintn count) {
     uint16 sendToTaskId = Task_GetStdOut(Task_GetRunningTaskId());
     if(sendToTaskId == 0) return -1;
     if(count == 0) {

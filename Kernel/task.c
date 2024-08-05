@@ -296,15 +296,6 @@ void Task_ChangeStdOut(uint16 taskId, uint16 stdout_taskId) {
 uintn Task_Messages_EnQueue(uint16 taskId, const Task_Message* message) {
     if(taskId == 0 || message == NULL) return 1;
 
-    if((uintn)Task_Message_ENUMCOUNT <= (uintn)message->type) {
-        Console_Print("Task_Message_EnQueue: unknown messega type\n");
-        return 3;
-    }
-    ascii buff[17];
-    SPrintIntX(message->type, 17, buff);
-    Console_Print(buff);
-    Console_Print("]]\n");
-
     if(taskId == 1) {
         for(uintn i=0; i<task.Table.count; i++) {
             Queue_EnQueue(&(task.Table.list[i].messages), message);
@@ -349,13 +340,6 @@ uintn Task_Messages_DeQueue(uint16 taskId, Task_Message* message) {
     if(Queue_DeQueue(&(task.Table.list[taskIndex].messages), message) == NULL) {
         message->type = Task_Message_Nothing;
         return 0;
-    }
-    if((uintn)Task_Message_ENUMCOUNT <= (uintn)message->type) {
-        ascii buff[9];
-        SPrintIntX(message->type, 9, buff);
-        Console_Print(buff);
-        Console_Print("\nTask_Messages_DeQueue: unknown messega type\n");
-        return 3;
     }
 
     return 0;

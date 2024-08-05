@@ -40,15 +40,14 @@ void Queue_DeInit(Queue* this) {
 Queue* Queue_GetElementByIndex(Queue* this, uintn index, void* element) {
     if(this == NULL || this->count <= index || element == NULL) return NULL;
 
-    uintn realIndex = this->start + index*this->perSize;
-    uintn maxIndex = this->poolPages << 12;
-    if(maxIndex <= realIndex+this->perSize) realIndex -= maxIndex;
+    uint8* elementptr = NULL;
+    Queue_GetElementPtrByIndex(this, index, (void**)&elementptr);
+    if(elementptr == NULL) return NULL;
 
     uint8* element_uint8Ptr = (uint8*)element;
+
     for(uintn i=0; i<this->perSize; i++) {
-        element_uint8Ptr[i] = this->objectPool[realIndex];
-        realIndex ++;
-        if(maxIndex <= realIndex) realIndex = 0;
+        element_uint8Ptr[i] = elementptr[i];
     }
 
     return this;
@@ -60,7 +59,7 @@ Queue* Queue_GetElementPtrByIndex(Queue* this, uintn index, void** elementPtr) {
     if(this == NULL || this->count <= index || elementPtr == NULL) return NULL;
 
     uintn realIndex = this->start + index*this->perSize;
-    uintn maxIndex = this->poolPages << 12;
+    uintn maxIndex = (this->poolPages<<12) - ((this->poolPages<<12)%this->perSize);
     if(maxIndex <= realIndex+this->perSize) realIndex -= maxIndex;
 
     *elementPtr = this->objectPool + realIndex;
@@ -72,7 +71,6 @@ Queue* Queue_GetElementPtrByIndex(Queue* this, uintn index, void** elementPtr) {
 //QueueのobjectPoolを拡張
 static Queue* Queue_Expand(Queue* this) {
     if(this == NULL) return NULL;
-    
     uintn newPoolPages = this->poolPages*2 + 1;
     uint8* newObjectPool = Memory_AllocPages(Queue_TaskId, newPoolPages);
     if(newObjectPool == NULL) return NULL;
@@ -80,13 +78,10 @@ static Queue* Queue_Expand(Queue* this) {
     for(uintn i=0; i<this->count; i++) {
         Queue_GetElementByIndex(this, i, newObjectPool + this->perSize*i);
     }
-
     Memory_FreePages(Queue_TaskId, this->poolPages, this->objectPool);
-
     this->start = 0;
     this->poolPages = newPoolPages;
     this->objectPool = newObjectPool;
-
     return this;
 }
 
@@ -94,11 +89,9 @@ static Queue* Queue_Expand(Queue* this) {
 //Queueに追加
 Queue* Queue_EnQueue(Queue* this, const void* object) {
     if(this == NULL || object == NULL) return NULL;
-
-    if(this->poolPages << 12 <= this->count*this->perSize) {
+    if((this->poolPages << 12) <= (this->count+1)*this->perSize) {
         if(Queue_Expand(this) == NULL) return NULL;
     }
-
     uint8* object_uint8Ptr = (uint8*)object;
     uint8* move2_uint8Ptr = NULL;
     this->count ++;
@@ -106,11 +99,9 @@ Queue* Queue_EnQueue(Queue* this, const void* object) {
         this->count --;
         return NULL;
     }
-
     for(uintn i=0; i<this->perSize; i++) {
         move2_uint8Ptr[i] = object_uint8Ptr[i];
     }
-
     return this;
 }
 
@@ -162,7 +153,7 @@ Queue* Queue_Print(Queue* this) {
     for(uintn i=0; i<this->count; i++) {
         ascii strBuff[18];
         uint8* ptr;
-        Queue_GetElementPtrByIndex(this, i, &ptr);
+        Queue_GetElementPtrByIndex(this, i, (void**)&ptr);
         SPrintIntX(*ptr, 17, strBuff);
         strBuff[17] = ':';
         Console_Print(strBuff);
@@ -178,11 +169,13 @@ Queue* Queue_DeQueue(Queue* this, void* object) {
 
     if(Queue_Check(this, object) == NULL) return NULL;
 
-    uintn maxIndex = this->poolPages << 12;
+    Queue_GetElementByIndex(this, 0, object);
 
-    this->start += this->perSize;
-    if(maxIndex <= this->start) this->start -= maxIndex;
+    uint64 secondQueuePtr;
+    Queue_GetElementPtrByIndex(this, 1, (void**)&secondQueuePtr);
+
     this->count --;
+    this->start = secondQueuePtr - (uint64)(this->objectPool);
 
     return this;
 }

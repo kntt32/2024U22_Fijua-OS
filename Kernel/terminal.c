@@ -156,6 +156,22 @@ void Terminal_Scroll(Terminal* this) {
     }
     this->cursorX = 0;
     this->cursorY--;
+
+    if(this->waitingKeyFlag) {
+        if(this->keyStrBuffStartCursorY == 0) {
+            if(this->keyStrBuffIndex < Terminal_StrWidth) {
+                this->keyStrBuff[0] = '\0';
+                this->keyStrBuffIndex = 0;
+            }else {
+                for(uintn i=0; i<this->keyStrBuffIndex - Terminal_StrWidth; i++) {
+                    this->keyStrBuff[i] = this->keyStrBuff[i + Terminal_StrWidth];
+                }
+                this->keyStrBuff[this->keyStrBuffIndex - Terminal_StrWidth] = '\0';
+                this->keyStrBuffIndex -= Terminal_StrWidth;
+            }
+        }
+        this->keyStrBuffStartCursorY--;
+    }
     
     return;
 }

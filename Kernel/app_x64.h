@@ -34,7 +34,7 @@ sintn App_Syscall_Exit(sintn retcode);
 
 sintn App_Syscall_GetStdOutTaskId(out uint16* taskId);
 
-sintn App_Syscall_StdOut(in ascii str[], uintn count);
+sintn App_Syscall_StdOut(in const ascii str[], uintn count);
 
 sintn App_Syscall_StdIn(out ascii str[], uintn strBuffSize);
 
