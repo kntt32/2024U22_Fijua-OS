@@ -45,7 +45,7 @@ sintn Shell_Main(void) {
                 App_Syscall_StdOut("Shell: Unknown Err Occured", sizeof("Shell: Unknown Err Occured"));
         }
 
-        App_Syscall_StdOut("\n", sizeof("\n"));
+        App_Syscall_StdOut("\n\n", sizeof("\n\n"));
     }
 
     return 0;

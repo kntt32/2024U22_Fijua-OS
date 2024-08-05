@@ -28,7 +28,7 @@ sintn App_Syscall_ReadMessage(out Task_Message* message);
 
 sintn App_Syscall_CheckMessage(out Task_Message* message);
 
-sintn App_Syscall_SendIPCMessage(in uint16 taskId, in ascii message[32]);
+sintn App_Syscall_SendIPCMessage(in uint16 taskId, in const ascii message[32]);
 
 sintn App_Syscall_Exit(sintn retcode);
 

@@ -200,7 +200,6 @@ void Terminal_Flush(Terminal* this) {
 
 //キー入力モードへ
 void Terminal_GetKeyInput(Terminal* this) {
-    Terminal_Print(this, "?");
     this->waitingKeyFlag = 1;
     this->keyStrBuff[0] = '\0';
     this->keyStrBuffIndex = 0;

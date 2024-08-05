@@ -43,7 +43,7 @@ sintn Log2(uintn number) {
 
 
 //fromからtoへsizeバイトだけメモリコピー
-void Functions_MemCpy(void* to, void* from, uintn size) {
+void Functions_MemCpy(void* to, const void* from, uintn size) {
     uint64* targTo64 = (uint64*)to;
     uint64* targFrom64 = (uint64*)from;
     for(uintn i=0; i<(size >> 3); i++) {

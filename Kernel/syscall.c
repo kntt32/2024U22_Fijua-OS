@@ -114,7 +114,7 @@ sintn Syscall_CheckMessage(out Task_Message* message) {
 
 
 //タスク間通信 32バイト送る
-sintn Syscall_SendIPCMessage(in uint16 taskId, in uint64 u64, in ascii str[32]) {
+sintn Syscall_SendIPCMessage(in uint16 taskId, in uint64 u64, in const ascii str[32]) {
     if(taskId == 0) return 1;
 
     Task_Message taskMessage;
@@ -204,21 +204,23 @@ sintn Syscall_StdIn(out ascii str[], uintn strBuffSize) {
                         str[i+buffindex] = message.data.IPCMessage.str[i];
                         if(str[i+buffindex] == '\0') break;
                     }
-                    break;
+                    return 0;
                 }else {
                     uintn i;
                     for(i=0; i<32; i++) {
                         str[i+buffindex] = message.data.IPCMessage.str[i];
                         if(str[i+buffindex] == '\0') break;
                     }
-                    if(str[i+buffindex] == '\0') break;
+                    if(str[i+buffindex] == '\0') return 0;
                 }
                 buffindex += 32;
-                break;
+                return 0;
             case Task_Message_CloseWindow:
                 Syscall_Exit(1);
             case Task_Message_Quit:
                 Syscall_Exit(1);
+            default:
+                break;
         }
     }
 
