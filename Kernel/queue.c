@@ -40,16 +40,9 @@ void Queue_DeInit(Queue* this) {
 Queue* Queue_GetElementByIndex(Queue* this, uintn index, void* element) {
     if(this == NULL || this->count <= index || element == NULL) return NULL;
 
-    uintn realIndex = this->start + index*this->perSize;
-    uintn maxIndex = this->poolPages << 12;
-    if(maxIndex <= realIndex+this->perSize) realIndex -= maxIndex;
-
-    uint8* element_uint8Ptr = (uint8*)element;
-    for(uintn i=0; i<this->perSize; i++) {
-        element_uint8Ptr[i] = this->objectPool[realIndex];
-        realIndex ++;
-        if(maxIndex <= realIndex) realIndex = 0;
-    }
+    void* elemPtr = NULL;
+    if(Queue_GetElementByIndex(this, index, &elemPtr) == NULL) return NULL;
+    Functions_MemCpy(element, elemPtr, this->perSize);
 
     return this;
 }
@@ -60,7 +53,7 @@ Queue* Queue_GetElementPtrByIndex(Queue* this, uintn index, void** elementPtr) {
     if(this == NULL || this->count <= index || elementPtr == NULL) return NULL;
 
     uintn realIndex = this->start + index*this->perSize;
-    uintn maxIndex = this->poolPages << 12;
+    uintn maxIndex = (this->poolPages<<12) - (this->poolPages<<12)%this->perSize;
     if(maxIndex <= realIndex+this->perSize) realIndex -= maxIndex;
 
     *elementPtr = this->objectPool + realIndex;
