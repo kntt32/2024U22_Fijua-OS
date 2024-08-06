@@ -183,6 +183,9 @@ Syscall_AppEnter:#16バイトアライメントの必要なし
     cmp $11, %rax
     je Syscall_AppEnter_Syscall_StdIn
 
+    cmp $12, %rax
+    je Syscall_AppEnter_Syscall_StdOut_Cls
+
     #無効なシステムコール番号
     mov $-1, %rax
     jmp Syscall_AppEnter_Exit
@@ -233,6 +236,10 @@ Syscall_AppEnter_Syscall_StdOut:
 
 Syscall_AppEnter_Syscall_StdIn:
     call Syscall_StdIn
+    jmp Syscall_AppEnter_Exit
+
+Syscall_AppEnter_Syscall_StdOut_Cls:
+    call Syscall_StdOut_Cls
     jmp Syscall_AppEnter_Exit
 
 Syscall_AppEnter_Exit:

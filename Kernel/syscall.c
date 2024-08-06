@@ -120,10 +120,9 @@ sintn Syscall_SendIPCMessage(in uint16 taskId, in uint64 u64, in const ascii str
     Task_Message taskMessage;
     taskMessage.type = Task_Message_IPCMessage;
     taskMessage.data.IPCMessage.u64 = u64;
-    Functions_MemCpy(taskMessage.data.IPCMessage.str, str, sizeof(ascii)*32);
+    if(str != NULL) Functions_MemCpy(taskMessage.data.IPCMessage.str, str, sizeof(ascii)*32);
 
     Message_EnQueue(taskId, &taskMessage);
-
     Task_Yield();
 
     return 0;
@@ -223,6 +222,17 @@ sintn Syscall_StdIn(out ascii str[], uintn strBuffSize) {
                 break;
         }
     }
+
+    return 0;
+}
+
+
+//stdoutの画面をクリア
+sintn Syscall_StdOut_Cls(void) {
+    uint16 sendToTaskId = Task_GetStdOut(Task_GetRunningTaskId());
+    if(sendToTaskId == 0) return -1;
+
+    Syscall_SendIPCMessage(sendToTaskId, 3, NULL);
 
     return 0;
 }

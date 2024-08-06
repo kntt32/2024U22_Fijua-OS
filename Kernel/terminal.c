@@ -32,6 +32,7 @@ void Terminal_Init(Terminal* this);
 void Terminal_Flush(Terminal* this);
 void Terminal_GetKeyInput(Terminal* this);
 void Terminal_Print(Terminal* this, ascii str[]);
+void Terminal_Cls(Terminal* this);
 
 static const Graphic_Color Terminal_BackgroundColor = {0x1b, 0x1d, 0x29};
 static const Graphic_Color Terminal_FontColor = {0xd3, 0xd4, 0xde};
@@ -97,6 +98,8 @@ sintn Terminal_Main(void) {
                         Terminal_Print(&terminal, strBuff);
                     }else if(message.data.IPCMessage.u64 == 1) {
                         Terminal_GetKeyInput(&terminal);
+                    }else if(message.data.IPCMessage.u64 == 3) {
+                        Terminal_Cls(&terminal);
                     }
                 }
                 break;
@@ -239,6 +242,27 @@ void Terminal_Print(Terminal* this, ascii str[]) {
             if(Terminal_StrHeight <= this->cursorY) Terminal_Scroll(this);
         }
     }
+
+    return;
+}
+
+
+//画面クリア
+void Terminal_Cls(Terminal* this) {
+    if(this == NULL) return;
+
+    this->cursorX = 0;
+    this->cursorY = 0;
+    for(uintn i=0; i<Terminal_StrWidth*Terminal_StrHeight; i++) this->strBuff[i] = ' ';
+    for(uintn i=0; i<Terminal_StrHeight; i++) this->updateFlag[i] = 1;
+
+    if(this->waitingKeyFlag) {
+        this->keyStrBuffStartCursorX = 0;
+        this->keyStrBuffStartCursorY = 0;
+        Terminal_Print(this, this->keyStrBuff);
+    }
+
+    Terminal_Flush(this);
 
     return;
 }

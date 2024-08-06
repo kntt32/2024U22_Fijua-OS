@@ -38,4 +38,6 @@ sintn App_Syscall_StdOut(in const ascii str[], uintn count);
 
 sintn App_Syscall_StdIn(out ascii str[], uintn strBuffSize);
 
+sintn App_Syscall_StdOut_Cls(void);
+
 #endif

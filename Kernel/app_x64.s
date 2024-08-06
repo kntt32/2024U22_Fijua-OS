@@ -10,6 +10,7 @@
 .global App_Syscall_GetStdOutTaskId
 .global App_Syscall_StdOut
 .global App_Syscall_StdIn
+.global App_Syscall_StdOut_Cls
 
 .text
 
@@ -70,5 +71,10 @@ App_Syscall_StdOut:
 
 App_Syscall_StdIn:
     mov $11, %rax
+    callq *(0x100000)
+    ret
+
+App_Syscall_StdOut_Cls:
+    mov $12, %rax
     callq *(0x100000)
     ret

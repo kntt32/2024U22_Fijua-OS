@@ -24,11 +24,13 @@ sintn Shell_Main(void) {
     ascii strBuff[128];
     while(1) {
         App_Syscall_StdOut("shell> ", sizeof("shell> "));
+        
         status = App_Syscall_StdIn(strBuff, sizeof(strBuff));
         if(status != 0) {
             App_Syscall_StdOut("Shell: too large input\n", sizeof("Shell: too large input\n"));
             continue;
         }
+        
         Shell_CmdType cmdType = Shell_GetCmd(strBuff);
         switch(cmdType) {
             case Shell_CmdType_Cls:
@@ -44,20 +46,21 @@ sintn Shell_Main(void) {
             default:
                 App_Syscall_StdOut("Shell: Unknown Err Occured", sizeof("Shell: Unknown Err Occured"));
         }
-
-        App_Syscall_StdOut("\n\n", sizeof("\n\n"));
+        if(cmdType != Shell_CmdType_Cls) {
+            App_Syscall_StdOut("\n\n", sizeof("\n\n"));
+        }
     }
 
     return 0;
 }
 
 
-//str1とstr2がlen文字目までで完全に等しいかどうか
-uintn Shell_Cmd_IsEqualStr(const ascii str1[], const ascii str2[], uintn len) {
+//str1が終わるまででstr2がstr1と完全に等しいかどうか
+uintn Shell_Cmd_IsEqualStr(const ascii str1[], const ascii str2[]) {
     if(str1 == NULL || str2 == NULL) return 0;
 
-    for(uintn i=0; i<len; i++) {
-        if(str1[i] == '\0' && str2[i] == '\0') return 1;
+    for(uintn i=0; 1; i++) {
+        if(str1[i] == '\0') return 1;
         if(str1[i] != str2[i]) return 0;
     }
     return 1;
@@ -87,20 +90,21 @@ Shell_CmdType Shell_GetCmd(const ascii shellInput[]) {
     }
 
     //Cls
-    if(Shell_Cmd_IsEqualStr("cls", shellInput, cmdLength)) {
+    if(Shell_Cmd_IsEqualStr("cls", shellInput)) {
         return Shell_CmdType_Cls;
     }
     //Echo
-    if(Shell_Cmd_IsEqualStr("echo", shellInput, cmdLength)) {
+    if(Shell_Cmd_IsEqualStr("echo", shellInput)) {
         return Shell_CmdType_Echo;
     }
 
     return Shell_CmdType_UnKnown;
 }
-
+sintn Syscall_StdOut_Cls(void);
 
 //Clsコマンド
 void Shell_Cmd_Cls(void) {
+    App_Syscall_StdOut_Cls();
     return;
 }
 
