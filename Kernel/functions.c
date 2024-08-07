@@ -72,3 +72,18 @@ uintn Functions_UTF16LE2ASCII(uint16 input, ascii* output) {
 
     return 0;
 }
+
+
+//メモリダンプ
+void Functions_MemDump(void* start, uintn size) {
+    ascii strbuff[3];
+    uint8* memptr = (uint8*)start;
+    for(uintn i=0; i<(size+15)/16; i++) {
+        for(uintn k=0; k<16; k++) {
+            SPrintIntX(memptr[k+i*16], 3, strbuff);
+            Console_Print(strbuff);
+            Console_Print(" ");
+        }
+        Console_Print("\n");
+    }
+}

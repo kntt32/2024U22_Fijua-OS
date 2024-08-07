@@ -11,4 +11,6 @@ void Functions_MemCpy(void* to, const void* from, uintn size);
 
 uintn Functions_UTF16LE2ASCII(uint16 input, ascii* output);
 
+void Functions_MemDump(void* start, uintn size);
+
 #endif

@@ -13,6 +13,8 @@
 #include "keyboard.h"
 #include "syscall.h"
 #include "message.h"
+#include "partition.h"
+#include "file.h"
 
 #include "terminal.h"
 #include "shell.h"
@@ -26,6 +28,8 @@ int Main(KernelInputStruct* kernelInput) {
 
     Graphic_Init();
     Console_Init();
+
+    Partition_Init();//debug
     
     Memory_Init();
     Mouse_Init();
