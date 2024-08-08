@@ -13,8 +13,8 @@
 #include "keyboard.h"
 #include "syscall.h"
 #include "message.h"
-#include "partition.h"
 #include "file.h"
+#include "x64.h"
 
 #include "terminal.h"
 #include "shell.h"
@@ -28,8 +28,6 @@ int Main(KernelInputStruct* kernelInput) {
 
     Graphic_Init();
     Console_Init();
-
-    Partition_Init();//debug
     
     Memory_Init();
     Mouse_Init();
@@ -42,6 +40,8 @@ int Main(KernelInputStruct* kernelInput) {
     Message_Init();
     
     Timer_Init();
+
+    File_Init();
 
     uint16 terminal = Task_New(Terminal_Main, 0, 0);
     uint16 shell = Task_New(Shell_Main, terminal, terminal);

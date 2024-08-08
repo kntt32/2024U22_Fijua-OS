@@ -62,7 +62,7 @@ void Functions_MemCpy(void* to, const void* from, uintn size) {
 }
 
 
-//UTF-16の文字コードをasciiに変換 x64のみ対応
+//UTF-16の文字コードをasciiに変換して*outputに戻す x64のみ対応
 uintn Functions_UTF16LE2ASCII(uint16 input, ascii* output) {
     uint8* in_uint8 = (uint8*)&input;
     if(in_uint8[1] != 0 || 0x80 <= in_uint8[0]) return 1;
@@ -71,6 +71,43 @@ uintn Functions_UTF16LE2ASCII(uint16 input, ascii* output) {
     if(*output == '\r') *output = '\n';
 
     return 0;
+}
+
+
+//countまでの範囲でNULL文字が出るまでutf16leのinput[]の文字列をasciiのoutput[]の文字列に変換
+void Functions_UTF16LE2ASCII_Str(uintn count, const uint16 input[], ascii output[]) {
+    if(count == 0 || input == NULL || output == NULL) return;
+
+    for(uintn i=0; i<count; i++) {
+        Functions_UTF16LE2ASCII(input[i], output+i);
+        if(input[i] == 0) break;
+    }
+
+    return;
+}
+
+
+//asciiをUTF-16に変換　x64のみ
+void Functions_ASCII2UTF16LE(ascii input, uint16* output) {
+    uint8* out_uint8 = (uint8*)output;
+
+    output[0] = input;
+    output[1] = 0;
+
+    return;
+}
+
+
+//countまでの範囲でNULL文字が出るまでasciiのinput[]の文字列をutf16leのoutput[]の文字列に変換
+void Functions_ASCII2UTF16LE_Str(uintn count, const ascii input[], uint16 output[]) {
+    if(count == 0 || input == NULL || output == NULL) return;
+
+    for(uintn i=0; i<count; i++) {
+        Functions_ASCII2UTF16LE(input[i], output+i);
+        if(input[i] == '\0') break;
+    }
+
+    return;
 }
 
 
@@ -85,5 +122,15 @@ void Functions_MemDump(void* start, uintn size) {
             Console_Print(" ");
         }
         Console_Print("\n");
+    }
+}
+
+
+//文字数カウント NULL文字は含まない
+uintn Functions_CountStr(const ascii str[]) {
+    if(str == NULL) return 0;
+
+    for(uintn i=0; 1; i++) {
+        if(str[i] == '\0') return i;
     }
 }

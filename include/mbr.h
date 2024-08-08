@@ -5,6 +5,14 @@
 https://wiki.osdev.org/MBR_(x86)#MBR_Format
 */
 
+#define Mbr_PartitionEntry_partitionType_Empty (0x00)
+#define Mbr_PartitionEntry_partitionType_Fat12_CHSLBA (0x01)
+#define Mbr_PartitionEntry_partitionType_Fat16_CHSLBA (0x04)
+#define Mbr_PartitionEntry_partitionType_Fat12And16_CHSLBA (0x06)
+#define Mbr_PartitionEntry_partitionType_Fat32_CHSLBA (0x0b)
+#define Mbr_PartitionEntry_partitionType_Fat32_LBA (0x0c)
+#define Mbr_PartitionEntry_partitionType_Fat12And16_LBA (0x0e)
+
 typedef struct {
     uint8 bootstrap[440];//MBR Bootstrap
     uint32 uniqueDiskId : 4*8;
