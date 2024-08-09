@@ -40,4 +40,6 @@ sintn App_Syscall_StdIn(out ascii str[], uintn strBuffSize);
 
 sintn App_Syscall_StdOut_Cls(void);
 
+sintn App_Syscall_GetFileList(const ascii path[], uintn pathLength, uintn* buffCount, File_Directory* buff);
+
 #endif

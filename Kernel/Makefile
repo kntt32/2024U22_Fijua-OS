@@ -38,12 +38,12 @@ graphic.o: graphic.c graphic.h graphic_mouse_bitmap
 task.o: task.c queue.h task.h memory.h x64.h graphic.h layer.h message.h console.h
 layer.o: layer.c memory.h graphic.h layer.h mouse.h queue.h task.h font.h message.h
 mouse.o: mouse.c mouse.h graphic.h layer.h functions.h console.h x64.h
-syscall.o: syscall.c syscall.h queue.h task.h x64.h console.h layer.h graphic.h font.h message.h functions.h
+syscall.o: syscall.c syscall.h queue.h task.h x64.h console.h layer.h graphic.h font.h message.h functions.h file.h
 message.o: message.c queue.h message.h task.h functions.h
-file.o: file.c file.h console.h x64.h
+file.o: file.c file.h console.h x64.h functions.h
 
-terminal.o: terminal.c graphic.h queue.h task.h terminal.h app_x64.h
-shell.o: shell.c graphic.h queue.h task.h shell.h app_x64.h
+terminal.o: terminal.c graphic.h queue.h task.h file.h terminal.h app_x64.h
+shell.o: shell.c graphic.h queue.h task.h file.h shell.h app_x64.h
 app_x64.o: app_x64.s
 
 test.o: test.c test.h queue.h task.h graphic.h functions.h console.h

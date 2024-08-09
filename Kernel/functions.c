@@ -134,3 +134,14 @@ uintn Functions_CountStr(const ascii str[]) {
         if(str[i] == '\0') return i;
     }
 }
+
+
+//文字列が等しいか判定
+uintn Functions_IsEqualStr(const ascii str1[], const ascii str2[]) {
+    if(str1 == NULL || str2 == NULL) return 0;
+
+    for(uintn i=0; 1; i++) {
+        if(str1[i] != str2[i]) return 0;
+        if(str1[i] == '\0') return i;
+    }
+}

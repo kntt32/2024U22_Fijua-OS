@@ -2,26 +2,40 @@
 #include "graphic.h"
 #include "queue.h"
 #include "task.h"
+#include "file.h"
+
 #include "shell.h"
 #include "app_x64.h"
+
+
+#define Shell_Default_StrBuffSize (128)
 
 
 typedef enum {
     Shell_CmdType_UnKnown,
     Shell_CmdType_Cls,
-    Shell_CmdType_Echo
+    Shell_CmdType_Echo,
+    Shell_CmdType_Ls
 } Shell_CmdType;
 
 
 Shell_CmdType Shell_GetCmd(const ascii shellInput[]);
-void Shell_Cmd_Echo(const ascii shelInput[]);
+const ascii* Shell_GetCmdInputStart(const ascii shellInput[]);
+
+void Shell_Cmd_Echo(const ascii cmdInput[]);
 void Shell_Cmd_Cls(void);
+void Shell_Cmd_Ls(const ascii cmdInput[Shell_Default_StrBuffSize], ascii workingPath[Shell_Default_StrBuffSize]);
+
+
+
 
 
 sintn Shell_Main(void) {
     sintn status;
 
-    ascii strBuff[128];
+    ascii workingPath[Shell_Default_StrBuffSize] = "";
+
+    ascii strBuff[Shell_Default_StrBuffSize];
     while(1) {
         App_Syscall_StdOut("shell> ", sizeof("shell> "));
         
@@ -32,16 +46,20 @@ sintn Shell_Main(void) {
         }
         
         Shell_CmdType cmdType = Shell_GetCmd(strBuff);
+        const ascii* cmdInput = Shell_GetCmdInputStart(strBuff);
         switch(cmdType) {
             case Shell_CmdType_Cls:
                 Shell_Cmd_Cls();
                 break;
             case Shell_CmdType_Echo:
-                Shell_Cmd_Echo(strBuff);
+                Shell_Cmd_Echo(cmdInput);
+                break;
+            case Shell_CmdType_Ls:
+                Shell_Cmd_Ls(cmdInput, workingPath);
                 break;
             case Shell_CmdType_UnKnown:
                 App_Syscall_StdOut("Shell: UnSupported Input: ", sizeof("Shell: UnSupported Input: "));
-                App_Syscall_StdOut(strBuff, 128);
+                App_Syscall_StdOut(strBuff, Shell_Default_StrBuffSize);
                 break;
             default:
                 App_Syscall_StdOut("Shell: Unknown Err Occured", sizeof("Shell: Unknown Err Occured"));
@@ -97,10 +115,46 @@ Shell_CmdType Shell_GetCmd(const ascii shellInput[]) {
     if(Shell_Cmd_IsEqualStr("echo", shellInput)) {
         return Shell_CmdType_Echo;
     }
+    //Ls
+    if(Shell_Cmd_IsEqualStr("ls", shellInput)) {
+        return Shell_CmdType_Ls;
+    }
 
     return Shell_CmdType_UnKnown;
 }
-sintn Syscall_StdOut_Cls(void);
+
+
+const ascii* Shell_GetCmdInputStart(const ascii shellInput[]) {
+    if(shellInput == NULL) return NULL;
+
+    for(uintn i=0; 1; i++) {
+        if(shellInput[i] == ' ' && shellInput[i+1] != ' ') return shellInput+i+1;
+        if(shellInput[i] == '\0') return NULL;
+    }
+}
+
+
+//作業パスを相対パスから本当のパスを取得
+static void Shell_GetRealPath(const ascii workingPath[Shell_Default_StrBuffSize], const ascii relativePath[Shell_Default_StrBuffSize], ascii realPath[Shell_Default_StrBuffSize*2]) {
+    uintn pathLength = 0;
+    for(uintn i=0; i<Shell_Default_StrBuffSize; i++) {
+        realPath[pathLength] = workingPath[i];
+        pathLength ++;
+        if(realPath[pathLength-1] == '\0') break;
+    }
+    if(relativePath != NULL) {
+        pathLength --;
+        realPath[pathLength] = '/';
+        pathLength ++;
+        for(uintn i=0; i<Shell_Default_StrBuffSize; i++) {
+            realPath[pathLength] = relativePath[i];
+            pathLength ++;
+            if(realPath[pathLength-1] == '\0') break;
+        }
+    }
+    return;
+}
+
 
 //Clsコマンド
 void Shell_Cmd_Cls(void) {
@@ -110,17 +164,37 @@ void Shell_Cmd_Cls(void) {
 
 
 //Echoコマンド
-void Shell_Cmd_Echo(const ascii shellInput[]) {
-    if(shellInput == NULL) return;
+void Shell_Cmd_Echo(const ascii cmdInput[]) {
+    App_Syscall_StdOut(cmdInput, Shell_Cmd_CountStr(cmdInput));
 
-    uintn cmdLength = 0;
-    while(1) {
-        if(shellInput[cmdLength] == ' ' || shellInput[cmdLength] == '\0') break;
-        cmdLength ++;
+    return;
+}
+
+
+//lsコマンド
+void Shell_Cmd_Ls(const ascii cmdInput[Shell_Default_StrBuffSize], ascii workingPath[Shell_Default_StrBuffSize]) {
+    uintn status;
+
+    ascii realPath[Shell_Default_StrBuffSize*2];
+
+    Shell_GetRealPath(workingPath, cmdInput, realPath);
+
+    App_Syscall_StdOut(realPath, Shell_Default_StrBuffSize*2);
+    App_Syscall_StdOut(":\n", 3);
+
+    uintn buffCount = 0;
+    App_Syscall_GetFileList(realPath, Shell_Default_StrBuffSize*2, &buffCount, NULL);
+    File_Directory buff[buffCount];
+    status = App_Syscall_GetFileList(realPath, Shell_Default_StrBuffSize*2, &buffCount, buff);
+    if(status) {
+        App_Syscall_StdOut("ls: Err", sizeof("ls: Err"));
+        return;
     }
 
-    const ascii* echoTarget = shellInput + cmdLength + 1;
-    App_Syscall_StdOut(echoTarget, Shell_Cmd_CountStr(echoTarget));
+    for(uintn i=0; i<buffCount; i++) {
+        App_Syscall_StdOut(buff[i].name, 32);
+        App_Syscall_StdOut(" ", sizeof(" "));
+    }
 
     return;
 }

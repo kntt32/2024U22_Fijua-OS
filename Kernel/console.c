@@ -33,7 +33,7 @@ void Console_Init(void) {
     for(uintn i=0; i<buffwidth*buffheight; i++) {
         buff[i] = ' ';
     }
-    for(uintn i=0; i<buffwidth*buffheight*16*8>>1; i++) {
+    for(uintn i=0; i<buffwidth*buffheight*16*8/2; i++) {
         *(((uint32*)console_framebuff)+i) = backgroundColor;
     }
     for(uintn i=0; i<buffheight; i++) {

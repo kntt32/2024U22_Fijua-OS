@@ -11,6 +11,7 @@
 .global App_Syscall_StdOut
 .global App_Syscall_StdIn
 .global App_Syscall_StdOut_Cls
+.global App_Syscall_GetFileList
 
 .text
 
@@ -76,5 +77,10 @@ App_Syscall_StdIn:
 
 App_Syscall_StdOut_Cls:
     mov $12, %rax
+    callq *(0x100000)
+    ret
+
+App_Syscall_GetFileList:
+    mov $13, %rax
     callq *(0x100000)
     ret

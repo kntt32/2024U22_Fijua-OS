@@ -2,6 +2,8 @@
 #include "graphic.h"
 #include "queue.h"
 #include "task.h"
+#include "file.h"
+
 #include "terminal.h"
 #include "app_x64.h"
 

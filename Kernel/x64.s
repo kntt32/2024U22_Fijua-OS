@@ -124,7 +124,7 @@ Task_NewTask_Asm_SetStartContext:
 
     pushq %r10   #rip
 
-    pushq $0x0                      #rax
+    pushq $0x0                  #rax
     pushq $0x0                  #rbp
     pushq $0x0                  #r12
     pushq $0x0                  #r13
@@ -186,6 +186,9 @@ Syscall_AppEnter:#16バイトアライメントの必要なし
     cmp $12, %rax
     je Syscall_AppEnter_Syscall_StdOut_Cls
 
+    cmp $13, %rax
+    je Syscall_AppEnter_Syscall_GetFileList
+
     #無効なシステムコール番号
     mov $-1, %rax
     jmp Syscall_AppEnter_Exit
@@ -240,6 +243,10 @@ Syscall_AppEnter_Syscall_StdIn:
 
 Syscall_AppEnter_Syscall_StdOut_Cls:
     call Syscall_StdOut_Cls
+    jmp Syscall_AppEnter_Exit
+
+Syscall_AppEnter_Syscall_GetFileList:
+    call Syscall_GetFileList
     jmp Syscall_AppEnter_Exit
 
 Syscall_AppEnter_Exit:

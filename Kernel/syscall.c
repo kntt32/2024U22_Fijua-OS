@@ -10,6 +10,7 @@
 #include "font.h"
 #include "message.h"
 #include "functions.h"
+#include "file.h"
 
 #define Syscall_SyscallAddr ((void**)0x100000)
 
@@ -233,6 +234,23 @@ sintn Syscall_StdOut_Cls(void) {
     if(sendToTaskId == 0) return -1;
 
     Syscall_SendIPCMessage(sendToTaskId, 3, NULL);
+
+    return 0;
+}
+
+
+//ファイルリスト取得 pathLength文字目まででNULL文字までのパスを認識する
+sintn Syscall_GetFileList(const ascii path[], uintn pathLength, uintn* buffCount, File_Directory* buff) {
+    if(path == NULL || buffCount == NULL || (*buffCount != 0 && buff == NULL)) return 1;
+
+    uintn status;
+
+    status = File_GetDirectory(path, buffCount, buff);
+    if(status) {
+        ascii strbuff[17];
+        SPrintIntX(status, 17, strbuff);
+        return 2;
+    }
 
     return 0;
 }

@@ -40,7 +40,6 @@ int Main(KernelInputStruct* kernelInput) {
     Message_Init();
     
     Timer_Init();
-
     File_Init();
 
     uint16 terminal = Task_New(Terminal_Main, 0, 0);
